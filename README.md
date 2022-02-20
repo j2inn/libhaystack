@@ -6,7 +6,7 @@
 
 Implementation of the [Haystack 4 spec](https://project-haystack.org/) in the Rust programming language.
 
-The library covers extensive parts of the specification, and it uses the cargo features to allow opt-in on features such as [decoders](https://docs.rs/libhaystack/latest/libhaystack/encoding/index.html), [filter](https://docs.rs/libhaystack/latest/libhaystack/haystack/filter/index.html), [units](https://docs.rs/libhaystack/latest/libhaystack/haystack/units/index.html), [timezone](https://docs.rs/libhaystack/latest/libhaystack/haystack/timezone/index.html), and the [C](https://docs.rs/libhaystack/latest/libhaystack/c_api/index.html) FFI API.
+The library covers extensive parts of the specification, and it uses the cargo features to allow opt-in on features such as [decoders](https://docs.rs/libhaystack/latest/libhaystack/haystack/encoding/index.html), [filter](https://docs.rs/libhaystack/latest/libhaystack/haystack/filter/index.html), [units](https://docs.rs/libhaystack/latest/libhaystack/haystack/units/index.html), [timezone](https://docs.rs/libhaystack/latest/libhaystack/haystack/timezone/index.html), and the [C](https://docs.rs/libhaystack/latest/libhaystack/c_api/index.html) FFI API.
 
 The library requires the allocator feature and the standard library, but it can be compiled to WASM as a non OS target.
 
@@ -25,11 +25,11 @@ Run unit and integration tests with `cargo test`
 
 ### Types
 
-The library fundamental type is [Value](https://docs.rs/libhaystack/latest/libhaystack/val/value/enum.Value.html). It can hold any of the Haystack supported [data-types](https://project-haystack.org/doc/docHaystack/Kinds).
+The library fundamental type is [Value](https://docs.rs/libhaystack/latest/libhaystack/haystack/val/value/enum.Value.html). It can hold any of the Haystack supported [data-types](https://project-haystack.org/doc/docHaystack/Kinds).
 
 ### Scalar types
 
-Create a [Str](https://docs.rs/libhaystack/latest/libhaystack/val/string/struct.Str.html)
+Create a [Str](https://docs.rs/libhaystack/latest/libhaystack/haystack/val/string/struct.Str.html)
 [Value](https://docs.rs/libhaystack/latest/libhaystack/val/value/enum.Value.html) from a `&str`
 ```rust
 use libhaystack::val::*;
