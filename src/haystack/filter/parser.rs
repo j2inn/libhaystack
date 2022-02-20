@@ -33,15 +33,11 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
         let mut ands: Vec<And> = vec![self.parse_and()?];
 
         while self.lexer.cur == or {
-            if self.lexer.cur == or {
-                if self.lexer.is_eof() {
-                    return self.make_generic_err("Expecting 'and' expression.");
-                }
-                self.lexer.read()?;
-                ands.push(self.parse_and()?);
-            } else {
+            if self.lexer.is_eof() {
                 return self.make_generic_err("Expecting 'and' expression.");
             }
+            self.lexer.read()?;
+            ands.push(self.parse_and()?);
         }
         Ok(Or { ands })
     }
@@ -51,16 +47,13 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
         let mut terms: Vec<Term> = vec![self.parse_term()?];
 
         while self.lexer.cur == and {
-            if self.lexer.cur == and {
-                if self.lexer.is_eof() {
-                    return self.make_generic_err("Expecting 'term' expression.");
-                }
-                self.lexer.read()?;
-                terms.push(self.parse_term()?);
-            } else {
+            if self.lexer.is_eof() {
                 return self.make_generic_err("Expecting 'term' expression.");
             }
+            self.lexer.read()?;
+            terms.push(self.parse_term()?);
         }
+
         Ok(And { terms })
     }
 
