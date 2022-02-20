@@ -30,7 +30,7 @@ The library fundamental type is [Value](https://docs.rs/libhaystack/latest/libha
 ### Scalar types
 
 Create a [Str](https://docs.rs/libhaystack/latest/libhaystack/haystack/val/string/struct.Str.html)
-[Value](https://docs.rs/libhaystack/latest/libhaystack/val/value/enum.Value.html) from a `&str`
+[Value](https://docs.rs/libhaystack/latest/libhaystack/haystack/val/value/enum.Value.html) from a `&str`
 ```rust
 use libhaystack::val::*;
 // Creates a Str Value
