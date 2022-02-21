@@ -1,5 +1,5 @@
-![GitHub CI](https://github.com/j2inn/libhaystack/actions/workflows/master-push.yaml/badge.svg)
-![crates.io](https://img.shields.io/crates/v/libhaystack.svg)
+[![GitHub CI](https://github.com/j2inn/libhaystack/actions/workflows/master-push.yaml/badge.svg)](https://github.com/j2inn/libhaystack/actions/workflows/master-push.yaml)
+[![crates.io](https://img.shields.io/crates/v/libhaystack.svg)](https://crates.io/crates/libhaystack)
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 # Haystack library
