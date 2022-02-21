@@ -8,7 +8,9 @@ Implementation of the [Haystack 4 spec](https://project-haystack.org/) in the Ru
 
 The library covers extensive parts of the specification, and it uses the cargo features to allow opt-in on features such as [decoders](https://docs.rs/libhaystack/latest/libhaystack/haystack/encoding/index.html), [filter](https://docs.rs/libhaystack/latest/libhaystack/haystack/filter/index.html), [units](https://docs.rs/libhaystack/latest/libhaystack/haystack/units/index.html), [timezone](https://docs.rs/libhaystack/latest/libhaystack/haystack/timezone/index.html), and the [C](https://docs.rs/libhaystack/latest/libhaystack/c_api/index.html) FFI API.
 
-The library requires the allocator feature and the standard library, but it can be compiled to WASM as a non OS target.
+This implementation is geared towards constructing high performance haystack application that can also run efficiently on constrained devices, for a more general implementation, J2 Innovations
+provides a [TypeScript](https://github.com/j2inn/haystack-core) implementation also.
+At the moment, the library requires the allocator feature and the standard library, but it can be compiled to WASM as a non OS target.
 
 ## Building
 
@@ -20,6 +22,10 @@ and the zinc encoding modules, resulting in a small binary (12KB on Windows x86-
 ## Testing
 
 Run unit and integration tests with `cargo test`
+
+## Docs
+
+As usual, docs for the library are generate on [docs.rs](https://docs.rs/libhaystack/latest/libhaystack/) each time we publish.
 
 ## Features
 
@@ -133,6 +139,7 @@ Building the header file:
 ```
 cbindgen --lang c -q --crate libhaystack --output src/c_api/libhaystack.h
 ```
+Please consult the [pre-generated](https://github.com/j2inn/libhaystack/blob/master/src/c_api/libhaystack.h) header file distributed within the repo.
 
 ### Webassembly support
 
