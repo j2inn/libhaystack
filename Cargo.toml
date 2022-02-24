@@ -1,7 +1,7 @@
 [package]
 name = "libhaystack"
-version = "1.0.0"
-description = "Rust implementation of the Haystack 4 data types, defs, filter, and encodings"
+version = "1.0.1"
+description = "Rust implementation of the Haystack 4 data types, defs, filter, units, and encodings"
 authors = ["J2 Innovations", "Radu Racariu <radur@j2inn.com>"]
 edition = "2021"
 license = "BSD-3-Clause"
@@ -9,7 +9,7 @@ repository = "https://github.com/j2inn/libhaystack/"
 homepage = "https://github.com/j2inn/libhaystack/"
 readme = "README.md"
 categories = ["command-line-utilities", "data-structures", "encoding", "parser-implementations"]
-keywords = ["iot", "bas"]
+keywords = ["iot", "bas", "haystack"]
 
 [[bin]]
 name = "unit-gen"

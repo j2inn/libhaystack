@@ -282,8 +282,7 @@ fn test_namespace_supertypes_of() {
     let mut query = ns
         .all_matching_names(&["entity", "geoPlace"])
         .into_iter()
-        .cloned()
-        .collect::<Vec<Dict>>();
+        .collect::<Vec<&Dict>>();
     query.sort();
 
     assert_eq!(supertypes_of, query);
@@ -299,8 +298,7 @@ fn test_namespace_all_supertypes_of() {
     let mut query = ns
         .all_matching_names(&["marker", "entity", "geoPlace"])
         .into_iter()
-        .cloned()
-        .collect::<Vec<Dict>>();
+        .collect::<Vec<&Dict>>();
     query.sort();
 
     assert_eq!(all_supertypes_of, query);
@@ -609,8 +607,7 @@ fn test_namespace_inheritance() {
     let mut query = ns
         .all_matching_names(&["site", "entity", "marker", "geoPlace"])
         .into_iter()
-        .cloned()
-        .collect::<Vec<Dict>>();
+        .collect::<Vec<&Dict>>();
     query.sort();
 
     assert_eq!(inheritance, query);
@@ -759,8 +756,7 @@ fn test_namespace_reflect() {
             "hot-water-plant",
         ])
         .into_iter()
-        .cloned()
-        .collect::<Vec<Dict>>();
+        .collect::<Vec<&Dict>>();
     query.sort();
 
     assert_eq!(defs, query);
@@ -786,8 +782,7 @@ fn test_namespace_reflect() {
             "chilled-water",
         ])
         .into_iter()
-        .cloned()
-        .collect::<Vec<Dict>>();
+        .collect::<Vec<&Dict>>();
     query.sort();
 
     assert_eq!(defs, query);
@@ -823,7 +818,7 @@ fn test_namespace_reflect() {
     .iter()
     .all(|def| names.contains(def)));
 
-    assert_eq!(reflect.subject, &subject);
+    assert_eq!(&reflect.subject, &subject);
 }
 
 #[test]
@@ -889,8 +884,7 @@ fn test_namespace_fits_implementation() {
     let mut query = ns
         .all_matching_names(&["tank", "equip"])
         .into_iter()
-        .cloned()
-        .collect::<Vec<Dict>>();
+        .collect::<Vec<&Dict>>();
     query.sort();
 
     assert_eq!(implementation, query);
@@ -901,8 +895,7 @@ fn test_namespace_fits_implementation() {
     let mut query = ns
         .all_matching_names(&["hot", "water"])
         .into_iter()
-        .cloned()
-        .collect::<Vec<Dict>>();
+        .collect::<Vec<&Dict>>();
     query.sort();
 
     assert_eq!(implementation, query);

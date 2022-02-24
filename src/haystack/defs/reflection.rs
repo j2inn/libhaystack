@@ -8,19 +8,19 @@ use crate::haystack::val::{Dict, HaystackDict, Symbol};
 /// The reflection result on a target dictionary
 pub struct Reflection<'a> {
     /// The subject of the reflection operation
-    pub subject: &'a Dict,
+    pub subject: Dict,
     /// Matching definitions for the target dictionary
-    pub defs: Vec<Dict>,
+    pub defs: Vec<&'a Dict>,
     /// The def namespace used for the reflection
-    pub ns: &'a Namespace,
+    pub ns: &'a Namespace<'a>,
     /// The entity type of the target dictionary
     pub entity_type: Dict,
 }
 
 impl<'a> Reflection<'a> {
-    pub fn make(subject: &'a Dict, defs: Vec<Dict>, ns: &'a Namespace) -> Self {
+    pub fn make(subject: &Dict, defs: Vec<&'a Dict>, ns: &'a Namespace<'a>) -> Self {
         let mut reflect = Reflection {
-            subject,
+            subject: subject.clone(),
             defs,
             ns,
             entity_type: Dict::default(),
@@ -48,12 +48,12 @@ impl<'a> Reflection<'a> {
                 .iter()
                 .find(|def| {
                     if let Some(def) = def.get_symbol("def") {
-                        self.ns.inheritance(def).contains(entity)
+                        self.ns.inheritance(def).contains(&entity)
                     } else {
                         false
                     }
                 })
-                .map_or(Dict::default(), |v| v.to_owned()),
+                .map_or(Dict::default(), |v| (*v).clone()),
             None => Dict::default(),
         }
     }
