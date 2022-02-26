@@ -12,7 +12,7 @@ use libhaystack::filter::{Filter, PathResolver};
 use libhaystack::haystack::val::*;
 
 lazy_static! {
-    pub(super) static ref NS: Namespace = Namespace::make(parse_def());
+    pub(super) static ref NS: Namespace<'static> = Namespace::make(parse_def());
 }
 
 fn eval_in_context(filter: &Filter, dict: &Dict) -> bool {

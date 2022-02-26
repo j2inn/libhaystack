@@ -57,7 +57,7 @@ pub struct CoreTypeDefs<'a> {
 
 /// The container of the normalized definitions.
 #[derive(Debug, Default)]
-pub struct Namespace {
+pub struct Namespace<'a> {
     /// Collection of normalized defs.
     pub defs: Defs,
 
@@ -81,12 +81,12 @@ pub struct Namespace {
     pub tag_on_defs: SymbolDefs,
 
     // Lazy caching for super types
-    supertypes_of_cache: DashMap<Symbol, Vec<Dict>>,
+    supertypes_of_cache: DashMap<Symbol, Vec<&'a Dict>>,
     // Lazy caching for inheritance
-    inheritance_of_cache: DashMap<Symbol, Vec<Dict>>,
+    inheritance_of_cache: DashMap<Symbol, Vec<&'a Dict>>,
 }
 
-impl Namespace {
+impl<'a> Namespace<'a> {
     /// Constructs a new namespace
     /// # Arguments
     /// - defs The normalized defs grid
@@ -97,18 +97,7 @@ impl Namespace {
                 .filter_map(|rec| rec.get_symbol("def").map(|def| (def.clone(), rec.clone())))
                 .collect(),
 
-            subtypes: SymbolDefs::new(),
-            choices: SymbolDefs::new(),
-            conjuncts: Vec::new(),
-            conjuncts_keys: BTreeMap::new(),
-            features: Vec::new(),
-            libs: Vec::new(),
-            feature_names: Vec::new(),
-            tag_on_names: Vec::new(),
-            tag_on_defs: SymbolDefs::new(),
-
-            supertypes_of_cache: DashMap::new(),
-            inheritance_of_cache: DashMap::new(),
+            ..Default::default()
         };
 
         // Order of execution matters as calls depend on the previous calculation
@@ -206,7 +195,7 @@ impl Namespace {
     /// Computes a list of all the libs implemented by this namespace.
     fn compute_libs(&mut self) {
         self.libs
-            .extend(self.subtypes_of(&Symbol::from("lib")).to_vec())
+            .extend(self.subtypes_of(&Symbol::from("lib")).clone())
     }
 
     /// Returns the subtypes of the type.
@@ -233,13 +222,14 @@ impl Namespace {
         let mut defs_stack = vec![self.subtypes_of(symbol)];
 
         while !defs_stack.is_empty() {
-            let def = defs_stack.pop().unwrap_or(&EMPTY_VEC_DICT);
-            for def in def {
-                sub_types.insert(def);
+            if let Some(defs) = defs_stack.pop() {
+                for def in defs {
+                    sub_types.insert(def);
 
-                let next_subtypes = self.subtypes_of(def.def_symbol());
+                    let next_subtypes = self.subtypes_of(def.def_symbol());
 
-                defs_stack.push(next_subtypes)
+                    defs_stack.push(next_subtypes)
+                }
             }
         }
 
@@ -265,19 +255,19 @@ impl Namespace {
     }
 
     ///  Returns the supertypes of a def or an empty list if it can't be found.
-    pub fn supertypes_of(&self, symbol: &Symbol) -> MapReadRef<Symbol, Vec<Dict>> {
+    pub fn supertypes_of(&'a self, symbol: &Symbol) -> MapReadRef<Symbol, Vec<&'a Dict>> {
         if let Some(super_types) = self.supertypes_of_cache.get(symbol) {
             super_types
         } else {
             let val = match self.get(symbol) {
                 Some(def) => {
                     if let Some(is_a_list) = def.get_list("is") {
-                        let mut defs: Vec<Dict> = Vec::new();
+                        let mut defs: Vec<&Dict> = Vec::new();
                         for name in is_a_list {
                             match name {
                                 Value::Symbol(sym) => {
                                     if let Some(dict) = self.get(sym) {
-                                        defs.push(dict.clone());
+                                        defs.push(dict);
                                     } else {
                                         continue;
                                     }
@@ -301,18 +291,19 @@ impl Namespace {
     }
 
     /// Returns a flattened list of all the supertypes in the whole supertype chain.
-    pub fn all_supertypes_of(&self, symbol: &Symbol) -> Vec<Dict> {
-        let mut super_types: HashSet<Dict> = HashSet::new();
+    pub fn all_supertypes_of(&'a self, symbol: &Symbol) -> Vec<&'a Dict> {
+        let mut super_types: HashSet<&Dict> = HashSet::new();
         let mut defs_stack = vec![self.supertypes_of(symbol).clone()];
 
         while !defs_stack.is_empty() {
-            let def = defs_stack.pop().map_or(Vec::default(), |val| val);
-            for def in def {
-                super_types.insert(def.clone());
+            if let Some(defs) = defs_stack.pop() {
+                for def in defs {
+                    super_types.insert(def);
 
-                let next_subtypes = self.supertypes_of(def.def_symbol());
-                if !next_subtypes.is_empty() {
-                    defs_stack.push(next_subtypes.clone())
+                    let next_subtypes = self.supertypes_of(def.def_symbol());
+                    if !next_subtypes.is_empty() {
+                        defs_stack.push(next_subtypes.clone())
+                    }
                 }
             }
         }
@@ -322,10 +313,7 @@ impl Namespace {
 
     /// Returns a list of choices for def.
     pub fn choices_for(&self, symbol: &Symbol) -> &Vec<Dict> {
-        if let Some(of) = self
-            .get(symbol)
-            .map(|def| def.get_symbol("of").unwrap_or(&EMPTY_SYMBOL))
-        {
+        if let Some(of) = self.get(symbol).and_then(|def| def.get_symbol("of")) {
             self.subtypes_of(of)
         } else {
             &EMPTY_VEC_DICT
@@ -338,7 +326,7 @@ impl Namespace {
         for (sym, def) in &self.defs {
             if def.get_symbol("of").is_some() {
                 self.choices
-                    .insert(sym.clone(), self.choices_for(sym).to_vec());
+                    .insert(sym.clone(), self.choices_for(sym).clone());
             }
         }
     }
@@ -396,13 +384,13 @@ impl Namespace {
     }
 
     /// Return the defs inheritance as a flattened array of defs.
-    pub fn inheritance(&self, symbol: &Symbol) -> MapReadRef<Symbol, Vec<Dict>> {
+    pub fn inheritance(&'a self, symbol: &Symbol) -> MapReadRef<Symbol, Vec<&'a Dict>> {
         if let Some(inheritance) = self.inheritance_of_cache.get(symbol) {
             inheritance
         } else {
             let val = if let Some(def) = self.get(symbol) {
-                let mut supertypes = HashSet::<Dict>::new();
-                supertypes.insert(def.clone());
+                let mut supertypes = HashSet::<&Dict>::new();
+                supertypes.insert(def);
                 supertypes.extend(self.all_supertypes_of(symbol));
                 supertypes.into_iter().collect()
             } else {
@@ -420,7 +408,7 @@ impl Namespace {
     /// - parent The parent def.
     /// - association The association.
     ///
-    pub fn associations(&self, parent: &Symbol, association: &Symbol) -> Vec<&Dict> {
+    pub fn associations(&'a self, parent: &Symbol, association: &Symbol) -> Vec<&Dict> {
         if let Some(association_def) = self.get(association) {
             // Make sure the association exists and is an association.
             if matches!(
@@ -437,8 +425,7 @@ impl Namespace {
             if !association_def.has("computed") {
                 return self
                     .get(parent)
-                    .map(|def| def.get_list(&association.value))
-                    .flatten()
+                    .and_then(|def| def.get_list(&association.value))
                     .unwrap_or(&Vec::default())
                     .iter()
                     .filter_map(|value| match value {
@@ -464,7 +451,11 @@ impl Namespace {
     }
 
     /// Return the associations for the parent for the reciprocal association.
-    fn find_reciprocal_associations(&self, parent: &Symbol, reciprocal_of: &Symbol) -> Vec<&Dict> {
+    fn find_reciprocal_associations(
+        &'a self,
+        parent: &Symbol,
+        reciprocal_of: &Symbol,
+    ) -> Vec<&Dict> {
         let inheritance = self.inheritance(parent);
 
         let mut matches = HashSet::<&Dict>::new();
@@ -491,7 +482,7 @@ impl Namespace {
     /// - parent The parent def
     /// # Return
     /// The `is` association defs
-    pub fn is(&self, parent: &Symbol) -> Vec<&Dict> {
+    pub fn is(&'a self, parent: &Symbol) -> Vec<&Dict> {
         self.associations(parent, &Symbol::from("is"))
     }
 
@@ -500,7 +491,7 @@ impl Namespace {
     /// - parent The parent def
     /// # Return
     /// The `tagOn` association defs
-    pub fn tag_on(&self, parent: &Symbol) -> Vec<&Dict> {
+    pub fn tag_on(&'a self, parent: &Symbol) -> Vec<&Dict> {
         self.associations(parent, &Symbol::from("tagOn"))
     }
 
@@ -509,7 +500,7 @@ impl Namespace {
     /// - parent The parent def
     /// # Return
     /// The `tags` association defs
-    pub fn tags(&self, parent: &Symbol) -> Vec<&Dict> {
+    pub fn tags(&'a self, parent: &Symbol) -> Vec<&Dict> {
         self.associations(parent, &Symbol::from("tags"))
     }
 
@@ -518,7 +509,7 @@ impl Namespace {
     /// - subject The subject to reflect
     /// # Return
     /// The reflected defs
-    pub fn reflect<'a, 'b: 'a>(&'a self, subject: &'b Dict) -> Reflection {
+    pub fn reflect(&'a self, subject: &Dict) -> Reflection {
         let mut defs = Vec::<&Dict>::new();
         let mut markers = HashSet::<&str>::new();
 
@@ -584,18 +575,18 @@ impl Namespace {
         conjuncts
     }
 
-    fn find_supertypes_from_defs<'a, 'b: 'a>(&'a self, defs: Vec<&'b Dict>) -> Vec<Dict> {
-        let mut reflected = HashSet::<Dict>::new();
+    fn find_supertypes_from_defs<'b: 'a>(&'a self, defs: Vec<&'b Dict>) -> Vec<&'a Dict> {
+        let mut reflected = HashSet::<&Dict>::new();
 
         for def in defs {
-            reflected.insert(def.clone());
+            reflected.insert(def);
             reflected.extend(self.all_supertypes_of(def.def_symbol()));
         }
 
         reflected.into_iter().collect()
     }
 
-    pub fn def_of_dict<'a, 'b: 'a>(&'a self, subject: &'b Dict) -> Dict {
+    pub fn def_of_dict<'b: 'a>(&'a self, subject: &'b Dict) -> Dict {
         self.reflect(subject).entity_type
     }
 
@@ -610,9 +601,9 @@ impl Namespace {
     /// - def_base The base definition
     /// # Returns
     ///  True if the def fits the base def.
-    pub fn fits(&self, def: &Symbol, base_def: &Symbol) -> bool {
+    pub fn fits(&'a self, def: &Symbol, base_def: &Symbol) -> bool {
         if let Some(base) = self.get(base_def) {
-            self.inheritance(def).contains(base)
+            self.inheritance(def).contains(&base)
         } else {
             false
         }
@@ -624,7 +615,7 @@ impl Namespace {
     /// - def The symbol to check
     /// # Returns
     /// True if the def is a marker.
-    pub fn fits_marker(&self, def: &Symbol) -> bool {
+    pub fn fits_marker(&'a self, def: &Symbol) -> bool {
         self.fits(def, &Symbol::from("marker"))
     }
 
@@ -634,7 +625,7 @@ impl Namespace {
     /// - def The symbol to check
     /// # Returns
     /// True if the def is a value.
-    pub fn fits_val(&self, def: &Symbol) -> bool {
+    pub fn fits_val(&'a self, def: &Symbol) -> bool {
         self.fits(def, &Symbol::from("val"))
     }
 
@@ -644,7 +635,7 @@ impl Namespace {
     /// - def The symbol to check
     /// # Returns
     /// True if the def is a choice.
-    pub fn fits_choice(&self, def: &Symbol) -> bool {
+    pub fn fits_choice(&'a self, def: &Symbol) -> bool {
         self.fits(def, &Symbol::from("choice"))
     }
 
@@ -654,7 +645,7 @@ impl Namespace {
     /// - def The symbol to check
     /// # Returns
     /// True if the def is a entity.
-    pub fn fits_entity(&self, def: &Symbol) -> bool {
+    pub fn fits_entity(&'a self, def: &Symbol) -> bool {
         self.fits(def, &Symbol::from("entity"))
     }
 
@@ -665,20 +656,19 @@ impl Namespace {
     /// # Returns
     ///  An array of defs to be added.
     ///
-    pub fn implementation(&self, def: &Symbol) -> Vec<Dict> {
+    pub fn implementation(&'a self, def: &Symbol) -> Vec<&'a Dict> {
         // 1.a Based on the tag name get the single def tag name.
         // 1.b If this is a conjunct get each tag from it.
         let conjuncts_defs = self.conjuncts_defs(def);
 
         // 1.c Feature keys are never implemented.
-        let mut defs: Vec<Dict> = conjuncts_defs
+        let mut defs: Vec<&Dict> = conjuncts_defs
             .into_iter()
             .filter(|def| !Namespace::is_feature(def.def_symbol()))
-            .cloned()
             .collect();
 
         // 2. We walk the supertype tree of the def and apply any tag which is marked as mandatory.
-        let mut super_types = HashSet::<Dict>::new();
+        let mut super_types = HashSet::<&Dict>::new();
 
         for def in &defs {
             super_types.extend(self.all_supertypes_of(def.def_symbol()));
@@ -700,7 +690,7 @@ impl Namespace {
     /// # Returns
     /// A list of children.
     ///
-    pub fn protos(&self, parent: &Dict) -> Vec<Dict> {
+    pub fn protos(&'a self, parent: &Dict) -> Vec<Dict> {
         parent
             .keys()
             .into_iter()
@@ -718,7 +708,7 @@ impl Namespace {
     /// # Returns
     /// A list of children.
     ///
-    fn protos_from_def(&self, parent: &Dict, name: &str) -> Vec<Dict> {
+    fn protos_from_def(&'a self, parent: &Dict, name: &str) -> Vec<Dict> {
         if let Some(def) = self.get_by_name(name) {
             if let Some(children) = def.get("children") {
                 // Parse the children into a list of dicts.
@@ -761,7 +751,7 @@ impl Namespace {
     /// - parent The parent to search for values.
     /// # Returns
     /// A dict with the flattened children information.
-    fn find_flattened_children(&self, def: &Dict, parent: &Dict) -> Dict {
+    fn find_flattened_children(&'a self, def: &Dict, parent: &Dict) -> Dict {
         def.get_list("childrenFlatten")
             .unwrap_or(&Vec::default())
             .iter()
@@ -823,7 +813,7 @@ impl Namespace {
     ///  True if a match is made.
     ////
     pub fn has_relationship<F: Fn(&Ref) -> Option<Dict>>(
-        &self,
+        &'a self,
         subject: &Dict,
         rel_name: &Symbol,
         rel_term: &Option<Symbol>,
@@ -852,15 +842,13 @@ impl Namespace {
                 let id = cur_subject.get_ref("id");
                 for (subject_key, subject_val) in cur_subject.iter() {
                     let subject_def = self.get_by_name(subject_key);
-                    let mut rel_val = subject_def.map(|def| def.get(&rel_name.value)).flatten();
+                    let mut rel_val = subject_def.and_then(|def| def.get(&rel_name.value));
 
                     // Handle a reciprocal relationship. A reciprocal relationship can only
                     // be inverted when a ref is specified.
                     if rel_val.is_none() && ref_tag.as_ref() == id && subject_val.is_ref() {
                         if let Some(reciprocal_of) = reciprocal_of {
-                            rel_val = subject_def
-                                .map(|def| def.get(&reciprocal_of.value))
-                                .flatten();
+                            rel_val = subject_def.and_then(|def| def.get(&reciprocal_of.value));
 
                             if rel_val.is_some() {
                                 if let Value::Ref(val) = subject_val {
