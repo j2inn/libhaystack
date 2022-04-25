@@ -23,7 +23,7 @@
 pub mod eval;
 pub mod filtered;
 mod lexer;
-mod nodes;
+pub mod nodes;
 pub mod parser;
 pub mod path;
 pub mod resolver;
@@ -35,14 +35,17 @@ pub use resolver::PathResolver;
 
 use nodes::*;
 use parser::Parser;
-use std::io::Cursor;
+use std::{
+    fmt::{Display, Formatter},
+    io::Cursor,
+};
 
 use self::eval::EvalContext;
 
 /// A Haystack Filter
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
 pub struct Filter {
-    or: Or,
+    pub or: Or,
 }
 
 impl TryFrom<&str> for Filter {
@@ -60,5 +63,11 @@ impl TryFrom<&str> for Filter {
 impl Eval for Filter {
     fn eval<R: PathResolver>(&self, context: &EvalContext<R>) -> bool {
         self.or.eval(context)
+    }
+}
+
+impl Display for Filter {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.or.fmt(f)
     }
 }
