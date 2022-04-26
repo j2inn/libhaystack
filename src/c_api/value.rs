@@ -635,7 +635,7 @@ pub unsafe extern "C" fn haystack_value_make_utc_datetime(
         .iter()
         .filter_map(|e| e.as_ref())
         .enumerate()
-        .filter(|e| e.0 == 0 && e.1.is_date() || e.0 == 1 && e.1.is_time())
+        .filter(|(idx, val)| *idx == 0 && val.is_date() || *idx == 1 && val.is_time())
         .map(|e| e.1)
         .collect();
 

@@ -71,9 +71,9 @@ impl Display for Path {
         self.segments
             .iter()
             .enumerate()
-            .try_for_each(|it| -> Result {
-                f.write_str(&it.1.to_string())?;
-                if it.0 < self.segments.len() - 1 {
+            .try_for_each(|(idx, id)| -> Result {
+                f.write_str(&id.to_string())?;
+                if idx < self.segments.len() - 1 {
                     f.write_str("->")
                 } else {
                     Ok(())

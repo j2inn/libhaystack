@@ -12,20 +12,22 @@ use std::fmt::{Display, Formatter, Result};
 
 /// A Haystack Filter Or expression
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
-pub(super) struct Or {
-    pub(super) ands: Vec<And>,
+pub struct Or {
+    pub ands: Vec<And>,
 }
-
 impl Display for Or {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        self.ands.iter().enumerate().try_for_each(|it| -> Result {
-            it.1.fmt(f)?;
-            if it.0 < self.ands.len() - 1 {
-                f.write_str(" or ")
-            } else {
-                Ok(())
-            }
-        })
+        self.ands
+            .iter()
+            .enumerate()
+            .try_for_each(|(idx, and)| -> Result {
+                and.fmt(f)?;
+                if idx < self.ands.len() - 1 {
+                    f.write_str(" or ")
+                } else {
+                    Ok(())
+                }
+            })
     }
 }
 
@@ -37,8 +39,8 @@ impl Eval for Or {
 
 /// A Haystack Filter And expression
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
-pub(super) struct And {
-    pub(super) terms: Vec<Term>,
+pub struct And {
+    pub terms: Vec<Term>,
 }
 
 impl Eval for And {
@@ -49,20 +51,23 @@ impl Eval for And {
 
 impl Display for And {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        self.terms.iter().enumerate().try_for_each(|it| -> Result {
-            it.1.fmt(f)?;
-            if it.0 < self.terms.len() - 1 {
-                f.write_str(" and ")
-            } else {
-                Ok(())
-            }
-        })
+        self.terms
+            .iter()
+            .enumerate()
+            .try_for_each(|(idx, term)| -> Result {
+                term.fmt(f)?;
+                if idx < self.terms.len() - 1 {
+                    f.write_str(" and ")
+                } else {
+                    Ok(())
+                }
+            })
     }
 }
 
 /// A Haystack Filter terminal
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
-pub(super) enum Term {
+pub enum Term {
     Parens(Parens),
     Has(Has),
     Missing(Missing),
@@ -102,7 +107,7 @@ impl Display for Term {
 
 /// Filter compare operators
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
-pub(super) enum CmpOp {
+pub enum CmpOp {
     Eq,
     NotEq,
     LessThan,
@@ -112,10 +117,10 @@ pub(super) enum CmpOp {
 }
 
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
-pub(super) struct Cmp {
-    pub(super) path: Path,
-    pub(super) op: CmpOp,
-    pub(super) value: Value,
+pub struct Cmp {
+    pub path: Path,
+    pub op: CmpOp,
+    pub value: Value,
 }
 impl Eval for Cmp {
     fn eval<R: PathResolver>(&self, context: &EvalContext<R>) -> bool {
@@ -145,8 +150,8 @@ impl Display for Cmp {
 
 /// Missing term
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
-pub(super) struct Missing {
-    pub(super) path: Path,
+pub struct Missing {
+    pub path: Path,
 }
 impl Eval for Missing {
     fn eval<R: PathResolver>(&self, context: &EvalContext<R>) -> bool {
@@ -163,8 +168,8 @@ impl Display for Missing {
 
 /// Parenthesis term
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
-pub(super) struct Parens {
-    pub(super) or: Or,
+pub struct Parens {
+    pub or: Or,
 }
 impl Eval for Parens {
     fn eval<R: PathResolver>(&self, context: &EvalContext<R>) -> bool {
@@ -182,8 +187,8 @@ impl Display for Parens {
 
 /// Has term
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
-pub(super) struct Has {
-    pub(super) path: Path,
+pub struct Has {
+    pub path: Path,
 }
 impl Eval for Has {
     fn eval<R: PathResolver>(&self, context: &EvalContext<R>) -> bool {
@@ -199,8 +204,8 @@ impl Display for Has {
 
 /// Is A term
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
-pub(super) struct IsA {
-    pub(super) symbol: Symbol,
+pub struct IsA {
+    pub symbol: Symbol,
 }
 impl Eval for IsA {
     fn eval<R: PathResolver>(&self, context: &EvalContext<R>) -> bool {
@@ -217,9 +222,9 @@ impl Display for IsA {
 
 /// Wildcard equality
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
-pub(super) struct WildcardEq {
-    pub(super) id: Path,
-    pub(super) ref_value: Ref,
+pub struct WildcardEq {
+    pub id: Path,
+    pub ref_value: Ref,
 }
 impl Eval for WildcardEq {
     fn eval<R: PathResolver>(&self, context: &EvalContext<R>) -> bool {
@@ -265,9 +270,9 @@ impl Display for WildcardEq {
 
 /// Relation
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
-pub(super) struct Relation {
-    pub(super) rel: Symbol,
-    pub(super) ref_value: Option<Ref>,
+pub struct Relation {
+    pub rel: Symbol,
+    pub ref_value: Option<Ref>,
 }
 impl Eval for Relation {
     fn eval<R: PathResolver>(&self, context: &EvalContext<R>) -> bool {
