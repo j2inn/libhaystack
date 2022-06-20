@@ -9,6 +9,11 @@ use libhaystack::dict;
 use libhaystack::haystack::val::*;
 use std::collections::HashMap;
 
+lazy_static::lazy_static! {
+    static ref FEATURES_NS: Namespace<'static> = Namespace::make(parse_features_def());
+    static ref DEFS_NS: Namespace<'static> = Namespace::make(parse_def());
+}
+
 #[test]
 fn test_namespace_empty() {
     let ns = Namespace::make(Grid::default());
@@ -274,12 +279,10 @@ fn test_namespace_has_subtype() {
 
 #[test]
 fn test_namespace_supertypes_of() {
-    let ns = Namespace::make(parse_features_def());
-
-    let mut supertypes_of = ns.supertypes_of(&Symbol::from("site")).clone();
+    let mut supertypes_of = FEATURES_NS.supertypes_of(&Symbol::from("site")).clone();
     supertypes_of.sort();
 
-    let mut query = ns
+    let mut query = FEATURES_NS
         .all_matching_names(&["entity", "geoPlace"])
         .into_iter()
         .collect::<Vec<&Dict>>();
@@ -290,12 +293,10 @@ fn test_namespace_supertypes_of() {
 
 #[test]
 fn test_namespace_all_supertypes_of() {
-    let ns = Namespace::make(parse_features_def());
-
-    let mut all_supertypes_of = ns.all_supertypes_of(&Symbol::from("site"));
+    let mut all_supertypes_of = FEATURES_NS.all_supertypes_of(&Symbol::from("site"));
     all_supertypes_of.sort();
 
-    let mut query = ns
+    let mut query = FEATURES_NS
         .all_matching_names(&["marker", "entity", "geoPlace"])
         .into_iter()
         .collect::<Vec<&Dict>>();
@@ -599,12 +600,10 @@ fn test_namespace_tag_on_defs() {
 
 #[test]
 fn test_namespace_inheritance() {
-    let ns = Namespace::make(parse_features_def());
-
-    let mut inheritance = ns.inheritance(&Symbol::from("site")).clone();
+    let mut inheritance = FEATURES_NS.inheritance(&Symbol::from("site")).clone();
     inheritance.sort();
 
-    let mut query = ns
+    let mut query = FEATURES_NS
         .all_matching_names(&["site", "entity", "marker", "geoPlace"])
         .into_iter()
         .collect::<Vec<&Dict>>();
@@ -612,17 +611,16 @@ fn test_namespace_inheritance() {
 
     assert_eq!(inheritance, query);
 
-    assert!(ns.inheritance(&Symbol::from("")).is_empty());
+    assert!(FEATURES_NS.inheritance(&Symbol::from("")).is_empty());
 }
 
 #[test]
 fn test_namespace_associations() {
-    let ns = Namespace::make(parse_features_def());
-
-    let mut associations = ns.associations(&Symbol::from("equipRef"), &Symbol::from("tagOn"));
+    let mut associations =
+        FEATURES_NS.associations(&Symbol::from("equipRef"), &Symbol::from("tagOn"));
     associations.sort();
 
-    let mut query = ns.all_matching_names(&["controller", "equip", "point"]);
+    let mut query = FEATURES_NS.all_matching_names(&["controller", "equip", "point"]);
     query.sort();
 
     assert_eq!(
@@ -631,15 +629,16 @@ fn test_namespace_associations() {
     );
 
     assert!(
-        ns.associations(&Symbol::from(""), &Symbol::from("tagOn"))
+        FEATURES_NS
+            .associations(&Symbol::from(""), &Symbol::from("tagOn"))
             .is_empty(),
         "empty array for an invalid parent using symbols"
     );
 
-    let mut associations = ns.associations(&Symbol::from("site"), &Symbol::from("tags"));
+    let mut associations = FEATURES_NS.associations(&Symbol::from("site"), &Symbol::from("tags"));
     associations.sort();
 
-    let mut query = ns.all_matching_names(&[
+    let mut query = FEATURES_NS.all_matching_names(&[
         "area",
         "dis",
         "geoAddr",
@@ -664,12 +663,10 @@ fn test_namespace_associations() {
 
 #[test]
 fn test_namespace_tags() {
-    let ns = Namespace::make(parse_features_def());
-
-    let mut tags = ns.tags(&Symbol::from("site"));
+    let mut tags = FEATURES_NS.tags(&Symbol::from("site"));
     tags.sort();
 
-    let mut query = ns.all_matching_names(&[
+    let mut query = FEATURES_NS.all_matching_names(&[
         "area",
         "dis",
         "geoAddr",
@@ -694,23 +691,19 @@ fn test_namespace_tags() {
 
 #[test]
 fn test_namespace_is() {
-    let ns = Namespace::make(parse_features_def());
+    let is = FEATURES_NS.is(&Symbol::from("ac-elec"));
 
-    let is = ns.is(&Symbol::from("ac-elec"));
-
-    let query = ns.all_matching_names(&["elec"]);
+    let query = FEATURES_NS.all_matching_names(&["elec"]);
 
     assert_eq!(is, query, "associations for a `ac-elec`");
 }
 
 #[test]
 fn test_namespace_tag_on() {
-    let ns = Namespace::make(parse_features_def());
-
-    let mut tag_on = ns.tag_on(&Symbol::from("equipRef"));
+    let mut tag_on = FEATURES_NS.tag_on(&Symbol::from("equipRef"));
     tag_on.sort();
 
-    let mut query = ns.all_matching_names(&["controller", "equip", "point"]);
+    let mut query = FEATURES_NS.all_matching_names(&["controller", "equip", "point"]);
     query.sort();
 
     assert_eq!(tag_on, query, "`tagOn` associations for a equipRef");
@@ -718,7 +711,6 @@ fn test_namespace_tag_on() {
 
 #[test]
 fn test_namespace_reflect() {
-    let ns = Namespace::make(parse_features_def());
     let subject = dict! {
         "id" => Value::make_ref("hwp"),
         "dis" =>  Value::make_str("Hot Water Plant"),
@@ -728,13 +720,13 @@ fn test_namespace_reflect() {
         "equip" =>  Value::Marker
     };
 
-    let reflect = ns.reflect(&subject);
+    let reflect = FEATURES_NS.reflect(&subject);
     let mut defs = reflect.defs.to_vec();
     defs.sort();
 
     assert!(reflect.fits(&Symbol::from("equip")));
 
-    let mut query = ns
+    let mut query = FEATURES_NS
         .all_matching_names(&[
             "id",
             "ref",
@@ -766,11 +758,11 @@ fn test_namespace_reflect() {
     "water" =>  Value::Marker
     };
 
-    let reflect = ns.reflect(&subject);
+    let reflect = FEATURES_NS.reflect(&subject);
     let mut defs = reflect.defs.to_vec();
     defs.sort();
 
-    let mut query = ns
+    let mut query = FEATURES_NS
         .all_matching_names(&[
             "chilled",
             "marker",
@@ -800,7 +792,7 @@ fn test_namespace_reflect() {
     "air" =>  Value::Marker
     };
 
-    let reflect = ns.reflect(&subject);
+    let reflect = FEATURES_NS.reflect(&subject);
 
     let names = reflect
         .defs
@@ -823,65 +815,53 @@ fn test_namespace_reflect() {
 
 #[test]
 fn test_namespace_fits() {
-    let ns = Namespace::make(parse_features_def());
+    assert!(FEATURES_NS.fits(&Symbol::from("site"), &Symbol::from("entity")));
 
-    assert!(ns.fits(&Symbol::from("site"), &Symbol::from("entity")));
+    assert!(FEATURES_NS.fits(&Symbol::from("site"), &Symbol::from("marker")));
 
-    assert!(ns.fits(&Symbol::from("site"), &Symbol::from("marker")));
+    assert!(FEATURES_NS.fits(&Symbol::from("air"), &Symbol::from("marker")));
 
-    assert!(ns.fits(&Symbol::from("air"), &Symbol::from("marker")));
-
-    assert!(!ns.fits(&Symbol::from("fake"), &Symbol::from("marker")));
-    assert!(!ns.fits(&Symbol::from("site"), &Symbol::from("fake")));
+    assert!(!FEATURES_NS.fits(&Symbol::from("fake"), &Symbol::from("marker")));
+    assert!(!FEATURES_NS.fits(&Symbol::from("site"), &Symbol::from("fake")));
 }
 
 #[test]
 fn test_namespace_fits_maker() {
-    let ns = Namespace::make(parse_features_def());
+    assert!(FEATURES_NS.fits_marker(&Symbol::from("site")));
+    assert!(FEATURES_NS.fits_marker(&Symbol::from("water")));
 
-    assert!(ns.fits_marker(&Symbol::from("site")));
-    assert!(ns.fits_marker(&Symbol::from("water")));
-
-    assert!(!ns.fits_marker(&Symbol::from("fake")));
+    assert!(!FEATURES_NS.fits_marker(&Symbol::from("fake")));
 }
 
 #[test]
 fn test_namespace_fits_val() {
-    let ns = Namespace::make(parse_features_def());
+    assert!(FEATURES_NS.fits_val(&Symbol::from("def")));
+    assert!(!FEATURES_NS.fits_val(&Symbol::from("site")));
 
-    assert!(ns.fits_val(&Symbol::from("def")));
-    assert!(!ns.fits_val(&Symbol::from("site")));
-
-    assert!(!ns.fits_val(&Symbol::from("equip")));
+    assert!(!FEATURES_NS.fits_val(&Symbol::from("equip")));
 }
 
 #[test]
 fn test_namespace_fits_choice() {
-    let ns = Namespace::make(parse_features_def());
+    assert!(FEATURES_NS.fits_choice(&Symbol::from("equipFunction")));
+    assert!(!FEATURES_NS.fits_choice(&Symbol::from("site")));
 
-    assert!(ns.fits_choice(&Symbol::from("equipFunction")));
-    assert!(!ns.fits_choice(&Symbol::from("site")));
-
-    assert!(!ns.fits_choice(&Symbol::from("equip")));
+    assert!(!FEATURES_NS.fits_choice(&Symbol::from("equip")));
 }
 
 #[test]
 fn test_namespace_fits_entity() {
-    let ns = Namespace::make(parse_features_def());
-
-    assert!(ns.fits_entity(&Symbol::from("site")));
-    assert!(ns.fits_entity(&Symbol::from("equip")));
-    assert!(!ns.fits_entity(&Symbol::from("equipFunction")));
+    assert!(FEATURES_NS.fits_entity(&Symbol::from("site")));
+    assert!(FEATURES_NS.fits_entity(&Symbol::from("equip")));
+    assert!(!FEATURES_NS.fits_entity(&Symbol::from("equipFunction")));
 }
 
 #[test]
 fn test_namespace_fits_implementation() {
-    let ns = Namespace::make(parse_features_def());
-
-    let mut implementation = ns.implementation(&Symbol::from("tank"));
+    let mut implementation = FEATURES_NS.implementation(&Symbol::from("tank"));
     implementation.sort();
 
-    let mut query = ns
+    let mut query = FEATURES_NS
         .all_matching_names(&["tank", "equip"])
         .into_iter()
         .collect::<Vec<&Dict>>();
@@ -889,10 +869,10 @@ fn test_namespace_fits_implementation() {
 
     assert_eq!(implementation, query);
 
-    let mut implementation = ns.implementation(&Symbol::from("hot-water"));
+    let mut implementation = FEATURES_NS.implementation(&Symbol::from("hot-water"));
     implementation.sort();
 
-    let mut query = ns
+    let mut query = FEATURES_NS
         .all_matching_names(&["hot", "water"])
         .into_iter()
         .collect::<Vec<&Dict>>();
@@ -900,21 +880,19 @@ fn test_namespace_fits_implementation() {
 
     assert_eq!(implementation, query);
 
-    assert!(ns
+    assert!(FEATURES_NS
         .implementation(&Symbol::from("super-ultra-duper"))
         .is_empty())
 }
 
 #[test]
 fn test_namespace_fits_protos() {
-    let ns = Namespace::make(parse_features_def());
-
     let parent = dict! {
         "pipe" =>  Value::Marker,
         "equip" =>  Value::Marker
     };
 
-    let mut protos = ns.protos(&parent);
+    let mut protos = FEATURES_NS.protos(&parent);
     protos.sort();
 
     let expect = parse_dict_list(concat!(
@@ -936,7 +914,7 @@ fn test_namespace_fits_protos() {
         "equip" =>  Value::Marker
     };
 
-    let mut protos = ns.protos(&parent);
+    let mut protos = FEATURES_NS.protos(&parent);
     protos.sort();
 
     let expect = parse_dict_list(concat!(
@@ -958,7 +936,7 @@ fn test_namespace_fits_protos() {
         "equip" =>  Value::Marker
     };
 
-    let mut protos = ns.protos(&parent);
+    let mut protos = FEATURES_NS.protos(&parent);
     protos.sort();
 
     let expect = parse_dict_list(concat!(
@@ -977,7 +955,7 @@ fn test_namespace_fits_protos() {
         "ahu" =>  Value::Marker
     };
 
-    let mut protos = ns.protos(&parent);
+    let mut protos = FEATURES_NS.protos(&parent);
     protos.sort();
 
     let expect = parse_dict_list(concat!(
@@ -999,7 +977,7 @@ fn test_namespace_fits_protos() {
         "chiller" =>  Value::Marker
     };
 
-    let mut protos = ns.protos(&parent);
+    let mut protos = FEATURES_NS.protos(&parent);
     protos.sort();
 
     let expect = parse_dict_list(concat!(
@@ -1030,7 +1008,7 @@ fn test_namespace_fits_protos() {
         "chiller" =>  Value::Marker
     };
 
-    let mut protos = ns.protos(&parent);
+    let mut protos = FEATURES_NS.protos(&parent);
     protos.sort();
 
     let expect = parse_dict_list(concat!(
@@ -1066,7 +1044,7 @@ fn test_namespace_fits_protos() {
 
     assert_eq!(protos, expect);
 
-    assert!(ns.protos(&Dict::default()).is_empty());
+    assert!(FEATURES_NS.protos(&Dict::default()).is_empty());
 }
 
 fn parse_dict_list(zinc_str: &str) -> Vec<Dict> {
@@ -1086,7 +1064,6 @@ fn parse_dict_list(zinc_str: &str) -> Vec<Dict> {
 
 #[test]
 fn test_namespace_relationship() {
-    let ns = Namespace::make(parse_def());
     let resolve = |_: &Ref| None;
 
     let subject = dict! {
@@ -1095,11 +1072,11 @@ fn test_namespace_relationship() {
     };
 
     // true when a record has a `hotWaterRef`
-    let has = ns.has_relationship(&subject, &Symbol::from("inputs"), &None, &None, &resolve);
+    let has = DEFS_NS.has_relationship(&subject, &Symbol::from("inputs"), &None, &None, &resolve);
     assert!(has);
 
     // true when a record has a `hotWaterRef` and inputs hot water
-    let has = ns.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &subject,
         &Symbol::from("inputs"),
         &Some(Symbol::from("hot-water")),
@@ -1109,7 +1086,7 @@ fn test_namespace_relationship() {
     assert!(has);
 
     // true when a record has a `hotWaterRef` and inputs liquid
-    let has = ns.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &subject,
         &Symbol::from("inputs"),
         &Some(Symbol::from("liquid")),
@@ -1119,7 +1096,7 @@ fn test_namespace_relationship() {
     assert!(has);
 
     // true when a record has a `hotWaterRef` and inputs water
-    let has = ns.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &subject,
         &Symbol::from("inputs"),
         &Some(Symbol::from("water")),
@@ -1129,7 +1106,7 @@ fn test_namespace_relationship() {
     assert!(has);
 
     // false when a record has a `hotWaterRef` and inputs air
-    let has = ns.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &subject,
         &Symbol::from("inputs"),
         &Some(Symbol::from("air")),
@@ -1139,7 +1116,7 @@ fn test_namespace_relationship() {
     assert!(!has);
 
     // true when a record has a `hotWaterRef`, inputs hot water and matches the target value
-    let has = ns.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &subject,
         &Symbol::from("inputs"),
         &Some(Symbol::from("hot-water")),
@@ -1149,7 +1126,7 @@ fn test_namespace_relationship() {
     assert!(has);
 
     // false when a record has a `hotWaterRef`, inputs hot water and does not match the target value
-    let has = ns.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &subject,
         &Symbol::from("inputs"),
         &Some(Symbol::from("hot-water")),
@@ -1162,13 +1139,12 @@ fn test_namespace_relationship() {
     let subject = dict! {
         "ahu" =>  Value::Marker
     };
-    let has = ns.has_relationship(&subject, &Symbol::from("inputs"), &None, &None, &resolve);
+    let has = DEFS_NS.has_relationship(&subject, &Symbol::from("inputs"), &None, &None, &resolve);
     assert!(!has);
 }
 
 #[test]
 fn test_namespace_transitive_relationship() {
-    let ns = Namespace::make(parse_def());
     let mut map = HashMap::<&str, &Dict>::new();
 
     let ahu = dict! {
@@ -1199,7 +1175,7 @@ fn test_namespace_transitive_relationship() {
     let resolve = |id: &Ref| map.get(id.value.as_str()).map(|d| (*d).clone());
 
     // true for a fan that directly references an ahu
-    let has = ns.has_relationship(
+    let has = FEATURES_NS.has_relationship(
         &fan,
         &Symbol::from("containedBy"),
         &None,
@@ -1209,7 +1185,7 @@ fn test_namespace_transitive_relationship() {
     assert!(has);
 
     // true for a point that directly references a fan
-    let has = ns.has_relationship(
+    let has = FEATURES_NS.has_relationship(
         &status,
         &Symbol::from("containedBy"),
         &None,
@@ -1219,7 +1195,7 @@ fn test_namespace_transitive_relationship() {
     assert!(has);
 
     // true for a point that indirectly references an ahu
-    let has = ns.has_relationship(
+    let has = FEATURES_NS.has_relationship(
         &status,
         &Symbol::from("containedBy"),
         &None,
@@ -1229,7 +1205,7 @@ fn test_namespace_transitive_relationship() {
     assert!(has);
 
     // false for a fan that does not reference a point
-    let has = ns.has_relationship(
+    let has = FEATURES_NS.has_relationship(
         &fan,
         &Symbol::from("containedBy"),
         &None,
@@ -1239,7 +1215,7 @@ fn test_namespace_transitive_relationship() {
     assert!(!has);
 
     //  false for a point that references itself
-    let has = ns.has_relationship(
+    let has = FEATURES_NS.has_relationship(
         &status,
         &Symbol::from("containedBy"),
         &None,
@@ -1251,7 +1227,6 @@ fn test_namespace_transitive_relationship() {
 
 #[test]
 fn test_namespace_reciprocal_relationship() {
-    let ns = Namespace::make(parse_def());
     let mut map = HashMap::<&str, &Dict>::new();
 
     let hwp = dict! {
@@ -1276,7 +1251,7 @@ fn test_namespace_reciprocal_relationship() {
     let resolve = |id: &Ref| map.get(id.value.as_str()).map(|d| (*d).clone());
 
     // true when `ahu` inputs hot water from `hwp`
-    let has = ns.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &ahu,
         &Symbol::from("inputs"),
         &Some(Symbol::from("hot-water")),
@@ -1286,7 +1261,7 @@ fn test_namespace_reciprocal_relationship() {
     assert!(has);
 
     // return true when AHU outputs hot water
-    let has = ns.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &ahu,
         &Symbol::from("outputs"),
         &Some(Symbol::from("hot-water")),
@@ -1296,7 +1271,7 @@ fn test_namespace_reciprocal_relationship() {
     assert!(has);
 
     // returns false when HWP outputs hot water
-    let has = ns.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &hwp,
         &Symbol::from("outputs"),
         &Some(Symbol::from("hot-water")),
@@ -1308,8 +1283,6 @@ fn test_namespace_reciprocal_relationship() {
 
 #[test]
 fn test_namespace_containment_relationship() {
-    let ns = Namespace::make(parse_def());
-
     let ahu = dict! {
         "id" =>  Value::make_ref("ahu"),
         "ahu" =>  Value::Marker,
@@ -1327,7 +1300,7 @@ fn test_namespace_containment_relationship() {
     };
 
     let contained_by_refs = |ahu: Dict| {
-        let reflect = &ns.reflect(&ahu);
+        let reflect = &FEATURES_NS.reflect(&ahu);
         reflect
             .defs
             .iter()

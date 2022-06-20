@@ -39,7 +39,7 @@ impl Ref {
 
     /// Generate a new Ref based on a V4 UUID
     pub fn gen() -> Ref {
-        let uuid = Uuid::new_v4().to_simple().to_string();
+        let uuid = Uuid::new_v4().as_simple().to_string();
         Ref {
             value: format!("{start}-{end}", start = &uuid[0..8], end = &uuid[26..]),
             dis: None,
