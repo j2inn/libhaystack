@@ -811,6 +811,38 @@ fn test_namespace_reflect() {
     .all(|def| names.contains(def)));
 
     assert_eq!(&reflect.subject, &subject);
+
+    let reflect = FEATURES_NS.reflect(&dict! {
+        "equip" => Value::Marker,
+        "ahu" => Value::Marker
+    });
+    assert_eq!(
+        &reflect.entity_type.def_name(),
+        &"ahu",
+        "returns the ahu tag when there is an equip and ahu tag"
+    );
+
+    let reflect = FEATURES_NS.reflect(&dict! {
+        "ahu" => Value::Marker,
+        "equip" => Value::Marker,
+    });
+    assert_eq!(
+        &reflect.entity_type.def_name(),
+        &"ahu",
+        "returns the ahu tag when there is an ahu and equip tag"
+    );
+
+    let reflect = FEATURES_NS.reflect(&dict! {
+        "heatExchanger" => Value::Marker,
+        "coil" => Value::Marker,
+        "coolingCoil" => Value::Marker,
+        "equip" => Value::Marker,
+    });
+    assert_eq!(
+        &reflect.entity_type.def_name(),
+        &"coolingCoil",
+        "returns the coolingCoil tag from an entity with all sub type marker tags"
+    );
 }
 
 #[test]

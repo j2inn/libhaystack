@@ -2,7 +2,10 @@
 
 //! Haystack Def reflection
 
+use std::collections::BTreeMap;
+
 use super::namespace::Namespace;
+use crate::haystack::defs::namespace::DefDict;
 use crate::haystack::val::{Dict, HaystackDict, Symbol};
 
 /// The reflection result on a target dictionary
@@ -43,17 +46,45 @@ impl<'a> Reflection<'a> {
     /// Compute the entity type of the target dictionary
     fn compute_entity_type(&mut self) {
         self.entity_type = match self.ns.get_by_name("entity") {
-            Some(entity) => self
-                .defs
-                .iter()
-                .find(|def| {
-                    if let Some(def) = def.get_symbol("def") {
-                        self.ns.inheritance(def).contains(&entity)
-                    } else {
-                        false
+            Some(entity) => {
+                let mut types_with_inheritance = BTreeMap::<&Dict, Vec<&Dict>>::new();
+
+                for def in &self.defs {
+                    let inheritance = self.ns.inheritance(def.def_symbol());
+                    if inheritance.contains(&entity) {
+                        types_with_inheritance.insert(def, inheritance.clone());
                     }
-                })
-                .map_or(Dict::default(), |v| (*v).clone()),
+                }
+
+                if types_with_inheritance.len() == 1 {
+                    // Just get the first entity if only one has been found.
+                    types_with_inheritance
+                        .keys()
+                        .copied()
+                        .next()
+                        .map_or(Dict::default(), |def| def.clone())
+                } else {
+                    // If multiple entity tags have been found then we need to find which tag is the most specific.
+                    // This can happen if a record has a tag like `ahu` and `equip`. The `ahu` tag extends `equip`.
+                    // Therefore, we need to check all the inheritance to find the first tag that isn't any of the
+                    // other tag's inheritance. This tag should be the most specific entity.
+
+                    let all_defs = types_with_inheritance.keys().copied();
+
+                    all_defs
+                        .into_iter()
+                        .find(|def| {
+                            // If this def isn't in the inheritance of any other tag then we should
+                            // have the most specific entity.
+                            !types_with_inheritance
+                                .iter()
+                                .any(|(inner_def, inheritance)| {
+                                    inner_def != def && inheritance.contains(def)
+                                })
+                        })
+                        .map_or(Dict::default(), |def| def.clone())
+                }
+            }
             None => Dict::default(),
         }
     }
