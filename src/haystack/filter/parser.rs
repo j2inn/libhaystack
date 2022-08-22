@@ -78,9 +78,11 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
                     }
                 }
                 // Is A
-                TokenValue::Value(Value::Symbol(symbol)) => Ok(Term::IsA(IsA {
-                    symbol: symbol.clone(),
-                })),
+                TokenValue::Value(Value::Symbol(symbol)) => {
+                    let term = Term::IsA(IsA { symbol: symbol.clone() });
+                    self.lexer.read().ok();
+                    Ok(term)
+                },
                 // Relation Expressions
                 TokenValue::Rel(rel) => {
                     let term = Term::Relation(self.parse_rel(rel)?);
@@ -368,5 +370,14 @@ mod test {
 
         let rel = parser.parse().expect("Relation");
         assert_eq!(rel.to_string(), "foo-bar? @zoo");
+    }
+
+    #[test]
+    fn test_filter_parser_isa() {
+        let mut input = Cursor::new("^geoPlace and not campusRef".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        let symbol = parser.parse().expect("Symbol");
+        assert_eq!(symbol.to_string(), "^geoPlace and not campusRef");
     }
 }
