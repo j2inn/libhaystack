@@ -20,7 +20,7 @@ use crate::haystack::val::Value;
 ///
 /// Lexer token value variants
 ///
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub enum TokenValue {
     Id(Id),
     Value(Value),
@@ -28,7 +28,7 @@ pub enum TokenValue {
 }
 
 /// The output of the lexer
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct LexerToken {
     pub value: Option<TokenValue>,
 }

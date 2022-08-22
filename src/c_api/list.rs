@@ -124,7 +124,7 @@ pub unsafe extern "C" fn haystack_value_get_list_entry_at(
             Value::List(list) => match list.get(index) {
                 Some(entry) => {
                     if let Some(value) = result.as_mut() {
-                        *value = &*entry;
+                        *value = entry;
                         return ResultType::TRUE;
                     } else {
                         new_error("Not a Value result.");

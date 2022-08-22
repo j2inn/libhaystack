@@ -27,7 +27,7 @@ pub mod err;
 
 /// Generic result type for API calls
 #[repr(C)]
-#[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, PartialOrd)]
 pub enum ResultType {
     ERR = -1,
     FALSE = 0,

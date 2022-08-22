@@ -7,7 +7,7 @@ use std::io::{Error, Read};
 use std::string::ToString;
 
 /// Zinc identifier
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct Id {
     pub(super) value: String,
 }

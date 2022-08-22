@@ -106,7 +106,7 @@ impl Display for Term {
 }
 
 /// Filter compare operators
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub enum CmpOp {
     Eq,
     NotEq,
@@ -116,7 +116,7 @@ pub enum CmpOp {
     GreatThanEq,
 }
 
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct Cmp {
     pub path: Path,
     pub op: CmpOp,
@@ -149,7 +149,7 @@ impl Display for Cmp {
 }
 
 /// Missing term
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct Missing {
     pub path: Path,
 }
@@ -186,7 +186,7 @@ impl Display for Parens {
 }
 
 /// Has term
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct Has {
     pub path: Path,
 }
@@ -203,7 +203,7 @@ impl Display for Has {
 }
 
 /// Is A term
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct IsA {
     pub symbol: Symbol,
 }
@@ -221,7 +221,7 @@ impl Display for IsA {
 }
 
 /// Wildcard equality
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct WildcardEq {
     pub id: Path,
     pub ref_value: Ref,
@@ -269,7 +269,7 @@ impl Display for WildcardEq {
 }
 
 /// Relation
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct Relation {
     pub rel: Symbol,
     pub ref_value: Option<Ref>,
