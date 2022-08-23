@@ -13,7 +13,7 @@ use std::ops::Index;
 /// Path elements are name of [Ref](crate::val::Ref) tags in a Dict that would
 /// be resolved to other Dicts that have the same `id` tag as the value of the Ref path element.
 /// This indirection scheme allows chaining multiple dicts in a graph like arrangement.
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct Path {
     segments: Vec<Id>,
 }

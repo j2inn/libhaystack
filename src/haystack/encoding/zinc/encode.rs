@@ -62,7 +62,7 @@ trait ZincEncode: ToZinc {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Error {
     Message(String),
 }

@@ -209,7 +209,7 @@ pub unsafe extern "C" fn haystack_value_get_dict_entry(
             Some(Value::Dict(dict)) => match dict.get(key) {
                 Some(val) => {
                     if let Some(value) = result.as_mut() {
-                        *value = &*val;
+                        *value = val;
                         return ResultType::TRUE;
                     } else {
                         new_error("Not a Value result.");

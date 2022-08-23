@@ -87,7 +87,7 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
                     self.lexer.read().ok();
                     Ok(term)
                 }
-                _ => return self.make_generic_err(&format!("Unexpected term token: {token:?}.")),
+                _ => self.make_generic_err(&format!("Unexpected term token: {token:?}.")),
             },
             None => self.make_generic_err("Unexpected empty term token."),
         }
