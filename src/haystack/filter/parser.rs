@@ -17,6 +17,12 @@ pub struct Parser<Lexer> {
     lexer: Lexer,
 }
 
+// Internal constant tokens to be used when comparing against current tokens
+lazy_static! {
+    static ref OR_TOKEN: LexerToken = LexerToken::make_path("or".into());
+    static ref AND_TOKEN: LexerToken = LexerToken::make_path("and".into());
+}
+
 impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
     pub(crate) fn make(input: &'a mut R) -> Result<Self, Error> {
         let lexer = Lexer::make(input)?;
@@ -29,10 +35,9 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
     }
 
     fn parse_or(&mut self) -> Result<Or, Error> {
-        let or = LexerToken::make_path(Path::from("or"));
         let mut ands: Vec<And> = vec![self.parse_and()?];
 
-        while self.lexer.cur == or {
+        while self.lexer.cur == *OR_TOKEN {
             if self.lexer.is_eof() {
                 return self.make_generic_err("Expecting 'and' expression.");
             }
@@ -43,10 +48,9 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
     }
 
     fn parse_and(&mut self) -> Result<And, Error> {
-        let and = LexerToken::make_path(Path::from("and"));
         let mut terms: Vec<Term> = vec![self.parse_term()?];
 
-        while self.lexer.cur == and {
+        while self.lexer.cur == *AND_TOKEN {
             if self.lexer.is_eof() {
                 return self.make_generic_err("Expecting 'term' expression.");
             }
@@ -78,9 +82,13 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
                     }
                 }
                 // Is A
-                TokenValue::Value(Value::Symbol(symbol)) => Ok(Term::IsA(IsA {
-                    symbol: symbol.clone(),
-                })),
+                TokenValue::Value(Value::Symbol(symbol)) => {
+                    let term = Term::IsA(IsA {
+                        symbol: symbol.clone(),
+                    });
+                    self.lexer.read().ok();
+                    Ok(term)
+                }
                 // Relation Expressions
                 TokenValue::Rel(rel) => {
                     let term = Term::Relation(self.parse_rel(rel)?);
@@ -368,5 +376,34 @@ mod test {
 
         let rel = parser.parse().expect("Relation");
         assert_eq!(rel.to_string(), "foo-bar? @zoo");
+    }
+
+    #[test]
+    fn test_filter_parser_isa() {
+        let mut input = Cursor::new("^geoPlace and not campusRef".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        let symbol = parser.parse().expect("Symbol");
+        assert_eq!(symbol.to_string(), "^geoPlace and not campusRef");
+
+        let mut input = Cursor::new("^geoPlace and not".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+        assert!(parser.parse().is_err(), "Expecting parse error.");
+
+        let mut input = Cursor::new("not foo and bar and zoo".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+        let symbol = parser.parse().expect("Symbol");
+        assert_eq!(
+            symbol,
+            Or {
+                ands: vec![And {
+                    terms: vec![
+                        Term::Missing(Missing { path: "foo".into() }),
+                        Term::Has(Has { path: "bar".into() }),
+                        Term::Has(Has { path: "zoo".into() })
+                    ]
+                }]
+            }
+        );
     }
 }
