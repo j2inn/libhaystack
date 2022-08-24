@@ -18,6 +18,7 @@ lazy_static! {
     pub(super) static ref EMPTY_SYMBOL: Symbol = Symbol::from("");
     pub(super) static ref EMPTY_DICT: Dict = Dict::default();
     pub(super) static ref EMPTY_VEC_DICT: Vec<Dict> = Vec::default();
+    pub static ref DEFAULT_NS: Namespace<'static> = Namespace::default();
 }
 
 /// Def trait for a Haystack [Dict](crate::val::Dict)

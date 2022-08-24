@@ -103,6 +103,93 @@ fn test_filter_defs_containment() {
     assert!(Filter::try_from("containedBy? equip2").is_err());
 }
 
+#[test]
+fn test_filter_path() {
+    let recs = vec![
+        dict! {
+            "id" => Value::make_ref("site"),
+            "site" => Value::Marker,
+            "dis" => "site".into(),
+        },
+        dict! {
+            "id" => Value::make_ref("equip1"),
+            "equip" => Value::Marker,
+            "navName" => "equip1".into(),
+            "siteRef" => Value::make_ref("site"),
+        },
+        dict! {
+            "id" => Value::make_ref("equip2"),
+            "equip" => Value::Marker,
+            "navName" => "equip2".into(),
+            "siteRef" => Value::make_ref("site"),
+        },
+        dict! {
+            "id" => Value::make_ref("point1"),
+            "point" => Value::Marker,
+            "navName" => "point1".into(),
+            "equipRef" => Value::make_ref("equip1"),
+            "siteRef" => Value::make_ref("site"),
+        },
+    ];
+
+    let db = Records { recs };
+
+    let filter = Filter::try_from(r#"point and equipRef->siteRef->foo=="site""#).expect("Filter");
+    assert_eq!(db.read(&filter), None);
+
+    let filter = Filter::try_from(r#"point and equipRef->siteRef->dis=="site""#).expect("Filter");
+    assert_eq!(db.read(&filter), db.recs.get(3));
+}
+
+#[test]
+fn test_filter_ref_list_path() {
+    let recs = vec![
+        dict! {
+            "id" => Value::make_ref("site"),
+            "site" => Value::Marker,
+            "dis" => "site".into(),
+        },
+        dict! {
+            "id" => Value::make_ref("equip1"),
+            "equip" => Value::Marker,
+            "navName" => "equip1".into(),
+            "siteRef" => Value::make_ref("site"),
+        },
+        dict! {
+            "id" => Value::make_ref("equip2"),
+            "equip" => Value::Marker,
+            "navName" => "equip2".into(),
+            "siteRef" => Value::make_ref("site"),
+            "refList2" => Value::make_list(vec![Value::make_ref("equip1")])
+        },
+        dict! {
+            "id" => Value::make_ref("point1"),
+            "point" => Value::Marker,
+            "navName" => "point1".into(),
+            "equipRef" => Value::make_ref("equip1"),
+            "siteRef" => Value::make_ref("site"),
+            "refList" => Value::make_list(vec![Value::make_ref("equip1"), Value::make_ref("equip2")])
+        },
+    ];
+
+    let db = Records { recs };
+
+    let filter = Filter::try_from(r#"refList->siteRef->foo=="site""#).expect("Filter");
+    assert_eq!(db.read(&filter), None);
+
+    let filter = Filter::try_from(r#"refList->navName=="equip1""#).expect("Filter");
+    assert_eq!(db.read(&filter), db.recs.get(3));
+
+    let filter = Filter::try_from(r#"refList->navName=="equip2""#).expect("Filter");
+    assert_eq!(db.read(&filter), db.recs.get(3));
+
+    let filter = Filter::try_from(r#"refList->refList2->siteRef->dis=="site""#).expect("Filter");
+    assert_eq!(db.read(&filter), db.recs.get(3));
+
+    let filter = Filter::try_from(r#"refList==@equip2"#).expect("Filter");
+    assert_eq!(db.read(&filter), db.recs.get(3));
+}
+
 struct Records {
     recs: Vec<Dict>,
 }
@@ -133,38 +220,51 @@ impl Records {
 impl PathResolver for Records {
     fn resolve_for(&self, root: &Dict, path: &Path) -> Value {
         if path.is_empty() || root.is_empty() {
-            Value::default()
+            Value::Null
         } else if path.len() == 1 {
-            match root.get(&path[0].to_string()) {
-                Some(val) => val.clone(),
-                None => Value::default(),
-            }
+            root.get(&path[0].to_string())
+                .map_or(Value::Null, |v| v.clone())
         } else {
-            let mut cur_val = Value::default();
-            let mut cur_dict = root.clone();
+            let mut cur_val = Value::Dict(root.clone());
 
             for (pos, segment) in path.iter().enumerate() {
-                cur_val = match cur_dict.get(&segment.to_string()) {
-                    Some(Value::Dict(dict)) => Value::Dict(dict.clone()),
-                    Some(Value::Ref(id)) => {
-                        if let Some(dict) = self.resolve_ref(id) {
-                            Value::Dict(dict)
-                        } else {
+                let seg_str = &segment.to_string();
+
+                cur_val = match &cur_val {
+                    Value::Dict(dict) => dict.get(seg_str).map_or(Value::Null, |v| v.clone()),
+
+                    Value::Ref(id) => self.resolve_ref(id).map_or(Value::Null, |dict| {
+                        dict.get(seg_str).map_or(Value::Null, |v| v.clone())
+                    }),
+
+                    Value::List(list) => {
+                        let dicts = self.resolve_ref_list(list);
+
+                        if dicts.is_empty() {
                             Value::Null
+                        } else {
+                            let next_path: Path =
+                                path.iter().skip(pos).cloned().collect::<Vec<_>>().into();
+
+                            let vals: Vec<Value> = dicts
+                                .iter()
+                                .map(|dict| self.resolve_for(dict, &next_path))
+                                .filter(|v| v.has_value())
+                                .collect();
+
+                            if vals.is_empty() {
+                                Value::Null
+                            } else {
+                                return Value::List(vals);
+                            }
                         }
                     }
+
                     _ => Value::Null,
                 };
 
                 if cur_val.is_null() {
                     break;
-                }
-
-                if pos < path.len() {
-                    cur_dict = match &cur_val {
-                        Value::Dict(dict) => dict.clone(),
-                        _ => continue,
-                    };
                 }
             }
             cur_val

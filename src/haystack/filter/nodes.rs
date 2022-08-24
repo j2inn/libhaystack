@@ -125,13 +125,27 @@ pub struct Cmp {
 impl Eval for Cmp {
     fn eval<R: PathResolver>(&self, context: &EvalContext<R>) -> bool {
         match self.op {
-            CmpOp::Eq => context.resolve(&self.path) == self.value,
-            CmpOp::NotEq => context.resolve(&self.path) != self.value,
+            CmpOp::Eq => eq(&context.resolve(&self.path), &self.value),
+            CmpOp::NotEq => !eq(&context.resolve(&self.path), &self.value),
             CmpOp::LessThan => context.resolve(&self.path) < self.value,
             CmpOp::LessThanEq => context.resolve(&self.path) <= self.value,
             CmpOp::GreatThan => context.resolve(&self.path) > self.value,
             CmpOp::GreatThanEq => context.resolve(&self.path) >= self.value,
         }
+    }
+}
+
+fn eq(lhs: &Value, rhs: &Value) -> bool {
+    match lhs {
+        Value::List(list) => {
+            if !rhs.is_list() {
+                list.iter().any(|el| eq(el, rhs))
+            } else {
+                lhs == rhs
+            }
+        }
+
+        _ => lhs == rhs,
     }
 }
 

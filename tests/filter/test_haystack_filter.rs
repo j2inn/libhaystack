@@ -144,6 +144,11 @@ fn test_filter_parse_path_nested() {
         dict! {"ref" => Value::make_dict(dict!{"val" => Value::make_int(100)})}
     )}
     .filter(&filter));
+
+    assert!(!dict! {"dict" => Value::make_dict(
+        dict! {"ref" => Value::Marker}
+    )}
+    .filter(&filter));
 }
 
 #[test]
