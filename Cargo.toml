@@ -1,6 +1,6 @@
 [package]
 name = "libhaystack"
-version = "1.0.3"
+version = "1.0.6"
 description = "Rust implementation of the Haystack 4 data types, defs, filter, units, and encodings"
 authors = ["J2 Innovations", "Radu Racariu <radur@j2inn.com>"]
 edition = "2021"
