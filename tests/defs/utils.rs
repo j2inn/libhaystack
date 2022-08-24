@@ -21,7 +21,7 @@ pub(crate) fn parse_def_file(file: &str) -> Grid {
     let file = format!(
         "{root}/tests/defs/{file}",
         root = std::env::var("CARGO_MANIFEST_DIR").unwrap_or(format!(
-            "{cwd}/libhaystack",
+            "{cwd}",
             cwd = std::env::current_dir().unwrap().display().to_string()
         ))
     );

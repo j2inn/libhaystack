@@ -6,12 +6,8 @@ use super::super::eval::Eval;
 use super::super::eval::EvalContext;
 use super::super::Filter;
 use super::Filtered;
-use crate::defs::namespace::Namespace;
+use crate::defs::namespace::DEFAULT_NS;
 use crate::val::Dict;
-
-lazy_static! {
-    static ref NS: Namespace<'static> = Namespace::default();
-}
 
 /// Implement the filtering trait for a Dict
 /// # Example
@@ -27,7 +23,7 @@ lazy_static! {
 /// ```
 impl Filtered<'_, bool> for Dict {
     fn filter(&self, filter: &Filter) -> bool {
-        let context = EvalContext::make(self, &NS, self);
+        let context = EvalContext::make(self, &DEFAULT_NS, self);
         filter.eval(&context)
     }
 }
