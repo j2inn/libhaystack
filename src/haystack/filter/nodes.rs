@@ -125,27 +125,35 @@ pub struct Cmp {
 impl Eval for Cmp {
     fn eval<R: PathResolver>(&self, context: &EvalContext<R>) -> bool {
         match self.op {
-            CmpOp::Eq => eq(&context.resolve(&self.path), &self.value),
-            CmpOp::NotEq => !eq(&context.resolve(&self.path), &self.value),
-            CmpOp::LessThan => context.resolve(&self.path) < self.value,
-            CmpOp::LessThanEq => context.resolve(&self.path) <= self.value,
-            CmpOp::GreatThan => context.resolve(&self.path) > self.value,
-            CmpOp::GreatThanEq => context.resolve(&self.path) >= self.value,
+            CmpOp::Eq => cmp_dispatch(&PartialEq::eq, &context.resolve(&self.path), &self.value),
+            CmpOp::NotEq => cmp_dispatch(&PartialEq::ne, &context.resolve(&self.path), &self.value),
+            CmpOp::LessThan => {
+                cmp_dispatch(&PartialOrd::lt, &context.resolve(&self.path), &self.value)
+            }
+            CmpOp::LessThanEq => {
+                cmp_dispatch(&PartialOrd::le, &context.resolve(&self.path), &self.value)
+            }
+            CmpOp::GreatThan => {
+                cmp_dispatch(&PartialOrd::gt, &context.resolve(&self.path), &self.value)
+            }
+            CmpOp::GreatThanEq => {
+                cmp_dispatch(&PartialOrd::ge, &context.resolve(&self.path), &self.value)
+            }
         }
     }
 }
 
-fn eq(lhs: &Value, rhs: &Value) -> bool {
+fn cmp_dispatch<Cmp: Fn(&Value, &Value) -> bool>(cmp: &Cmp, lhs: &Value, rhs: &Value) -> bool {
     match lhs {
         Value::List(list) => {
             if !rhs.is_list() {
-                list.iter().any(|el| eq(el, rhs))
+                list.iter().any(|el| cmp_dispatch(cmp, el, rhs))
             } else {
-                lhs == rhs
+                cmp(lhs, rhs)
             }
         }
 
-        _ => lhs == rhs,
+        _ => cmp(lhs, rhs),
     }
 }
 
