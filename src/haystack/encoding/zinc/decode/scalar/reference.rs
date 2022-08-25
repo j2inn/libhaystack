@@ -16,11 +16,7 @@ pub(crate) fn parse_ref<R: Read>(scanner: &mut Scanner<R>) -> Result<Ref, Error>
     while !scanner.is_eof && (scanner.is_alpha_num() || scanner.is_any_of("~:-._")) {
         ref_chars.push(scanner.cur);
 
-        if let Err(err) = scanner.read() {
-            if !scanner.is_eof {
-                return Err(err);
-            }
-        }
+        scanner.advance()?
     }
 
     if ref_chars.is_empty() {

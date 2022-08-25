@@ -35,11 +35,7 @@ pub(crate) fn parse_time<R: Read>(scanner: &mut Scanner<R>) -> Result<Time, Erro
         scanner.read()?;
         while !scanner.is_eof && scanner.is_digit() {
             time_str.push(scanner.cur);
-            if let Err(err) = scanner.read() {
-                if !scanner.is_eof {
-                    return Err(err);
-                }
-            }
+            scanner.advance()?
         }
     }
 
@@ -132,7 +128,7 @@ fn parse_time_zone<R: Read>(
                 false
             }
         {
-            scanner.advance(2)?;
+            scanner.advance_by(2)?;
             Ok((parse_time_zone_name(scanner)?, None))
         } else {
             if !scanner.is_eof {
@@ -176,11 +172,7 @@ fn parse_time_zone_name<R: Read>(scanner: &mut Scanner<R>) -> Result<String, Err
 
     while !scanner.is_eof && (scanner.is_alpha_num() || scanner.is_any_of("_/+-")) {
         name.push(scanner.cur);
-        if let Err(err) = scanner.read() {
-            if !scanner.is_eof {
-                return Err(err);
-            }
-        }
+        scanner.advance()?
     }
 
     let name = String::from_utf8_lossy(&name).to_string();

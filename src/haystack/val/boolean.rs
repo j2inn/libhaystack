@@ -32,6 +32,7 @@ use crate::haystack::val::Value;
 pub struct Bool {
     pub value: bool,
 }
+
 // Make a Haystack `Bool` from a bool
 impl From<bool> for Bool {
     fn from(value: bool) -> Self {

@@ -66,11 +66,7 @@ fn parse_unit<R: Read>(scanner: &mut Scanner<R>) -> Result<String, Error> {
     while !scanner.is_eof && is_unit_char(scanner) {
         unit.push(scanner.cur);
 
-        if let Err(err) = scanner.read() {
-            if !scanner.is_eof {
-                return Err(err);
-            }
-        }
+        scanner.advance()?
     }
 
     Ok(String::from_utf8_lossy(&unit).to_string())
@@ -85,11 +81,7 @@ pub(crate) fn parse_decimal<R: Read>(scanner: &mut Scanner<R>) -> Result<f64, Er
             id.push(scanner.cur);
         }
 
-        if let Err(err) = scanner.read() {
-            if !scanner.is_eof {
-                return Err(err);
-            }
-        }
+        scanner.advance()?
     }
 
     let str = String::from_utf8_lossy(&id).to_string();

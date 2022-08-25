@@ -346,7 +346,7 @@ checksum = "8371e4e5341c3a96db127eb2465ac681ced4c433e01dd0e938adbef26ba93ba5"
 
 [[package]]
 name = "libhaystack"
-version = "1.0.6"
+version = "1.0.7"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -354,7 +354,6 @@ dependencies = [
  "criterion",
  "dashmap",
  "lazy_static",
- "pom",
  "serde",
  "serde_json",
  "uuid",
@@ -758,6 +757,15 @@ name = "unicode-width"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ed742d4ea2bd1176e236172c8429aaf54486e7ac098db29ffe6529e0ce50973"
+
+[[package]]
+name = "unit-gen"
+version = "1.0.0"
+dependencies = [
+ "lazy_static",
+ "libhaystack",
+ "pom",
+]
 
 [[package]]
 name = "uuid"

@@ -215,6 +215,9 @@ impl<'de> Visitor<'de> for HValVisitor {
     fn visit_i8<E: Error>(self, v: i8) -> Result<Self::Value, E> {
         Ok(HVal::make_number(v as f64))
     }
+    fn visit_i16<E: Error>(self, v: i16) -> Result<Self::Value, E> {
+        Ok(HVal::make_number(v as f64))
+    }
     fn visit_i32<E: Error>(self, v: i32) -> Result<Self::Value, E> {
         Ok(HVal::make_number(v as f64))
     }
@@ -222,6 +225,9 @@ impl<'de> Visitor<'de> for HValVisitor {
         Ok(HVal::make_number(v as f64))
     }
     fn visit_u8<E: Error>(self, v: u8) -> Result<Self::Value, E> {
+        Ok(HVal::make_number(v as f64))
+    }
+    fn visit_u16<E: Error>(self, v: u16) -> Result<Self::Value, E> {
         Ok(HVal::make_number(v as f64))
     }
     fn visit_u32<E: Error>(self, v: u32) -> Result<Self::Value, E> {
@@ -297,38 +303,47 @@ impl<'de> Visitor<'de> for HValVisitor {
                 Ok(num) => Ok(num),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Number. {err}"))),
             },
+
             "ref" => match parse_ref(&dict) {
                 Ok(num) => Ok(num),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Ref. {err}"))),
             },
+
             "symbol" => match parse_symbol(&dict) {
                 Ok(num) => Ok(num),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Symbol. {err}"))),
             },
+
             "uri" => match parse_uri(&dict) {
                 Ok(num) => Ok(num),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Uri. {err}"))),
             },
+
             "date" => match parse_date(&dict) {
                 Ok(num) => Ok(num),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Date. {err}"))),
             },
+
             "time" => match parse_time(&dict) {
                 Ok(num) => Ok(num),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Time. {err}"))),
             },
+
             "dateTime" => match parse_datetime(&dict) {
                 Ok(num) => Ok(num),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson DateTime. {err}"))),
             },
+
             "coord" => match parse_coord(&dict) {
                 Ok(num) => Ok(num),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Coord. {err}"))),
             },
+
             "xstr" => match parse_xstr(&dict) {
                 Ok(num) => Ok(num),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson XStr. {err}"))),
             },
+
             "grid" => match parse_grid(&dict) {
                 Ok(num) => Ok(num),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Grid. {err}"))),
@@ -456,6 +471,7 @@ fn parse_grid(dict: &Dict) -> Result<HVal, JsonErr> {
             Some(cols) => {
                 let grid = Grid {
                     meta: dict.get_dict("meta").cloned(),
+
                     columns: {
                         let cols: Result<Vec<Column>, JsonErr> = cols
                             .iter()
@@ -481,6 +497,7 @@ fn parse_grid(dict: &Dict) -> Result<HVal, JsonErr> {
                             .collect();
                         cols?
                     },
+
                     rows: {
                         let rows: Result<Vec<Dict>, JsonErr> = rows
                             .iter()

@@ -4,7 +4,7 @@
 
 use std::io::{Error, ErrorKind, Read};
 
-/// Scanner implementation for the Zinc encoding
+/// Zinc decoder scanner
 pub struct Scanner<'a, R: Read> {
     input: &'a mut R,
     pub cur: u8,
@@ -232,16 +232,22 @@ impl<'a, R: Read> Scanner<'a, R> {
         }
     }
 
-    /// Increment current input position and line number
-    fn increment_pos(&mut self) {
-        self.pos += 1;
-        if self.is_newline() {
-            self.line += 1;
+    /// Advances the current input by one, errors out in case of IO Error.
+    /// If current input is at EOS, silently ignore it and does nothing.
+    pub fn advance(&mut self) -> Result<(), Error> {
+        if let Err(err) = self.read() {
+            if !self.is_eof {
+                Err(err)
+            } else {
+                Ok(())
+            }
+        } else {
+            Ok(())
         }
     }
 
-    /// Consume input until EOS or limit
-    pub fn advance(&mut self, limit: u64) -> Result<u8, Error> {
+    /// Consume input until EOS or until the limit
+    pub fn advance_by(&mut self, limit: u64) -> Result<u8, Error> {
         for _ in 0..limit {
             self.read()?;
         }
@@ -271,17 +277,6 @@ impl<'a, R: Read> Scanner<'a, R> {
         Some(self.buffer_peek(next))
     }
 
-    fn buffer_peek(&mut self, next: u8) -> u8 {
-        if self.next.is_none() {
-            self.next = Some(Vec::new());
-        }
-        if let Some(peek_bytes) = &mut self.next {
-            peek_bytes.push(next);
-            self.last_peek = next;
-        }
-        next
-    }
-
     /// Create am error for an missing expect condition
     /// Current position and the current char are captured
     pub fn make_expect_err<T, E: std::fmt::Display>(&self, item: E) -> Result<T, Error> {
@@ -309,6 +304,25 @@ impl<'a, R: Read> Scanner<'a, R> {
                 line = self.line
             ),
         ))
+    }
+
+    /// Increment current input position and line number
+    fn increment_pos(&mut self) {
+        self.pos += 1;
+        if self.is_newline() {
+            self.line += 1;
+        }
+    }
+
+    fn buffer_peek(&mut self, next: u8) -> u8 {
+        if self.next.is_none() {
+            self.next = Some(Vec::new());
+        }
+        if let Some(peek_bytes) = &mut self.next {
+            peek_bytes.push(next);
+            self.last_peek = next;
+        }
+        next
     }
 
     fn read_byte(&mut self) -> Result<u8, Error> {
@@ -354,7 +368,7 @@ mod test {
         );
         assert_eq!(scanner.cur, b'a');
 
-        assert_eq!(scanner.advance(3).expect("Space"), b' ');
+        assert_eq!(scanner.advance_by(3).expect("Space"), b' ');
 
         scanner.consume_spaces().expect("Valid");
 

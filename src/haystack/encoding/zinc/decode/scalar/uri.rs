@@ -39,22 +39,14 @@ pub(crate) fn parse_uri<R: Read>(scanner: &mut Scanner<R>) -> Result<Uri, Error>
         } else {
             str.push(scanner.cur);
         }
-        if let Err(err) = scanner.read() {
-            if !scanner.is_eof {
-                return Err(err);
-            }
-        }
+        scanner.advance()?
     }
 
     if start == scanner.pos {
         return scanner.make_generic_err("Unterminated Uri");
     }
 
-    if let Err(err) = scanner.read() {
-        if !scanner.is_eof {
-            return Err(err);
-        }
-    }
+    scanner.advance()?;
 
     Ok(Uri {
         value: String::from_utf8_lossy(&str).to_string(),

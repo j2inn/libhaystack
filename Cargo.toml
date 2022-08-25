@@ -1,6 +1,6 @@
 [package]
 name = "libhaystack"
-version = "1.0.6"
+version = "1.0.7"
 description = "Rust implementation of the Haystack 4 data types, defs, filter, units, and encodings"
 authors = ["J2 Innovations", "Radu Racariu <radur@j2inn.com>"]
 edition = "2021"
@@ -11,11 +11,6 @@ readme = "README.md"
 categories = ["command-line-utilities", "data-structures", "encoding", "parser-implementations"]
 keywords = ["iot", "bas", "haystack"]
 
-[[bin]]
-name = "unit-gen"
-path = "src/haystack/units/tools/mod.rs"
-required-features = ["unit-gen"]
-
 [lib]
 name = "libhaystack"
 crate-type = ["cdylib", "rlib"]
@@ -23,6 +18,12 @@ crate-type = ["cdylib", "rlib"]
 [[bench]]
 name = "main"
 harness = false
+
+[workspace]
+members = [
+    "unit-gen"
+]
+
 
 [features]
 # Default enabled features
@@ -47,9 +48,6 @@ zinc = ["zinc-encoding", "zinc-decoding"]
 zinc-encoding = []
 zinc-decoding = []
 
-# Util features
-unit-gen = ["pom"]
-
 [dependencies]
 serde = "1.0"
 serde_json = "1.0"
@@ -58,7 +56,6 @@ chrono = "0.4"
 chrono-tz = "0.6.1"
 lazy_static = "1.4.0"
 dashmap = "5.3.4"
-pom  = {version = "3.2.0", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
