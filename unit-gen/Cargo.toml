@@ -1,0 +1,16 @@
+[package]
+name = "unit-gen"
+version = "1.0.0"
+authors = ["J2 Innovations", "Radu Racariu <radur@j2inn.com>"]
+description = "Utility for generating Rust Unit types from the Fantom Units database."
+edition = "2021"
+license = "BSD-3-Clause"
+
+[[bin]]
+name = "unit-gen"
+path = "src/main.rs"
+
+[dependencies]
+lazy_static = "1.4.0"
+pom  = {version = "3.2.0" }
+libhaystack = {path = "../"}

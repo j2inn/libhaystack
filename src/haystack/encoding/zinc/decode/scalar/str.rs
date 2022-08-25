@@ -24,22 +24,14 @@ pub(crate) fn parse_str<R: Read>(scanner: &mut Scanner<R>) -> Result<Str, Error>
         } else {
             str.push(scanner.cur);
         }
-        if let Err(err) = scanner.read() {
-            if !scanner.is_eof {
-                return Err(err);
-            }
-        }
+        scanner.advance()?
     }
 
     if start == scanner.pos {
         return scanner.make_generic_err("Unterminated Str");
     }
 
-    if let Err(err) = scanner.read() {
-        if !scanner.is_eof {
-            return Err(err);
-        }
-    }
+    scanner.advance()?;
 
     Ok(Str {
         value: String::from_utf8_lossy(&str).to_string(),

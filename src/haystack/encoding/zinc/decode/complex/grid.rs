@@ -156,6 +156,7 @@ fn parse_grid_columns<'a, 'b: 'a, R: Read>(
                 name: name.to_string(),
                 meta: None,
             });
+
             if parser.lexer.is_char(b'\n') {
                 done = true;
                 break;

@@ -141,7 +141,7 @@ impl<'a, R: Read> Lexer<Scanner<'a, R>> {
                 b'A'..=b'Z' => {
                     let literal = parse_literal(&mut self.scanner)?;
 
-                    if self.scanner.is_any_of("(") {
+                    if self.scanner.cur == b'(' {
                         if literal == "C" {
                             let coord = parse_coord_body(&mut self.scanner)?;
                             self.cur = LexerToken::make_value(Value::Coord(coord));

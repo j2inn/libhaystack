@@ -12,8 +12,10 @@ mod unit_gen;
 
 /// Tool for generating the unit definitions in Rust from the Fantom unit database
 fn main() {
-    let def_in_path = &String::from("src/haystack/units/tools/units.txt");
+    let def_in_path = &String::from("unit-gen/units.txt");
     let def_out_path = &String::from("src/haystack/units/units_generated.rs");
+
+    println!("Running unit-gen tool.");
 
     println!(
         "Generator working dir: {}",
@@ -35,4 +37,6 @@ fn main() {
         .expect("Out file")
         .write(gen.as_bytes())
         .expect("Write units succeeded.");
+
+    println!("unit-gen tool completed.");
 }

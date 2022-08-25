@@ -41,13 +41,9 @@ pub(crate) fn parse_id<R: Read>(scanner: &mut Scanner<R>) -> Result<Id, Error> {
 pub(super) fn parse_literal<R: Read>(scanner: &mut Scanner<R>) -> Result<String, Error> {
     let mut id = Vec::new();
 
-    while !scanner.is_eof && (scanner.is_alpha_num() || scanner.is_any_of("_")) {
+    while !scanner.is_eof && (scanner.is_alpha_num() || scanner.cur == b'_') {
         id.push(scanner.cur);
-        if let Err(err) = scanner.read() {
-            if !scanner.is_eof {
-                return Err(err);
-            }
-        }
+        scanner.advance()?
     }
 
     if !id.is_empty() {

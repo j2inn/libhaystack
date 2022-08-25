@@ -32,6 +32,7 @@ pub(super) fn parse_dict_parts<'a, 'b: 'a, R: Read>(
             expect_comma = false;
             continue;
         }
+
         if !parser.lexer.is_id() {
             break;
         }

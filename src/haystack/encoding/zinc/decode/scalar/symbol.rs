@@ -19,11 +19,7 @@ pub(crate) fn parse_symbol<R: Read>(scanner: &mut Scanner<R>) -> Result<Symbol, 
     while !scanner.is_eof && (scanner.is_alpha_num() || scanner.is_any_of("~:-._")) {
         symbol.push(scanner.cur);
 
-        if let Err(err) = scanner.read() {
-            if !scanner.is_eof {
-                return Err(err);
-            }
-        }
+        scanner.advance()?
     }
 
     if symbol.is_empty() {

@@ -10,12 +10,11 @@ use std::io::{Error, Read};
 pub(crate) fn parse_list<'a, 'b: 'a, R: Read>(
     parser: &'a mut ParserType<'b, R>,
 ) -> Result<List, Error> {
-    let mut list = List::new();
-
     parser.lexer.expect_char(b'[', "List parser")?;
 
     let mut expect_comma = false;
     let mut done = false;
+    let mut list = List::new();
 
     while !done {
         parser.lexer.read()?;

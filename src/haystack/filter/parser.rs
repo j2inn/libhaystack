@@ -143,9 +143,9 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
                     self.lexer.read().ok();
                     Ok(Missing { path })
                 }
-                _ => self.make_generic_err(&format!("Unexpected not operant token: {token:?}.")),
+                _ => self.make_generic_err(&format!("Unexpected 'not' operant token: {token:?}.")),
             },
-            None => self.make_generic_err("Unexpected empty not expression."),
+            None => self.make_generic_err("Unexpected empty 'not' expression."),
         }
     }
 
@@ -170,12 +170,14 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
                             },
                         })
                     } else {
-                        self.make_generic_err(&format!("Unexpected cmp operant token: {str_val}."))
+                        self.make_generic_err(&format!(
+                            "Unexpected 'cmp' operant token: {str_val}."
+                        ))
                     }
                 }
-                _ => self.make_generic_err(&format!("Unexpected cmp operant token: {token:?}.")),
+                _ => self.make_generic_err(&format!("Unexpected 'cmp' operant token: {token:?}.")),
             },
-            None => self.make_generic_err("Unexpected empty not expression."),
+            None => self.make_generic_err("Unexpected empty 'cmp' expression."),
         }
     }
 
@@ -223,7 +225,7 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
             TokenValue::LessThanOrEqual => Ok(CmpOp::LessThanEq),
             TokenValue::GreaterThan => Ok(CmpOp::GreatThan),
             TokenValue::GreaterThanOrEqual => Ok(CmpOp::GreatThanEq),
-            _ => self.make_generic_err(&format!("Unexpected cmp token: {token:?}.")),
+            _ => self.make_generic_err(&format!("Unexpected 'cmp' token: {token:?}.")),
         }
     }
 
