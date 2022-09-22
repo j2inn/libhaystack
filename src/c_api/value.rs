@@ -47,7 +47,7 @@ pub extern "C" fn haystack_value_init() -> Box<Value> {
 /// Panics on invalid input data
 #[no_mangle]
 pub unsafe extern "C" fn haystack_value_destroy(val: *mut Value) {
-    Box::from_raw(val);
+    _ = Box::from_raw(val);
 }
 
 /// True if a null (empty) [Value](crate::val::Value)

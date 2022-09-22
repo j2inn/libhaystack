@@ -23,7 +23,7 @@ pub fn parse_grid<'a, 'b: 'a, R: Read>(parser: &'a mut ParserType<'b, R>) -> Res
     let rows_iterator = parse_grid_iterator(parser)?;
 
     // Copy the grid meta and columns
-    let mut grid = (&rows_iterator.grid).clone();
+    let mut grid = rows_iterator.grid.clone();
 
     // Collect the lazy parser result as a Row vector
     let rows: Result<Vec<Dict>, Error> = rows_iterator.into_iter().collect();

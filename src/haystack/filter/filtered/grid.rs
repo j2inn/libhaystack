@@ -34,12 +34,7 @@ impl<'a> Filtered<'a, Option<&'a Dict>> for Grid {
     ///   }));
     /// ```
     fn filter(&'a self, filter: &Filter) -> Option<&'a Dict> {
-        for dict in &self.rows {
-            if dict.filter(filter) {
-                return Some(dict);
-            }
-        }
-        None
+        self.rows.iter().find(|&dict| dict.filter(filter))
     }
 }
 
