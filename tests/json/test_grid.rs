@@ -45,6 +45,7 @@ fn test_json_grid_empty_encode() {
             },
         ],
         rows: recs,
+        ver: GRID_FORMAT_VERSION.to_string(),
     });
 
     assert_eq!(value, grid);
@@ -53,7 +54,7 @@ fn test_json_grid_empty_encode() {
 #[test]
 fn test_json_grid_decode() {
     let string = concat!(
-        r#"{"_kind":"grid","meta":{},"#,
+        r#"{"_kind":"grid","#,
         r#""cols":[{"name":"dis"},{"name":"equip"},{"name":"navName"},{"name":"site"}],"#,
         r#""rows":[{"dis":"Site","site":{"_kind":"marker"}},{"equip":{"_kind":"marker"},"navName":"Equip"}]}"#
     );
@@ -69,7 +70,7 @@ fn test_json_grid_decode() {
         },
     ];
     let grid = Value::make_grid(Grid {
-        meta: Some(Dict::default()),
+        meta: None,
         columns: vec![
             Column {
                 name: "dis".into(),
@@ -89,9 +90,56 @@ fn test_json_grid_decode() {
             },
         ],
         rows: recs,
+        ver: GRID_FORMAT_VERSION.to_string(),
     });
 
     assert_eq!(value, grid);
+}
+
+#[test]
+fn test_json_grid_with_ver() {
+    let string = concat!(
+        r#"{"_kind":"grid","meta":{"ver": "3.0"},"#,
+        r#""cols":[{"name":"dis"}],"#,
+        r#""rows":[{"dis":"a"},{"dis":"b"}]}"#
+    );
+
+    let value: Value = serde_json::from_str(string).expect("Value");
+
+    let recs = vec![
+        dict! {
+            "dis" => Value::make_str("a")
+        },
+        dict! {
+            "dis" => Value::make_str("b")
+        },
+    ];
+
+    assert_eq!(
+        value,
+        Grid::make_from_dicts_with_meta(recs.clone(), Dict::default()).into()
+    );
+
+    let string = concat!(
+        r#"{"_kind":"grid","meta":{"ver": "3.0", "foo": 100},"#,
+        r#""cols":[{"name":"dis"}],"#,
+        r#""rows":[{"dis":"a"},{"dis":"b"}]}"#
+    );
+    let value: Value = serde_json::from_str(string).expect("Value");
+
+    assert_eq!(
+        value,
+        Grid::make_from_dicts_with_meta(recs.clone(), dict! {"foo" => 100.into()}).into()
+    );
+
+    let string = concat!(
+        r#"{"_kind":"grid","meta":{"ver": "2.0"},"#,
+        r#""cols":[{"name":"dis"}],"#,
+        r#""rows":[{"dis":"a"},{"dis":"b"}]}"#
+    );
+    let value: Value = serde_json::from_str(string).expect("Value");
+
+    assert_ne!(value, Grid::make_from_dicts(recs).into())
 }
 
 #[test]

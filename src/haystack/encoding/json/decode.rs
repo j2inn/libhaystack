@@ -10,6 +10,7 @@ use crate::haystack::val::{
 
 use crate::haystack::timezone::make_date_time_with_tz;
 use crate::units::get_unit;
+use crate::val::GRID_FORMAT_VERSION;
 
 use chrono::{Offset, Utc};
 use serde::de::{Deserialize, Deserializer, Error, MapAccess, SeqAccess, Visitor};
@@ -300,52 +301,52 @@ impl<'de> Visitor<'de> for HValVisitor {
 
         match kind.as_str() {
             "number" => match parse_number(&dict) {
-                Ok(num) => Ok(num),
+                Ok(val) => Ok(val),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Number. {err}"))),
             },
 
             "ref" => match parse_ref(&dict) {
-                Ok(num) => Ok(num),
+                Ok(val) => Ok(val),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Ref. {err}"))),
             },
 
             "symbol" => match parse_symbol(&dict) {
-                Ok(num) => Ok(num),
+                Ok(val) => Ok(val),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Symbol. {err}"))),
             },
 
             "uri" => match parse_uri(&dict) {
-                Ok(num) => Ok(num),
+                Ok(val) => Ok(val),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Uri. {err}"))),
             },
 
             "date" => match parse_date(&dict) {
-                Ok(num) => Ok(num),
+                Ok(val) => Ok(val),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Date. {err}"))),
             },
 
             "time" => match parse_time(&dict) {
-                Ok(num) => Ok(num),
+                Ok(val) => Ok(val),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Time. {err}"))),
             },
 
             "dateTime" => match parse_datetime(&dict) {
-                Ok(num) => Ok(num),
+                Ok(val) => Ok(val),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson DateTime. {err}"))),
             },
 
             "coord" => match parse_coord(&dict) {
-                Ok(num) => Ok(num),
+                Ok(val) => Ok(val),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Coord. {err}"))),
             },
 
             "xstr" => match parse_xstr(&dict) {
-                Ok(num) => Ok(num),
+                Ok(val) => Ok(val),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson XStr. {err}"))),
             },
 
             "grid" => match parse_grid(&dict) {
-                Ok(num) => Ok(num),
+                Ok(val) => Ok(val),
                 Err(err) => Err(A::Error::custom(format!("Invalid Hayson Grid. {err}"))),
             },
             _ => Ok(HVal::make_dict(dict)),
@@ -469,9 +470,16 @@ fn parse_grid(dict: &Dict) -> Result<HVal, JsonErr> {
     match dict.get_list("rows") {
         Some(rows) => match dict.get_list("cols") {
             Some(cols) => {
-                let grid = Grid {
-                    meta: dict.get_dict("meta").cloned(),
+                let mut grid_ver = GRID_FORMAT_VERSION.to_string();
 
+                let grid = Grid {
+                    meta: dict.get_dict("meta").cloned().map(|mut meta| {
+                        if let Some(ver) = meta.get_str("ver") {
+                            grid_ver = ver.value.to_owned();
+                        };
+                        meta.remove("ver");
+                        meta
+                    }),
                     columns: {
                         let cols: Result<Vec<Column>, JsonErr> = cols
                             .iter()
@@ -508,6 +516,7 @@ fn parse_grid(dict: &Dict) -> Result<HVal, JsonErr> {
                             .collect();
                         rows?
                     },
+                    ver: grid_ver,
                 };
                 Ok(grid.into())
             }
