@@ -120,6 +120,8 @@ fn test_json_grid_with_ver() {
         Grid::make_from_dicts_with_meta(recs.clone(), Dict::default()).into()
     );
 
+    assert!(matches!(value, Value::Grid(grid) if grid.ver == GRID_FORMAT_VERSION));
+
     let string = concat!(
         r#"{"_kind":"grid","meta":{"ver": "3.0", "foo": 100},"#,
         r#""cols":[{"name":"dis"}],"#,
@@ -139,6 +141,7 @@ fn test_json_grid_with_ver() {
     );
     let value: Value = serde_json::from_str(string).expect("Value");
 
+    assert!(matches!(&value, Value::Grid(grid) if grid.ver == "2.0"));
     assert_ne!(value, Grid::make_from_dicts(recs).into())
 }
 
