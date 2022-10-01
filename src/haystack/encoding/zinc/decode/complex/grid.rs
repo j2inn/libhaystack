@@ -58,7 +58,7 @@ fn parse_grid_content<'a, 'b: 'a, R: Read>(
 ) -> Result<(Grid, RowParser<'a, 'b, R>), Error> {
     let has_nested_grid_start = parse_nested_grid_start(parser)?;
 
-    parse_grid_ver(parser)?;
+    let ver = parse_grid_ver(parser)?;
 
     parser.lexer.read()?;
 
@@ -74,6 +74,7 @@ fn parse_grid_content<'a, 'b: 'a, R: Read>(
         meta: if meta.is_empty() { None } else { Some(meta) },
         columns,
         rows: Vec::default(),
+        ver,
     };
 
     Ok((
@@ -432,6 +433,7 @@ mod test {
                     }
                 ],
                 rows: vec![dict! {"id" => Value::make_ref("foo")}],
+                ver: GRID_FORMAT_VERSION.to_string()
             })
         )
     }
@@ -472,6 +474,7 @@ mod test {
                     dict! {"id" => Value::make_ref("foo")},
                     dict! {"id" => Value::make_ref("bar")}
                 ],
+                ver: GRID_FORMAT_VERSION.to_string()
             })
         )
     }

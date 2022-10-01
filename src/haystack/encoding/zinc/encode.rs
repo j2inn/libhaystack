@@ -4,13 +4,10 @@
 
 use crate::haystack::val::{
     Bool, Column, Coord, Date, DateTime, Dict, Grid, List, Marker, Na, Number, Ref, Remove, Str,
-    Symbol, Time, Uri, Value, XStr,
+    Symbol, Time, Uri, Value, XStr, GRID_FORMAT_VERSION,
 };
 use chrono::SecondsFormat;
 use std::fmt::Display;
-
-/// Zinc encoding version
-pub const VER: f32 = 3.0;
 
 /// Zinc encoding trait implemented by scalar and collection types
 pub trait ToZinc {
@@ -282,7 +279,7 @@ impl ZincEncode for Grid {
             writer.write_all(b"<<\n")?;
         }
 
-        writer.write_fmt(format_args!("ver:\"{:.1}\"\n", VER))?;
+        writer.write_fmt(format_args!("ver:\"{GRID_FORMAT_VERSION}\"\n"))?;
 
         // Grid meta
         if let Some(meta) = &self.meta {

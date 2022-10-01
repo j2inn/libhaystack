@@ -18,6 +18,9 @@ pub struct Column {
     pub meta: Option<Dict>,
 }
 
+/// The version of the grid format supported by this library
+pub const GRID_FORMAT_VERSION: &str = "3.0";
+
 /// Haystack Grid
 ///
 /// # Example
@@ -53,6 +56,8 @@ pub struct Grid {
     pub columns: Vec<Column>,
     /// List of the row for this `Grid`
     pub rows: Vec<Dict>,
+    /// The version of this grid
+    pub ver: String,
 }
 
 impl Grid {
@@ -65,6 +70,7 @@ impl Grid {
                 meta: None,
             }],
             rows: Vec::default(),
+            ver: GRID_FORMAT_VERSION.to_string(),
         }
     }
 
@@ -91,6 +97,7 @@ impl Grid {
             meta: None,
             columns,
             rows,
+            ver: GRID_FORMAT_VERSION.to_string(),
         }
     }
 
@@ -134,6 +141,7 @@ impl Grid {
                 meta: None,
             }],
             rows: Vec::default(),
+            ver: GRID_FORMAT_VERSION.to_string(),
         }
     }
 
@@ -164,6 +172,7 @@ impl Default for Grid {
             columns: Vec::default(),
             meta: None,
             rows: Vec::default(),
+            ver: GRID_FORMAT_VERSION.to_string(),
         }
     }
 }
