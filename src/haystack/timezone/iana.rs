@@ -10,9 +10,9 @@ use chrono_tz::{OffsetName, Tz, UTC};
 use crate::timezone::fixed_timezone;
 
 /// DateTime type that supports timezones
-pub(crate) type DateTimeType = StdDateTime<Tz>;
+pub type DateTimeType = StdDateTime<Tz>;
 
-pub(crate) fn make_date_time(date: StdDateTime<FixedOffset>) -> Result<DateTimeType, String> {
+pub fn make_date_time(date: StdDateTime<FixedOffset>) -> Result<DateTimeType, String> {
     use chrono::LocalResult;
     if let Ok(tz) = find_timezone(&fixed_timezone(&date.offset().to_string())) {
         Ok(match tz.from_local_datetime(&date.naive_local()) {
@@ -37,15 +37,15 @@ pub fn make_date_time_with_tz(
     }
 }
 
-pub(crate) fn utc_now() -> DateTimeType {
+pub fn utc_now() -> DateTimeType {
     Utc::now().with_timezone(&UTC)
 }
 
-pub(crate) fn is_utc(date: &DateTimeType) -> bool {
+pub fn is_utc(date: &DateTimeType) -> bool {
     date.timezone() == UTC
 }
 
-pub(crate) fn timezone_short_name(date: &DateTimeType) -> String {
+pub fn timezone_short_name(date: &DateTimeType) -> String {
     let tz_id = date.offset().tz_id();
 
     tz_id[tz_id.find('/').map_or(0, |v| v + 1)..].to_string()

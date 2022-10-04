@@ -190,6 +190,7 @@ mod test {
         let meters = get_unit("m").expect("Meters");
         let foot = get_unit("ft").expect("Foot");
         assert_eq!(meters.convert_to(1.0, foot).map(|f| f.round()), Ok(3.0));
+        assert_eq!(foot.convert_to(1.0, meters), Ok(0.3048));
 
         let fahrenheit = get_unit("°F").expect("Fahrenheit");
         let celsius = get_unit("°C").expect("Celsius");

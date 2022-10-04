@@ -6,14 +6,14 @@
 //! provided by [chrono_tz](https://crates.io/crates/chrono-tz), or by just using a fixed offset datetime
 //! by toggling the `timezone` feature.
 
-#[cfg(feature = "timezone")]
+#[cfg(feature = "timezone-db")]
 pub mod iana;
-#[cfg(feature = "timezone")]
-pub(crate) use iana::*;
-#[cfg(not(feature = "timezone"))]
+#[cfg(feature = "timezone-db")]
+pub use iana::*;
+#[cfg(not(feature = "timezone-db"))]
 pub mod utc;
-#[cfg(not(feature = "timezone"))]
-pub(crate) use utc::*;
+#[cfg(not(feature = "timezone-db"))]
+pub use utc::*;
 
 pub(super) fn fixed_timezone(offset: &str) -> String {
     let gmt_offset = offset[2..offset.find(':').unwrap_or(3)].to_string();

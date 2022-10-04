@@ -3,6 +3,7 @@
 //! Haystack Def namespace
 
 use dashmap::{mapref::one::Ref as MapReadRef, DashMap};
+use lazy_static::lazy_static;
 use std::collections::{BTreeMap, HashSet};
 
 use super::misc::parse_multi_line_string_to_dicts;

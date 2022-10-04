@@ -1,6 +1,6 @@
 [package]
 name = "libhaystack"
-version = "1.0.9"
+version = "1.0.10"
 description = "Rust implementation of the Haystack 4 data types, defs, filter, units, and encodings"
 authors = ["J2 Innovations", "Radu Racariu <radur@j2inn.com>"]
 edition = "2021"
@@ -36,11 +36,14 @@ c-api-zinc = ["zinc"]
 c-api-json = ["json"]
 
 # Lib features
-filter = ["defs",  "zinc-decoding"]
-defs = []
-units = []
-timezone = []
-encoders = ["json", "zinc"]
+value  = ["units", "timezone", "encoders"]
+filter = ["value", "defs",  "zinc-decoding"]
+defs = ["value"]
+units = ["units-db"]
+units-db = []
+timezone = ["timezone-db"]
+timezone-db = []
+encoders = ["value", "json", "zinc"]
 json = ["json-encoding", "json-decoding"]
 json-encoding = []
 json-decoding = []

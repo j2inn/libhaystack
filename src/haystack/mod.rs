@@ -15,6 +15,9 @@ pub mod defs;
 pub mod encoding;
 #[cfg(feature = "filter")]
 pub mod filter;
+#[cfg(feature = "timezone")]
 pub mod timezone;
+#[cfg(feature = "units")]
 pub mod units;
+#[cfg(feature = "value")]
 pub mod val;
