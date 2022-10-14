@@ -24,7 +24,7 @@ pub fn get_unit(unit: &str) -> Option<&'static Unit> {
 
 /// Tries to get the unit by name, if none is found, return a default unit
 pub fn get_unit_or_default(unit: &str) -> &'static Unit {
-    get_unit(unit).unwrap_or_else(|| &*DEFAULT_UNIT)
+    get_unit(unit).unwrap_or(&*DEFAULT_UNIT)
 }
 
 /// Match units for the dimension
