@@ -2,6 +2,8 @@
 
 //! Test haystack types
 
+use std::collections::HashSet;
+
 use libhaystack::units::get_unit_or_default;
 
 #[cfg(test)]
@@ -13,6 +15,19 @@ fn test_value_null() {
     let value = Value::default();
     assert!(value.is_null());
     assert!(!value.is_number());
+
+    let mut set = HashSet::<Value>::new();
+    set.insert(value);
+}
+
+#[test]
+fn test_value_null_hash() {
+    let value = Value::default();
+
+    let mut set = HashSet::<Value>::new();
+    set.insert(value);
+
+    assert!(set.contains(&Value::Null))
 }
 
 #[test]

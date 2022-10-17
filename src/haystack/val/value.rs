@@ -63,9 +63,10 @@ use std::hash::Hash;
 /// assert_eq!(Grid::try_from(&grid).unwrap().len(), 2);
 /// ```
 ///
-#[derive(PartialOrd, Eq, Ord, Clone, Debug)]
+#[derive(PartialOrd, Eq, Ord, Clone, Debug, Default)]
 pub enum Value {
     /// No value
+    #[default]
     Null,
     /// A remove tag
     Remove,
@@ -352,13 +353,6 @@ impl Value {
     }
 }
 
-/// Implements the `Default` trait for the `Value`
-impl Default for Value {
-    fn default() -> Self {
-        Value::Null
-    }
-}
-
 /// Implement user friendly display for a [Value](crate::val::Value)
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -397,7 +391,7 @@ impl Display for Value {
 impl Hash for Value {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
-            Value::Null => Self::Null.hash(state),
+            Value::Null => std::any::TypeId::of::<Value>().hash(state),
 
             Value::Marker => super::marker::Marker.hash(state),
             Value::Remove => super::remove::Remove.hash(state),
