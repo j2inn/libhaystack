@@ -3,6 +3,7 @@
 
 #![allow(clippy::approx_constant)]
 use super::{Unit, UnitDimensions};
+use lazy_static::lazy_static;
 use std::collections::HashMap;
 
 // dimensionless

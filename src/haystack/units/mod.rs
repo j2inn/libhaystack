@@ -4,8 +4,9 @@
 
 pub mod unit;
 pub mod unit_dimension;
-#[cfg(feature = "units")]
+#[cfg(feature = "units-db")]
 pub mod units_generated;
+use lazy_static::lazy_static;
 
 pub use unit::Unit;
 pub use unit_dimension::UnitDimensions;
@@ -13,27 +14,23 @@ pub use unit_dimension::UnitDimensions;
 /// Get unit by name, if it is defined in the units database
 #[allow(unused_variables)]
 pub fn get_unit(unit: &str) -> Option<&'static Unit> {
-    #[cfg(feature = "units")]
+    #[cfg(feature = "units-db")]
     {
         return units_generated::UNITS.get(unit).copied();
     }
-    #[cfg(not(feature = "units"))]
+    #[cfg(not(feature = "units-db"))]
     return None;
 }
 
 /// Tries to get the unit by name, if none is found, return a default unit
 pub fn get_unit_or_default(unit: &str) -> &'static Unit {
-    if let Some(unit) = get_unit(unit) {
-        unit
-    } else {
-        &*DEFAULT_UNIT
-    }
+    get_unit(unit).unwrap_or(&*DEFAULT_UNIT)
 }
 
 /// Match units for the dimension
 #[allow(unused_variables)]
 pub fn match_units(dim: UnitDimensions, scale: f64) -> Vec<&'static Unit> {
-    #[cfg(feature = "units")]
+    #[cfg(feature = "units-db")]
     {
         units_generated::UNITS
             .iter()
@@ -46,11 +43,11 @@ pub fn match_units(dim: UnitDimensions, scale: f64) -> Vec<&'static Unit> {
             })
             .collect()
     }
-    #[cfg(not(feature = "units"))]
+    #[cfg(not(feature = "units-db"))]
     return Vec::default();
 }
 
-#[cfg(feature = "units")]
+#[cfg(feature = "units-db")]
 fn approx_eq(a: f64, b: f64) -> bool {
     if a == b {
         return true;

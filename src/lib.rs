@@ -14,11 +14,6 @@ pub mod haystack;
 
 pub use haystack::*;
 
-#[cfg(feature = "timezone")]
-extern crate chrono_tz;
-#[macro_use]
-extern crate lazy_static;
-
 #[cfg(target_arch = "wasm32")]
 extern crate web_sys;
 

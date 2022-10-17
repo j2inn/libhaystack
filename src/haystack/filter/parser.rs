@@ -7,6 +7,7 @@ use super::nodes::*;
 use super::path::Path;
 use crate::haystack::encoding::zinc::decode::scanner::Scanner;
 use crate::val::{Symbol, Value};
+use lazy_static::lazy_static;
 
 use std::io::{Error, Read};
 

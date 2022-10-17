@@ -57,6 +57,7 @@ fn gen_file_header() -> String {
         "\n",
         "#![allow(clippy::approx_constant)]\n",
         "use super::{Unit, UnitDimensions};\n",
+        "use lazy_static::lazy_static;\n",
         "use std::collections::HashMap;\n"
     )
     .to_string()
