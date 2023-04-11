@@ -28,7 +28,7 @@ use crate::haystack::val::Value;
 /// assert!(!Bool::try_from(&false_val).unwrap().value)
 ///```
 ///
-#[derive(PartialEq, PartialOrd, Eq, Ord, Hash, Copy, Clone, Debug)]
+#[derive(PartialEq, PartialOrd, Eq, Ord, Hash, Copy, Clone, Debug, Default)]
 pub struct Bool {
     pub value: bool,
 }

@@ -24,7 +24,7 @@ use crate::haystack::val::Value;
 /// let str:Str = "sample string".into();
 /// assert_eq!(str.as_str(), "sample string");
 /// ```
-#[derive(PartialEq, PartialOrd, Eq, Ord, Hash, Clone, Debug)]
+#[derive(PartialEq, PartialOrd, Eq, Ord, Hash, Clone, Debug, Default)]
 pub struct Str {
     pub value: String,
 }

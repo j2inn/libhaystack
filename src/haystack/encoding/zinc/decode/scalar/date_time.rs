@@ -102,11 +102,23 @@ pub(crate) fn parse_datetime<R: Read>(scanner: &mut Scanner<R>) -> Result<DateTi
         match fixed_offset {
             Some(fixed_offset) => {
                 let fixed = fixed_offset
-                    .ymd(date.year(), date.month(), date.day())
-                    .and_hms_nano(time.hour(), time.minute(), time.second(), time.nanosecond());
-                match make_date_time_with_tz(&fixed, &tz) {
-                    Ok(datetime) => Ok(datetime.into()),
-                    Err(err) => scanner.make_generic_err(&err),
+                    .with_ymd_and_hms(
+                        date.year(),
+                        date.month(),
+                        date.day(),
+                        time.hour(),
+                        time.minute(),
+                        time.second(),
+                    )
+                    .single()
+                    .and_then(|dt| dt.with_nanosecond(time.nanosecond()));
+                if let Some(fixed) = fixed {
+                    match make_date_time_with_tz(&fixed, &tz) {
+                        Ok(datetime) => Ok(datetime.into()),
+                        Err(err) => scanner.make_generic_err(&err),
+                    }
+                } else {
+                    scanner.make_generic_err("Invalid date time.")
                 }
             }
             None => match make_date_time_with_tz(&utc.with_timezone(&Utc.fix()), &tz) {
@@ -123,7 +135,7 @@ fn parse_time_zone<R: Read>(
     if scanner.cur == b'Z' {
         if scanner.safe_peek() == Some(b' ')
             && if let Some(char) = scanner.safe_peek() {
-                (b'A'..=b'Z').contains(&char)
+                char.is_ascii_uppercase()
             } else {
                 false
             }
@@ -158,12 +170,12 @@ fn parse_time_zone<R: Read>(
         let tz_name = parse_time_zone_name(scanner)?;
 
         let fixed_offset = if gmt_sign == "+" {
-            FixedOffset::east(dur.num_seconds() as i32)
+            FixedOffset::east_opt(dur.num_seconds() as i32)
         } else {
-            FixedOffset::west(dur.num_seconds() as i32)
+            FixedOffset::west_opt(dur.num_seconds() as i32)
         };
 
-        Ok((tz_name, Some(fixed_offset)))
+        Ok((tz_name, fixed_offset))
     }
 }
 

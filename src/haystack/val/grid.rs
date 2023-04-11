@@ -10,7 +10,7 @@ use std::iter::Iterator;
 use std::ops::Index;
 
 /// Grid Column
-#[derive(Eq, PartialEq, PartialOrd, Ord, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, PartialOrd, Ord, Hash, Clone, Debug, Default)]
 pub struct Column {
     /// Column name
     pub name: String,

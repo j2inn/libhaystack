@@ -97,22 +97,22 @@ impl<'a, R: Read> Scanner<'a, R> {
 
     /// True if cur is a digit char
     pub fn is_digit(&self) -> bool {
-        (b'0'..=b'9').contains(&self.cur)
+        self.cur.is_ascii_digit()
     }
 
     /// True if cur is a hex digit char
     pub fn is_hex_digit(&self) -> bool {
-        self.is_digit() || (b'a'..=b'f').contains(&self.cur) || (b'A'..=b'F').contains(&self.cur)
+        self.cur.is_ascii_hexdigit()
     }
 
     /// True if cur is an upper case char
     pub fn is_upper(&self) -> bool {
-        (b'A'..=b'Z').contains(&self.cur)
+        self.cur.is_ascii_uppercase()
     }
 
     /// True if cur is an lower case char
     pub fn is_lower(&self) -> bool {
-        (b'a'..=b'z').contains(&self.cur)
+        self.cur.is_ascii_lowercase()
     }
 
     /// True if cur is an alpha char

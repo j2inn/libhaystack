@@ -18,7 +18,7 @@ use crate::haystack::val::Value;
 /// // Get the symbol value from the Value
 /// assert_eq!(Symbol::try_from(&sym_value).unwrap(), Symbol::from("symbol"));
 /// ```
-#[derive(PartialEq, PartialOrd, Eq, Ord, Hash, Clone, Debug)]
+#[derive(PartialEq, PartialOrd, Eq, Ord, Hash, Clone, Debug, Default)]
 pub struct Symbol {
     pub value: String,
 }
