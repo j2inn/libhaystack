@@ -120,32 +120,6 @@ pub(crate) fn parse_datetime<R: Read>(scanner: &mut Scanner<R>) -> Result<DateTi
             )
             .map(DateTime::from)
             .or_else(|err| scanner.make_generic_err(&err))
-            Some(fixed_offset) => {
-                let fixed = fixed_offset
-                    .with_ymd_and_hms(
-                        date.year(),
-                        date.month(),
-                        date.day(),
-                        time.hour(),
-                        time.minute(),
-                        time.second(),
-                    )
-                    .single()
-                    .and_then(|dt| dt.with_nanosecond(time.nanosecond()));
-                if let Some(fixed) = fixed {
-                    match make_date_time_with_tz(&fixed, &tz) {
-                        Ok(datetime) => Ok(datetime.into()),
-                        Err(err) => scanner.make_generic_err(&err),
-                    }
-                } else {
-                    scanner.make_generic_err("Invalid date time.")
-                }
-            }
-            None => match make_date_time_with_tz(&utc.with_timezone(&Utc.fix()), &tz) {
-                Ok(datetime) => Ok(datetime.into()),
-                Err(err) => scanner.make_generic_err(&err),
-            },
-        }
     }
 }
 
