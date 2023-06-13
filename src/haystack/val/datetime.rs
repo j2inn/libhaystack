@@ -120,7 +120,7 @@ impl From<DateTime> for Value {
 }
 
 /// Converts from `DateTimeImpl<Utc>` to a `DateTime` `Value`
-#[cfg(feature = "timezone")]
+#[cfg(feature = "timezone-db")]
 impl From<DateTimeImpl<Utc>> for Value {
     fn from(from: DateTimeImpl<Utc>) -> Self {
         Value::DateTime(DateTime::from(from))
@@ -128,7 +128,7 @@ impl From<DateTimeImpl<Utc>> for Value {
 }
 
 /// Converts from `DateTimeImpl<Utc>` to a `DateTime` `Value`
-#[cfg(not(feature = "timezone"))]
+#[cfg(not(feature = "timezone-db"))]
 impl From<DateTimeImpl<Utc>> for Value {
     fn from(from: DateTimeImpl<Utc>) -> Self {
         Value::DateTime(DateTime { value: from.into() })
@@ -136,7 +136,7 @@ impl From<DateTimeImpl<Utc>> for Value {
 }
 
 /// Converts from `DateTimeImpl<Utc>` to a `DateTime`
-#[cfg(not(feature = "timezone"))]
+#[cfg(not(feature = "timezone-db"))]
 impl From<DateTimeImpl<Utc>> for DateTime {
     fn from(from: DateTimeImpl<Utc>) -> Self {
         DateTime { value: from.into() }
@@ -144,7 +144,7 @@ impl From<DateTimeImpl<Utc>> for DateTime {
 }
 
 /// Converts from `DateTimeImpl<FixedOffset>` to a `DateTime`
-#[cfg(not(feature = "timezone"))]
+#[cfg(not(feature = "timezone-db"))]
 impl From<DateTimeImpl<FixedOffset>> for DateTime {
     fn from(from: DateTimeImpl<FixedOffset>) -> Self {
         DateTime { value: from }
@@ -152,7 +152,7 @@ impl From<DateTimeImpl<FixedOffset>> for DateTime {
 }
 
 /// Converts from `DateTimeImpl<Utc>` to a `DateTime`
-#[cfg(feature = "timezone")]
+#[cfg(feature = "timezone-db")]
 impl From<DateTimeImpl<Utc>> for DateTime {
     fn from(from: DateTimeImpl<Utc>) -> Self {
         DateTime {
@@ -162,7 +162,7 @@ impl From<DateTimeImpl<Utc>> for DateTime {
 }
 
 /// Converts from `DateTimeImpl<Tz>` to a `DateTime`
-#[cfg(feature = "timezone")]
+#[cfg(feature = "timezone-db")]
 impl From<DateTimeImpl<chrono_tz::Tz>> for DateTime {
     fn from(value: DateTimeImpl<chrono_tz::Tz>) -> Self {
         DateTime { value }

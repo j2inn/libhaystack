@@ -18,7 +18,7 @@ pub(crate) fn parse_number<R: Read>(scanner: &mut Scanner<R>) -> Result<Number, 
 
     if !scanner.is_eof && scanner.is_any_of("eE") {
         let next = scanner.peek()?;
-        if next == b'+' || next == b'-' || (b'0'..=b'9').contains(&next) {
+        if next == b'+' || next == b'-' || next.is_ascii_digit() {
             exponent = Some(parse_exponent(scanner)?);
         }
     }

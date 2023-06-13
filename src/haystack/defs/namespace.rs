@@ -695,7 +695,6 @@ impl<'a> Namespace<'a> {
     pub fn protos(&'a self, parent: &Dict) -> Vec<Dict> {
         parent
             .keys()
-            .into_iter()
             .map(|name| self.protos_from_def(parent, name))
             .fold(Vec::new(), |mut vec, cur| {
                 vec.extend(cur);

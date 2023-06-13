@@ -277,7 +277,7 @@ pub(crate) fn parse_number_date_time<R: Read>(
         let mut read_count = 0;
         let mut cur = scanner.cur;
         for _ in 0..4 {
-            if !(b'0'..=b'9').contains(&cur) || scanner.is_eof {
+            if !cur.is_ascii_digit() || scanner.is_eof {
                 break;
             }
             read_count += 1;

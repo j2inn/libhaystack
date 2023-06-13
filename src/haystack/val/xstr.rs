@@ -18,7 +18,7 @@ use crate::haystack::val::Value;
 /// // Get the XStr value from the Value
 /// assert_eq!(XStr::try_from(&xstr_value).unwrap(), XStr::make("Type", r#"{"test":"100"}"#));
 /// ```
-#[derive(PartialEq, PartialOrd, Eq, Ord, Hash, Clone, Debug)]
+#[derive(PartialEq, PartialOrd, Eq, Ord, Hash, Clone, Debug, Default)]
 pub struct XStr {
     pub r#type: String,
     pub value: String,

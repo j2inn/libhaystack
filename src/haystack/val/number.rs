@@ -33,7 +33,7 @@ use std::{
 /// let num_unit_value = Value::from(Number::make_with_unit(100.0, "sec".into()));
 /// assert_eq!(Number::try_from(&num_unit_value).unwrap().unit, get_unit("sec"));
 ///```
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct Number {
     pub value: f64,
     pub unit: Option<&'static Unit>,

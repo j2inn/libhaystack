@@ -26,7 +26,7 @@ use std::os::raw::c_char;
 /// ```
 #[no_mangle]
 pub extern "C" fn haystack_value_init() -> Box<Value> {
-    Box::new(Value::default())
+    Box::<Value>::default()
 }
 
 /// Destructs and free a [Value](crate::val::Value)

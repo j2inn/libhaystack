@@ -18,7 +18,7 @@ use crate::haystack::val::Value;
 /// // Get the uri value from the Value
 /// assert_eq!(Uri::try_from(&uri_value).unwrap(), Uri::from("/an/uri"));
 /// ```
-#[derive(PartialEq, PartialOrd, Eq, Ord, Hash, Clone, Debug)]
+#[derive(PartialEq, PartialOrd, Eq, Ord, Hash, Clone, Debug, Default)]
 pub struct Uri {
     pub value: String,
 }

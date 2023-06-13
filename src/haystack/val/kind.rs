@@ -7,9 +7,10 @@ use std::fmt::Display;
 use super::Value;
 
 /// List all haystack kind types as an simple enum
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum HaystackKind {
     /// No value
+    #[default]
     Null,
     /// A remove tag
     Remove,
@@ -45,13 +46,6 @@ pub enum HaystackKind {
     Dict,
     /// Haystack Grid
     Grid,
-}
-
-/// Default Kind variant
-impl Default for HaystackKind {
-    fn default() -> Self {
-        HaystackKind::Null
-    }
 }
 
 impl TryFrom<u8> for HaystackKind {

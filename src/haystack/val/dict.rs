@@ -38,7 +38,7 @@ pub type DictType = BTreeMap<String, Value>;
 /// // Get a `Str` value from the dictionary
 /// assert_eq!(dict_value.get_str("name"), Some(&"Foo".into()));
 ///```
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Default)]
 pub struct Dict {
     value: DictType,
 }
@@ -120,15 +120,6 @@ impl Dict {
     pub fn new() -> Dict {
         Dict {
             value: DictType::new(),
-        }
-    }
-}
-
-/// Implements the `Default` trait for `Dict`
-impl Default for Dict {
-    fn default() -> Self {
-        Dict {
-            value: DictType::default(),
         }
     }
 }

@@ -25,7 +25,7 @@ use std::str::FromStr;
 /// // Get the Time value
 /// assert_eq!(Time::try_from(&time).unwrap().hour(), 16);
 ///```
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug, Default)]
 pub struct Time {
     value: NaiveTime,
 }

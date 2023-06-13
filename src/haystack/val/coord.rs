@@ -25,7 +25,7 @@ use std::{
 /// assert_eq!(Coord::try_from(&coord).unwrap().lat, 45.0);
 ///```
 ///
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct Coord {
     pub lat: f64,
     pub long: f64,
