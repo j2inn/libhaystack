@@ -193,14 +193,14 @@ impl ToZinc for Str {
             if c < ' ' || c == '"' || c == '\\' {
                 match c {
                     '"' => writer.write_all(br#"\""#)?,
-                    '\t' => writer.write_all(br#"\t"#)?,
-                    '\r' => writer.write_all(br#"\r"#)?,
-                    '\n' => writer.write_all(br#"\n"#)?,
-                    '\\' => writer.write_all(br#"\\"#)?,
+                    '\t' => writer.write_all(br"\t")?,
+                    '\r' => writer.write_all(br"\r")?,
+                    '\n' => writer.write_all(br"\n")?,
+                    '\\' => writer.write_all(br"\\")?,
                     _ => writer.write_fmt(format_args!("\\u{:04x}", c as u32))?,
                 }
             } else if c == '$' {
-                writer.write_all(br#"\$"#)?
+                writer.write_all(br"\$")?
             } else {
                 let chunk = c.encode_utf8(&mut buf);
                 writer.write_fmt(format_args!("{}", chunk))?
@@ -237,8 +237,8 @@ impl ToZinc for Uri {
                 continue;
             }
             match c {
-                '`' => writer.write_all(br#"\`"#)?,
-                '\\' => writer.write_all(br#"\\"#)?,
+                '`' => writer.write_all(br"\`")?,
+                '\\' => writer.write_all(br"\\")?,
                 '\x20'..='\x7e' => writer.write_all(&[c as u8])?,
                 _ => writer.write_fmt(format_args!("\\u{:04x}", c as u32))?,
             }
