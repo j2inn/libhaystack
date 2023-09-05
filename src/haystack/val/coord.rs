@@ -71,7 +71,13 @@ impl Eq for Coord {}
 
 impl PartialOrd for Coord {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
+        self.lat.partial_cmp(&other.lat).and_then(|ord| {
+            if ord == Ordering::Equal {
+                self.long.partial_cmp(&other.long)
+            } else {
+                Some(ord)
+            }
+        })
     }
 }
 
