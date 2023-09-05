@@ -220,6 +220,9 @@ fn test_number_cmp() {
 
     let a: Number = NAN.into();
     let b: Number = NAN.into();
-    assert!(a > b);
-    assert!(a >= b);
+    assert!(!(a > b));
+    assert!(!(a >= b));
+    assert!(!(a < b));
+    assert!(!(a <= b));
+    assert!(a != b);
 }

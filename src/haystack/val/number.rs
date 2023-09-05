@@ -135,7 +135,7 @@ impl Eq for Number {}
 impl PartialOrd for Number {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.unit == other.unit {
-            Some(self.cmp(other))
+            self.value.partial_cmp(&other.value)
         } else {
             None
         }
