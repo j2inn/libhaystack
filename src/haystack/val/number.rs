@@ -146,10 +146,10 @@ impl Ord for Number {
     fn cmp(&self, other: &Self) -> Ordering {
         if self.value < other.value {
             Ordering::Less
-        } else if self.value > other.value {
-            Ordering::Greater
-        } else {
+        } else if self.value == other.value {
             Ordering::Equal
+        } else {
+            Ordering::Greater
         }
     }
 }
