@@ -214,6 +214,7 @@ fn test_number_cmp() {
     assert!(!(a > b));
     assert!(!(a >= b));
     assert!(!(a == b));
+    assert!(a != b);
     assert!(!(a < b));
     assert!(!(a <= b));
 }

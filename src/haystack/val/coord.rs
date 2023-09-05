@@ -71,20 +71,23 @@ impl Eq for Coord {}
 
 impl PartialOrd for Coord {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(
-            self.lat
-                .to_bits()
-                .cmp(&other.lat.to_bits())
-                .cmp(&self.long.to_bits().cmp(&other.long.to_bits())),
-        )
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for Coord {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.lat
-            .to_bits()
-            .cmp(&other.lat.to_bits())
-            .cmp(&self.long.to_bits().cmp(&other.long.to_bits()))
+        // Order by latitude first, then longitude
+        if self.lat < other.lat {
+            Ordering::Less
+        } else if self.lat > other.lat {
+            Ordering::Greater
+        } else if self.long < other.long {
+            Ordering::Less
+        } else if self.long > other.long {
+            Ordering::Greater
+        } else {
+            Ordering::Equal
+        }
     }
 }
