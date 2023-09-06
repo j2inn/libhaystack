@@ -1,6 +1,6 @@
 [package]
 name = "libhaystack"
-version = "1.0.11"
+version = "1.0.12"
 description = "Rust implementation of the Haystack 4 data types, defs, filter, units, and encodings"
 authors = ["J2 Innovations", "Radu Racariu <radur@j2inn.com>"]
 edition = "2021"
@@ -8,7 +8,12 @@ license = "BSD-3-Clause"
 repository = "https://github.com/j2inn/libhaystack/"
 homepage = "https://github.com/j2inn/libhaystack/"
 readme = "README.md"
-categories = ["command-line-utilities", "data-structures", "encoding", "parser-implementations"]
+categories = [
+	"command-line-utilities",
+	"data-structures",
+	"encoding",
+	"parser-implementations",
+]
 keywords = ["iot", "bas", "haystack"]
 
 [lib]
@@ -20,9 +25,7 @@ name = "main"
 harness = false
 
 [workspace]
-members = [
-    "unit-gen"
-]
+members = ["unit-gen"]
 
 
 [features]
@@ -30,14 +33,14 @@ members = [
 default = ["encoders", "filter", "timezone", "units", "c-api"]
 
 # C API Features
-c-api = ["c-api-filter", "c-api-json","c-api-zinc"]
+c-api = ["c-api-filter", "c-api-json", "c-api-zinc"]
 c-api-filter = ["filter"]
 c-api-zinc = ["zinc"]
 c-api-json = ["json"]
 
 # Lib features
-value  = ["units", "timezone", "encoders"]
-filter = ["value", "defs",  "zinc-decoding"]
+value = ["units", "timezone", "encoders"]
+filter = ["value", "defs", "zinc-decoding"]
 defs = ["value"]
 units = ["units-db"]
 units-db = []
@@ -66,5 +69,5 @@ criterion = "0.3"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
 uuid = { version = "1.1", features = ["v4", "js"] }
-web-sys = { version = "0.3", features = [ "console"]}
+web-sys = { version = "0.3", features = ["console"] }
 console_error_panic_hook = "0.1.7"

@@ -126,7 +126,7 @@ impl Hash for Number {
 
 impl PartialEq for Number {
     fn eq(&self, other: &Self) -> bool {
-        self.value.eq(&other.value) && self.unit.eq(&other.unit)
+        self.value == other.value && self.unit == other.unit
     }
 }
 
@@ -134,13 +134,23 @@ impl Eq for Number {}
 
 impl PartialOrd for Number {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.value.to_bits().cmp(&other.value.to_bits()))
+        if self.unit == other.unit {
+            self.value.partial_cmp(&other.value)
+        } else {
+            None
+        }
     }
 }
 
 impl Ord for Number {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.value.to_bits().cmp(&other.value.to_bits())
+        if self.value < other.value {
+            Ordering::Less
+        } else if self.value == other.value {
+            Ordering::Equal
+        } else {
+            Ordering::Greater
+        }
     }
 }
 

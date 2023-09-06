@@ -2,6 +2,8 @@
 
 //! Test Number
 
+use std::f64::NAN;
+
 use libhaystack::units::get_unit_or_default;
 #[cfg(test)]
 use libhaystack::val::*;
@@ -159,4 +161,68 @@ fn test_number_division() {
     let b: Number = Number::make_with_unit(20.0, get_unit_or_default("ft"));
 
     assert!((a * b).is_err());
+}
+
+#[test]
+fn test_number_eq() {
+    let a: Number = 10.into();
+    let b: Number = 10.into();
+    assert_eq!(a, b);
+
+    let a: Number = NAN.into();
+    let b: Number = NAN.into();
+    assert_ne!(a, b);
+
+    let a: Number = Number::make_with_unit(20.0, get_unit_or_default("m"));
+    let b: Number = Number::make_with_unit(20.0, get_unit_or_default("m"));
+    assert_eq!(a, b);
+
+    let a: Number = Number::make_with_unit(20.0, get_unit_or_default("m"));
+    let b: Number = Number::make(20.0);
+    assert_ne!(a, b);
+}
+
+#[test]
+fn test_number_cmp() {
+    let a: Number = 20.into();
+    let b: Number = (-10).into();
+    assert!(a > b);
+
+    let a: Number = 10.into();
+    let b: Number = 10.into();
+    assert!(a >= b);
+
+    let a: Number = Number::make_with_unit(20.0, get_unit_or_default("m"));
+    let b: Number = Number::make_with_unit(-20.0, get_unit_or_default("m"));
+    assert!(a > b);
+
+    let a: Number = Number::make_with_unit(20.0, get_unit_or_default("m"));
+    let b: Number = Number::make_with_unit(20.0, get_unit_or_default("m"));
+    assert!(a >= b);
+
+    let a: Number = Number::make_with_unit(-20.0, get_unit_or_default("m"));
+    let b: Number = Number::make_with_unit(-20.0, get_unit_or_default("m"));
+    assert!(a <= b);
+
+    let a: Number = Number::make_with_unit(-20.0, get_unit_or_default("m"));
+    let b: Number = Number::make_with_unit(20.0, get_unit_or_default("m"));
+    assert!(a < b);
+
+    let a: Number = Number::make_with_unit(20.0, get_unit_or_default("m"));
+    let b: Number = Number::make(20.0);
+    // Because units are different they can't be compared
+    assert!(!(a > b));
+    assert!(!(a >= b));
+    assert!(!(a == b));
+    assert!(a != b);
+    assert!(!(a < b));
+    assert!(!(a <= b));
+
+    let a: Number = NAN.into();
+    let b: Number = NAN.into();
+    assert!(!(a > b));
+    assert!(!(a >= b));
+    assert!(!(a < b));
+    assert!(!(a <= b));
+    assert!(a != b);
 }

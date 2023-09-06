@@ -27,3 +27,22 @@ fn test_coord_make_invalid_value() {
 
     assert_eq!(Number::try_from(&value), Err("Value is not a `Number`"))
 }
+
+#[test]
+fn test_coord_cmp() {
+    let c1: Value = Value::from(Coord::make(34.0522, 118.2437));
+    let c2: Value = Value::from(Coord::make(34.0522, 118.2437));
+
+    assert_eq!(c1, c2);
+
+    assert!(c1 >= c2);
+
+    let c2: Value = Value::from(Coord::make(31.0522, 118.2437));
+    assert!(c1 >= c2);
+
+    let c2: Value = Value::from(Coord::make(31.0522, 123.2437));
+    assert!(c1 >= c2);
+
+    let c2: Value = Value::from(Coord::make(44.0522, 123.2437));
+    assert!(c2 > c1);
+}
