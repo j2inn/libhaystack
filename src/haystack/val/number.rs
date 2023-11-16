@@ -132,7 +132,7 @@ impl PartialEq for Number {
 
 impl Eq for Number {}
 
-#[allow(clippy::incorrect_partial_ord_impl_on_ord_type)]
+#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for Number {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.unit == other.unit {
