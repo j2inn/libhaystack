@@ -71,3 +71,9 @@ impl Display for Filter {
         self.or.fmt(f)
     }
 }
+
+impl Visitable for Filter {
+    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+        self.or.accept_visitor(visitor);
+    }
+}

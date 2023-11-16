@@ -10,11 +10,38 @@ use crate::val::Symbol;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter, Result};
 
+/// A visitable that accepts a visitor.
+pub trait Visitable {
+    fn accept_visitor(&self, visitor: &mut dyn Visitor);
+}
+
+/// A visitor trait used for working with a generated filter AST.
+pub trait Visitor {
+    fn visit_cond_or(&mut self, node: &Or);
+
+    fn visit_cond_and(&mut self, node: &And);
+
+    fn visit_parens(&mut self, node: &Parens);
+
+    fn visit_has(&mut self, node: &Has);
+
+    fn visit_missing(&mut self, node: &Missing);
+
+    fn visit_is_a(&mut self, node: &IsA);
+
+    fn visit_wildcard_equals(&mut self, node: &WildcardEq);
+
+    fn visit_relation(&mut self, node: &Relation);
+
+    fn visit_cmp(&mut self, node: &Cmp);
+}
+
 /// A Haystack Filter Or expression
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
 pub struct Or {
     pub ands: Vec<And>,
 }
+
 impl Display for Or {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         self.ands
@@ -34,6 +61,12 @@ impl Display for Or {
 impl Eval for Or {
     fn eval<R: PathResolver>(&self, context: &EvalContext<R>) -> bool {
         self.ands.iter().any(|and| and.eval(context))
+    }
+}
+
+impl Visitable for Or {
+    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+        visitor.visit_cond_or(self);
     }
 }
 
@@ -62,6 +95,12 @@ impl Display for And {
                     Ok(())
                 }
             })
+    }
+}
+
+impl Visitable for And {
+    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+        visitor.visit_cond_and(self);
     }
 }
 
@@ -101,6 +140,20 @@ impl Display for Term {
             Term::WildcardEq(wildcard_eq) => wildcard_eq.fmt(f),
             Term::Relation(rel) => rel.fmt(f),
             Term::Cmp(cmp) => cmp.fmt(f),
+        }
+    }
+}
+
+impl Visitable for Term {
+    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+        match self {
+            Term::Parens(parens) => parens.accept_visitor(visitor),
+            Term::Has(has) => has.accept_visitor(visitor),
+            Term::Missing(missing) => missing.accept_visitor(visitor),
+            Term::IsA(isa) => isa.accept_visitor(visitor),
+            Term::WildcardEq(wildcard_eq) => wildcard_eq.accept_visitor(visitor),
+            Term::Relation(rel) => rel.accept_visitor(visitor),
+            Term::Cmp(cmp) => cmp.accept_visitor(visitor),
         }
     }
 }
@@ -170,6 +223,12 @@ impl Display for Cmp {
     }
 }
 
+impl Visitable for Cmp {
+    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+        visitor.visit_cmp(self);
+    }
+}
+
 /// Missing term
 #[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct Missing {
@@ -185,6 +244,12 @@ impl Display for Missing {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         f.write_str("not ")?;
         self.path.fmt(f)
+    }
+}
+
+impl Visitable for Missing {
+    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+        visitor.visit_missing(self);
     }
 }
 
@@ -207,6 +272,12 @@ impl Display for Parens {
     }
 }
 
+impl Visitable for Parens {
+    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+        visitor.visit_parens(self);
+    }
+}
+
 /// Has term
 #[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct Has {
@@ -221,6 +292,12 @@ impl Eval for Has {
 impl Display for Has {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         self.path.fmt(f)
+    }
+}
+
+impl Visitable for Has {
+    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+        visitor.visit_has(self);
     }
 }
 
@@ -239,6 +316,12 @@ impl Display for IsA {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         f.write_str("^")?;
         f.write_str(&self.symbol.value)
+    }
+}
+
+impl Visitable for IsA {
+    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+        visitor.visit_is_a(self);
     }
 }
 
@@ -290,6 +373,12 @@ impl Display for WildcardEq {
     }
 }
 
+impl Visitable for WildcardEq {
+    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+        visitor.visit_wildcard_equals(self);
+    }
+}
+
 /// Relation
 #[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct Relation {
@@ -324,5 +413,11 @@ impl Display for Relation {
         } else {
             Ok(())
         }
+    }
+}
+
+impl Visitable for Relation {
+    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+        visitor.visit_relation(self);
     }
 }
