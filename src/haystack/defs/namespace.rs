@@ -247,7 +247,7 @@ impl<'a> Namespace<'a> {
                         Value::Symbol(sym) => self
                             .subtypes
                             .entry(sym.clone())
-                            .or_insert_with(Vec::new)
+                            .or_default()
                             .push(def.clone()),
                         _ => continue,
                     }
@@ -542,16 +542,19 @@ impl<'a> Namespace<'a> {
                 .map(|conjunct| conjunct.def_name())
                 .map(|def_name| def_name.split('-').collect::<Vec<&str>>())
                 .filter(|parts| !parts.is_empty())
-                .fold(BTreeMap::default(), |mut map, parts| {
-                    let marker = parts[0];
-                    map.entry(marker.into()).or_insert_with(Vec::new).push(
-                        Vec::from(&parts[1..])
-                            .into_iter()
-                            .map(|v| v.into())
-                            .collect(),
-                    );
-                    map
-                }),
+                .fold(
+                    BTreeMap::default(),
+                    |mut map: BTreeMap<String, Vec<Vec<String>>>, parts| {
+                        let marker = parts[0];
+                        map.entry(marker.into()).or_default().push(
+                            Vec::from(&parts[1..])
+                                .into_iter()
+                                .map(|v| v.into())
+                                .collect(),
+                        );
+                        map
+                    },
+                ),
         )
     }
 

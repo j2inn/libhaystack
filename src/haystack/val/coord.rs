@@ -10,7 +10,7 @@ use std::{
 };
 
 /// Coordinate latitude and longitude
-////
+///
 /// # Example
 /// Create a coord value
 /// ```
@@ -69,6 +69,7 @@ impl PartialEq for Coord {
 
 impl Eq for Coord {}
 
+#[allow(clippy::incorrect_partial_ord_impl_on_ord_type)]
 impl PartialOrd for Coord {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.lat.partial_cmp(&other.lat).and_then(|ord| {
