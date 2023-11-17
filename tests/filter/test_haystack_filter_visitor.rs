@@ -2,15 +2,12 @@
 
 //! Tests the Haystack Filter
 
-#[cfg(test)]
 use libhaystack::filter::nodes::{
     And, Cmp, Has, IsA, Missing, Or, Parens, Relation, Visitable, Visitor, WildcardEq,
 };
 
-#[cfg(test)]
 use libhaystack::filter::Filter;
 
-#[cfg(test)]
 #[derive(PartialEq, Debug)]
 struct CountVisitor {
     or_count: u32,
@@ -24,7 +21,6 @@ struct CountVisitor {
     cmp_count: u32,
 }
 
-#[cfg(test)]
 impl CountVisitor {
     fn new() -> Self {
         CountVisitor {
@@ -41,7 +37,6 @@ impl CountVisitor {
     }
 }
 
-#[cfg(test)]
 impl Visitor for CountVisitor {
     fn visit_cond_or(&mut self, node: &Or) {
         self.or_count += 1;

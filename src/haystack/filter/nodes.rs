@@ -12,7 +12,7 @@ use std::fmt::{Display, Formatter, Result};
 
 /// A visitable that accepts a visitor.
 pub trait Visitable {
-    fn accept_visitor(&self, visitor: &mut dyn Visitor);
+    fn accept_visitor(&self, visitor: &mut impl Visitor);
 }
 
 /// A visitor trait used for working with a generated filter AST.
@@ -65,7 +65,7 @@ impl Eval for Or {
 }
 
 impl Visitable for Or {
-    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+    fn accept_visitor(&self, visitor: &mut impl Visitor) {
         visitor.visit_cond_or(self);
     }
 }
@@ -99,7 +99,7 @@ impl Display for And {
 }
 
 impl Visitable for And {
-    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+    fn accept_visitor(&self, visitor: &mut impl Visitor) {
         visitor.visit_cond_and(self);
     }
 }
@@ -145,7 +145,7 @@ impl Display for Term {
 }
 
 impl Visitable for Term {
-    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+    fn accept_visitor(&self, visitor: &mut impl Visitor) {
         match self {
             Term::Parens(parens) => parens.accept_visitor(visitor),
             Term::Has(has) => has.accept_visitor(visitor),
@@ -224,7 +224,7 @@ impl Display for Cmp {
 }
 
 impl Visitable for Cmp {
-    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+    fn accept_visitor(&self, visitor: &mut impl Visitor) {
         visitor.visit_cmp(self);
     }
 }
@@ -248,7 +248,7 @@ impl Display for Missing {
 }
 
 impl Visitable for Missing {
-    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+    fn accept_visitor(&self, visitor: &mut impl Visitor) {
         visitor.visit_missing(self);
     }
 }
@@ -273,7 +273,7 @@ impl Display for Parens {
 }
 
 impl Visitable for Parens {
-    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+    fn accept_visitor(&self, visitor: &mut impl Visitor) {
         visitor.visit_parens(self);
     }
 }
@@ -296,7 +296,7 @@ impl Display for Has {
 }
 
 impl Visitable for Has {
-    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+    fn accept_visitor(&self, visitor: &mut impl Visitor) {
         visitor.visit_has(self);
     }
 }
@@ -320,7 +320,7 @@ impl Display for IsA {
 }
 
 impl Visitable for IsA {
-    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+    fn accept_visitor(&self, visitor: &mut impl Visitor) {
         visitor.visit_is_a(self);
     }
 }
@@ -374,7 +374,7 @@ impl Display for WildcardEq {
 }
 
 impl Visitable for WildcardEq {
-    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+    fn accept_visitor(&self, visitor: &mut impl Visitor) {
         visitor.visit_wildcard_equals(self);
     }
 }
@@ -417,7 +417,7 @@ impl Display for Relation {
 }
 
 impl Visitable for Relation {
-    fn accept_visitor(&self, visitor: &mut dyn Visitor) {
+    fn accept_visitor(&self, visitor: &mut impl Visitor) {
         visitor.visit_relation(self);
     }
 }
