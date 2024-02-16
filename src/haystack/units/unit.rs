@@ -20,7 +20,7 @@ pub struct Unit {
 impl Unit {
     ///  The unit name.
     pub fn name(&self) -> &str {
-        self.ids.get(0).map_or("", |v| v.as_str())
+        self.ids.first().map_or("", |v| v.as_str())
     }
 
     /// The unit symbol.
