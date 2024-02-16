@@ -43,14 +43,14 @@ fn parse_float<'a>() -> Parser<'a, u8, f64> {
     number
         .collect()
         .convert(std::str::from_utf8)
-        .convert(|s| f64::from_str(&s))
+        .convert(f64::from_str)
 }
 
 fn parse_integer<'a>() -> Parser<'a, u8, i64> {
     (sym(b'-').opt() + is_a(digit).repeat(1..))
         .collect()
         .convert(std::str::from_utf8)
-        .convert(|s| i64::from_str(&s))
+        .convert(i64::from_str)
 }
 
 fn parse_offset<'a>() -> Parser<'a, u8, f64> {
@@ -95,11 +95,11 @@ pub(super) fn parse_unit<'a>() -> Parser<'a, u8, Unit> {
     let offset = sym(b';') * parse_space() * parse_offset();
     (parse_names() - parse_space() + (dims + (scale + (offset).opt()).opt()).opt()).map(
         |(names, dims)| Unit {
-            ids: names.into_iter().map(|v| String::from(v)).collect(),
+            ids: names.into_iter().map(String::from).collect(),
             dimensions: dims
                 .as_ref()
                 .map(|(dims, ..)| {
-                    dims.into_iter()
+                    dims.iter()
                         .fold(UnitDimensions::default(), |mut cur, (dim, scale)| {
                             match *dim {
                                 "kg" => cur.kg = *scale,
@@ -114,14 +114,13 @@ pub(super) fn parse_unit<'a>() -> Parser<'a, u8, Unit> {
                             cur
                         })
                 })
-                .map(|u| {
+                .and_then(|u| {
                     if u == UnitDimensions::default() {
                         None
                     } else {
                         Some(u)
                     }
-                })
-                .flatten(),
+                }),
             quantity: QUANTITY.with(|tlv| tlv.borrow().clone()),
             scale: dims
                 .as_ref()
@@ -144,9 +143,7 @@ pub(super) fn parse_units<'a>() -> Parser<'a, u8, Vec<Option<Unit>>> {
     parse_multi_space()
         * parse_comment().opt()
         * list(
-            map_quantity().map(|_| None)
-                | parse_comment().map(|_| None)
-                | parse_unit().map(|u| Some(u)),
+            map_quantity().map(|_| None) | parse_comment().map(|_| None) | parse_unit().map(Some),
             sym(b'\n').repeat(1..),
         )
         - end()
