@@ -354,6 +354,7 @@ dependencies = [
  "criterion",
  "dashmap",
  "lazy_static",
+ "regex",
  "serde",
  "serde_json",
  "uuid",
