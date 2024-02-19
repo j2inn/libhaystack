@@ -5,6 +5,7 @@
 use crate::{dict_get, dict_has};
 
 use crate::haystack::val::*;
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::Hash;
@@ -113,6 +114,9 @@ pub trait HaystackDict {
 
     /// Get optional Grid for the key
     fn get_grid<'a>(&'a self, key: &str) -> Option<&'a Grid>;
+
+    /// Get a formatted display string for a dict.
+    fn dis(&self) -> Cow<'_, str>;
 }
 
 impl Dict {
@@ -262,6 +266,10 @@ impl HaystackDict for Dict {
     fn get_grid<'a>(&'a self, key: &str) -> Option<&'a Grid> {
         dict_get! {self, key, Grid}
     }
+
+    fn dis(&self) -> Cow<'_, str> {
+        dict_to_dis(self, &|_| None, None)
+    }
 }
 
 /// Converts from `DictType` to a `Dict`
@@ -362,3 +370,145 @@ macro_rules! dict_has(
         }
      };
 );
+
+fn decode_str_from_value(val: &'_ Value) -> Cow<'_, str> {
+    match val {
+        Value::Str(val) => Cow::Borrowed(&val.value),
+        _ => Cow::Owned(val.to_string()),
+    }
+}
+
+/// Convert a dict to its display string.
+pub fn dict_to_dis<'a, GetLocalizedFunc>(
+    dict: &'a Dict,
+    get_localized: &'a GetLocalizedFunc,
+    def: Option<Cow<'a, str>>,
+) -> Cow<'a, str>
+where
+    GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,
+{
+    if let Some(val) = dict.get("dis") {
+        return decode_str_from_value(val);
+    }
+
+    if let Some(val) = dict.get("disMacro") {
+        return match val {
+            Value::Str(val) => {
+                Cow::Owned(dis_macro(&val.value, |val| dict.get(val), get_localized))
+            }
+            _ => decode_str_from_value(val),
+        };
+    }
+
+    if let Some(val) = dict.get("disKey") {
+        if let Value::Str(val) = val {
+            if let Some(val) = get_localized(&val.value) {
+                return val;
+            }
+        }
+        return decode_str_from_value(val);
+    }
+
+    if let Some(val) = dict.get("name") {
+        return decode_str_from_value(val);
+    }
+
+    if let Some(val) = dict.get("def") {
+        return decode_str_from_value(val);
+    }
+
+    if let Some(val) = dict.get("tag") {
+        return decode_str_from_value(val);
+    }
+
+    if let Some(val) = dict.get("id") {
+        return match val {
+            Value::Ref(val) => Cow::Borrowed(val.dis.as_ref().unwrap_or(&val.value)),
+            _ => decode_str_from_value(val),
+        };
+    }
+
+    def.unwrap_or(Cow::Borrowed(""))
+}
+
+#[cfg(test)]
+mod test {
+    use std::borrow::Cow;
+
+    use crate::val::{dict_to_dis, Dict, HaystackDict, Value};
+
+    fn get_localized<'a>(key: &str) -> Option<Cow<'a, str>> {
+        if key == "key" {
+            Some(Cow::Borrowed("translated"))
+        } else {
+            None
+        }
+    }
+
+    #[test]
+    fn dict_to_dis_returns_dis() {
+        let dict = dict!["dis" => Value::make_str("display")];
+        assert_eq!(dict_to_dis(&dict, &|_| None, None), "display");
+    }
+
+    #[test]
+    fn dict_to_dis_returns_dis_not_str() {
+        let dict = dict!["dis" => Value::make_ref("display")];
+        assert_eq!(dict_to_dis(&dict, &|_| None, None), "@display");
+    }
+
+    #[test]
+    fn dict_to_dis_returns_dis_macro() {
+        let dict = dict!["foo" => Value::make_str("bar"), "disMacro" => Value::make_str("hello $foo world!")];
+        assert_eq!(dict_to_dis(&dict, &|_| None, None), "hello bar world!");
+    }
+
+    #[test]
+    fn dict_to_dis_returns_dis_key_translated() {
+        let dict = dict!["foo" => Value::make_str("bar"), "disKey" => Value::make_str("key")];
+        assert_eq!(dict_to_dis(&dict, &get_localized, None), "translated");
+    }
+
+    #[test]
+    fn dict_to_dis_returns_dis_key_not_translated() {
+        let dict =
+            dict!["foo" => Value::make_str("bar"), "disKey" => Value::make_str("notTranslated")];
+        assert_eq!(dict_to_dis(&dict, &get_localized, None), "notTranslated");
+    }
+
+    #[test]
+    fn dict_to_dis_returns_name() {
+        let dict = dict!["name" => Value::make_str("display")];
+        assert_eq!(dict_to_dis(&dict, &|_| None, None), "display");
+    }
+
+    #[test]
+    fn dict_to_dis_returns_def() {
+        let dict = dict!["def" => Value::make_str("display")];
+        assert_eq!(dict_to_dis(&dict, &|_| None, None), "display");
+    }
+
+    #[test]
+    fn dict_to_dis_returns_tag() {
+        let dict = dict!["tag" => Value::make_str("display")];
+        assert_eq!(dict_to_dis(&dict, &|_| None, None), "display");
+    }
+
+    #[test]
+    fn dict_to_dis_returns_id() {
+        let dict = dict!["id" => Value::make_ref("id")];
+        assert_eq!(dict_to_dis(&dict, &|_| None, None), "id");
+    }
+
+    #[test]
+    fn dict_to_dis_returns_id_dis() {
+        let dict = dict!["id" => Value::make_ref_with_dis("id", "dis")];
+        assert_eq!(dict_to_dis(&dict, &|_| None, None), "dis");
+    }
+
+    #[test]
+    fn dict_returns_dis() {
+        let dict = dict!["dis" => Value::make_str("display")];
+        assert_eq!(dict.dis(), "display");
+    }
+}

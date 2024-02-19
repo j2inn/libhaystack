@@ -73,7 +73,7 @@ where
 ///
 /// If a tag resolves to a Ref, then we use the Ref.dis for the string.
 pub fn dis_macro<'a, GetValueFunc, GetLocalizedFunc>(
-    pattern: &str,
+    pattern: &'a str,
     get_value: GetValueFunc,
     get_localized: GetLocalizedFunc,
 ) -> String
@@ -82,40 +82,49 @@ where
     GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,
 {
     // Replace $tag
-    static VARIABLE_REG_EX: OnceLock<Regex> = OnceLock::new();
-    let variable_regex =
-        VARIABLE_REG_EX.get_or_init(|| Regex::new(r"\$([a-z][a-zA-Z0-9_]+)").unwrap());
+    let result = {
+        static VARIABLE_REG_EX: OnceLock<Regex> = OnceLock::new();
 
-    let result = variable_regex.replace_all(
-        pattern,
-        ValueReplacer {
-            get_value: &get_value,
-        },
-    );
+        let variable_regex =
+            VARIABLE_REG_EX.get_or_init(|| Regex::new(r"\$([a-z][a-zA-Z0-9_]+)").unwrap());
+
+        variable_regex.replace_all(
+            pattern,
+            ValueReplacer {
+                get_value: &get_value,
+            },
+        )
+    };
 
     // Replace ${tag}
-    static SCOPE_REG_EX: OnceLock<Regex> = OnceLock::new();
-    let scope_regex =
-        SCOPE_REG_EX.get_or_init(|| Regex::new(r"\$\{([a-z][a-zA-Z0-9_]+)\}").unwrap());
+    let result = {
+        static SCOPE_REG_EX: OnceLock<Regex> = OnceLock::new();
 
-    let result = scope_regex.replace_all(
-        &result,
-        ValueReplacer {
-            get_value: &get_value,
-        },
-    );
+        let scope_regex =
+            SCOPE_REG_EX.get_or_init(|| Regex::new(r"\$\{([a-z][a-zA-Z0-9_]+)\}").unwrap());
+
+        scope_regex.replace_all(
+            &result,
+            ValueReplacer {
+                get_value: &get_value,
+            },
+        )
+    };
 
     // Replace $<pod::key>
-    static LOCALIZED_REG_EX: OnceLock<Regex> = OnceLock::new();
-    let localized_regex = LOCALIZED_REG_EX.get_or_init(|| Regex::new(r"\$<([^>]+)>").unwrap());
+    let result = {
+        static LOCALIZED_REG_EX: OnceLock<Regex> = OnceLock::new();
+        let localized_regex = LOCALIZED_REG_EX.get_or_init(|| Regex::new(r"\$<([^>]+)>").unwrap());
 
-    let result = localized_regex.replace_all(
-        &result,
-        LocalizedReplacer {
-            get_localized: &get_localized,
-        },
-    );
+        localized_regex.replace_all(
+            &result,
+            LocalizedReplacer {
+                get_localized: &get_localized,
+            },
+        )
+    };
 
+    // TODO: return Cow?
     result.to_string()
 }
 
