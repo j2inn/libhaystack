@@ -371,14 +371,7 @@ macro_rules! dict_has(
      };
 );
 
-fn decode_str_from_value(val: &'_ Value) -> Cow<'_, str> {
-    match val {
-        Value::Str(val) => Cow::Borrowed(&val.value),
-        _ => Cow::Owned(val.to_string()),
-    }
-}
-
-/// Convert a dict to its display string.
+/// Convert a dict to its formatted display string.
 pub fn dict_to_dis<'a, GetLocalizedFunc>(
     dict: &'a Dict,
     get_localized: &'a GetLocalizedFunc,
@@ -393,9 +386,7 @@ where
 
     if let Some(val) = dict.get("disMacro") {
         return match val {
-            Value::Str(val) => {
-                Cow::Owned(dis_macro(&val.value, |val| dict.get(val), get_localized))
-            }
+            Value::Str(val) => dis_macro(&val.value, |val| dict.get(val), get_localized),
             _ => decode_str_from_value(val),
         };
     }
@@ -429,6 +420,13 @@ where
     }
 
     def.unwrap_or(Cow::Borrowed(""))
+}
+
+fn decode_str_from_value(val: &'_ Value) -> Cow<'_, str> {
+    match val {
+        Value::Str(val) => Cow::Borrowed(&val.value),
+        _ => Cow::Owned(val.to_string()),
+    }
 }
 
 #[cfg(test)]
@@ -510,5 +508,14 @@ mod test {
     fn dict_returns_dis() {
         let dict = dict!["dis" => Value::make_str("display")];
         assert_eq!(dict.dis(), "display");
+    }
+
+    #[test]
+    fn dict_returns_default_value_if_none_found() {
+        let dict = dict!["something" => Value::make_str("display")];
+        assert_eq!(
+            dict_to_dis(&dict, &|_| None, Some("default".into())),
+            "default"
+        );
     }
 }

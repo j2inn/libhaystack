@@ -3,22 +3,28 @@
 use std::{borrow::Cow, sync::OnceLock};
 
 use super::Value;
-use regex::{Captures, Regex, Replacer};
+use regex::{Captures, Match, Regex, Replacer};
 
-/// Replaces a value in a string.
-struct ValueReplacer<'a, 'b, GetValueFunc>
+/// A regular expression replacer implementation for replacing formatted
+/// values in a display macro string.
+struct DisReplacer<'a, 'b, GetValueFunc, GetLocalizedFunc>
 where
     GetValueFunc: Fn(&str) -> Option<&'a Value>,
+    GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,
 {
     get_value: &'b GetValueFunc,
+
+    get_localized: &'b GetLocalizedFunc,
 }
 
-impl<'a, 'b, GetValueFunc> Replacer for ValueReplacer<'a, 'b, GetValueFunc>
+impl<'a, 'b, GetValueFunc, GetLocalizedFunc> Replacer
+    for DisReplacer<'a, 'b, GetValueFunc, GetLocalizedFunc>
 where
     GetValueFunc: Fn(&str) -> Option<&'a Value>,
+    GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,
 {
     fn replace_append(&mut self, caps: &Captures<'_>, dst: &mut String) {
-        if let Some(cap_match) = caps.get(1) {
+        let mut handle_value_capture = |cap_match: Match<'_>| {
             if let Some(value) = (self.get_value)(cap_match.as_str()) {
                 if let Value::Ref(val) = value {
                     dst.push_str(val.dis.as_ref().unwrap_or(&val.value));
@@ -30,26 +36,16 @@ where
             } else {
                 dst.push_str(caps.get(0).unwrap().as_str());
             }
-        } else {
-            dst.push_str(caps.get(0).unwrap().as_str());
-        }
-    }
-}
+        };
 
-/// Replaces a localized value in a string.
-struct LocalizedReplacer<'a, 'b, GetLocalizedFunc>
-where
-    GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,
-{
-    get_localized: &'b GetLocalizedFunc,
-}
-
-impl<'a, 'b, GetLocalizedFunc> Replacer for LocalizedReplacer<'a, 'b, GetLocalizedFunc>
-where
-    GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,
-{
-    fn replace_append(&mut self, caps: &Captures<'_>, dst: &mut String) {
-        if let Some(cap_match) = caps.get(1) {
+        // Replace $tag
+        if let Some(cap_match) = caps.get(2) {
+            handle_value_capture(cap_match);
+        // Replace ${tag}
+        } else if let Some(cap_match) = caps.get(4) {
+            handle_value_capture(cap_match);
+        // Replace $<pod::key>
+        } else if let Some(cap_match) = caps.get(6) {
             if let Some(value) = (self.get_localized)(cap_match.as_str()) {
                 dst.push_str(&value);
             } else {
@@ -63,70 +59,39 @@ where
 
 /// Process a macro pattern with the given scope of name/value pairs. Also includes localization processing.
 ///
-/// * The pattern is a unicode string with embedded expressions:
-/// * '$tag': resolve tag name from scope, variable name ends with first non-tag character.
-/// * '${tag}': resolve tag name from scope.
-/// * '$<pod::key> localization key.
+/// The pattern is a unicode string with embedded expressions:
+/// * `$tag`: resolve tag name from scope, variable name ends with first non-tag character.
+/// * `${tag}`: resolve tag name from scope.
+/// * `$<pod::key>` localization key.
 ///
-/// Any variables which cannot be resolved are resolved in the scope are returned as-is (i.e. $name)
+/// Any variables which cannot be resolved are resolved in the scope are returned as-is (i.e. `$name`)
 /// in the result string.
 ///
-/// If a tag resolves to a Ref, then we use the Ref.dis for the string.
+/// If a tag resolves to a `Ref`, then we use the `Ref.dis` for the string.
 pub fn dis_macro<'a, GetValueFunc, GetLocalizedFunc>(
     pattern: &'a str,
     get_value: GetValueFunc,
     get_localized: GetLocalizedFunc,
-) -> String
+) -> Cow<'a, str>
 where
     GetValueFunc: Fn(&str) -> Option<&'a Value>,
     GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,
 {
-    // Replace $tag
-    let result = {
-        static VARIABLE_REG_EX: OnceLock<Regex> = OnceLock::new();
+    // Cache the regular expression in memory so it doesn't need to compile on each invocation.
+    static REG_EX: OnceLock<Regex> = OnceLock::new();
 
-        let variable_regex =
-            VARIABLE_REG_EX.get_or_init(|| Regex::new(r"\$([a-z][a-zA-Z0-9_]+)").unwrap());
+    let regex = REG_EX.get_or_init(|| {
+        // Replace $tags, ${tag} or $<pod::key>
+        Regex::new(r"(\$([a-z][a-zA-Z0-9_]+))|(\$\{([a-z][a-zA-Z0-9_]+)\})|(\$<([^>]+)>)").unwrap()
+    });
 
-        variable_regex.replace_all(
-            pattern,
-            ValueReplacer {
-                get_value: &get_value,
-            },
-        )
-    };
-
-    // Replace ${tag}
-    let result = {
-        static SCOPE_REG_EX: OnceLock<Regex> = OnceLock::new();
-
-        let scope_regex =
-            SCOPE_REG_EX.get_or_init(|| Regex::new(r"\$\{([a-z][a-zA-Z0-9_]+)\}").unwrap());
-
-        scope_regex.replace_all(
-            &result,
-            ValueReplacer {
-                get_value: &get_value,
-            },
-        )
-    };
-
-    // Replace $<pod::key>
-    let result = {
-        static LOCALIZED_REG_EX: OnceLock<Regex> = OnceLock::new();
-
-        let localized_regex = LOCALIZED_REG_EX.get_or_init(|| Regex::new(r"\$<([^>]+)>").unwrap());
-
-        localized_regex.replace_all(
-            &result,
-            LocalizedReplacer {
-                get_localized: &get_localized,
-            },
-        )
-    };
-
-    // TODO: return Cow?
-    result.to_string()
+    regex.replace_all(
+        pattern,
+        DisReplacer {
+            get_value: &get_value,
+            get_localized: &get_localized,
+        },
+    )
 }
 
 #[cfg(test)]
