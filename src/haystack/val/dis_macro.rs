@@ -1,6 +1,6 @@
 // Copyright (C) 2020 - 2024, J2 Innovations
 
-use std::sync::OnceLock;
+use std::{borrow::Cow, sync::OnceLock};
 
 use super::Value;
 use regex::{Captures, Regex};
@@ -23,21 +23,21 @@ pub fn dis_macro<'a, GetValueFunc, GetLocalizedFunc>(
 ) -> String
 where
     GetValueFunc: Fn(&str) -> Option<&'a Value>,
-    GetLocalizedFunc: Fn(&str) -> Option<String>,
+    GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,
 {
-    let value_replacer = |caps: &Captures| -> String {
+    let value_replacer = |caps: &Captures| -> Cow<str> {
         if let Some(cap_match) = caps.get(1) {
             if let Some(value) = get_value(cap_match.as_str()) {
                 return match value {
-                    Value::Ref(val) => val.dis.clone().unwrap_or_else(|| val.value.to_string()),
-                    Value::Str(val) => val.value.to_string(),
-                    _ => value.to_string(),
+                    Value::Ref(val) => Cow::Borrowed(val.dis.as_ref().unwrap_or(&val.value)),
+                    Value::Str(val) => Cow::Borrowed(&val.value),
+                    _ => Cow::Owned(value.to_string()),
                 };
             }
         }
 
         // Zero is always available as per the documentation for `Regex`.
-        caps.get(0).unwrap().as_str().to_string()
+        Cow::Owned(caps.get(0).unwrap().as_str().to_string())
     };
 
     // Replace $tag
@@ -54,7 +54,7 @@ where
 
     let result = scope_regex.replace_all(&result, value_replacer);
 
-    let localized_replacer = |caps: &Captures| -> String {
+    let localized_replacer = |caps: &Captures| -> Cow<str> {
         if let Some(cap_match) = caps.get(1) {
             if let Some(value) = get_localized(cap_match.as_str()) {
                 return value;
@@ -62,7 +62,7 @@ where
         }
 
         // Zero is always available as per the documentation for `Regex`.
-        caps.get(0).unwrap().as_str().to_string()
+        Cow::Owned(caps.get(0).unwrap().as_str().to_string())
     };
 
     // Replace $<pod::key>
@@ -76,6 +76,7 @@ where
 
 #[cfg(test)]
 mod test {
+    use std::borrow::Cow;
     use std::sync::OnceLock;
 
     use super::dis_macro;
@@ -98,9 +99,9 @@ mod test {
         .get(name)
     }
 
-    fn i18n_cb<'a>(name: &str) -> Option<String> {
+    fn i18n_cb<'a>(name: &str) -> Option<Cow<'a, str>> {
         if name == "pod::hello" {
-            Some("world".to_string())
+            Some(Cow::Borrowed("world"))
         } else {
             None
         }
