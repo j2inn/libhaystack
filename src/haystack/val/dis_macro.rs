@@ -24,6 +24,8 @@ where
     GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,
 {
     fn replace_append(&mut self, caps: &Captures<'_>, dst: &mut String) {
+        let default_replace = |dst: &mut String| dst.push_str(caps.get(0).unwrap().as_str());
+
         let mut handle_value_capture = |cap_match: Match<'_>| {
             if let Some(value) = (self.get_value)(cap_match.as_str()) {
                 if let Value::Ref(val) = value {
@@ -34,7 +36,7 @@ where
                     dst.push_str(&value.to_string())
                 }
             } else {
-                dst.push_str(caps.get(0).unwrap().as_str());
+                default_replace(dst);
             }
         };
 
@@ -49,10 +51,10 @@ where
             if let Some(value) = (self.get_localized)(cap_match.as_str()) {
                 dst.push_str(&value);
             } else {
-                dst.push_str(caps.get(0).unwrap().as_str());
+                default_replace(dst);
             }
         } else {
-            dst.push_str(caps.get(0).unwrap().as_str());
+            default_replace(dst);
         }
     }
 }
@@ -80,18 +82,19 @@ where
     // Cache the regular expression in memory so it doesn't need to compile on each invocation.
     static REG_EX: OnceLock<Regex> = OnceLock::new();
 
-    let regex = REG_EX.get_or_init(|| {
-        // Replace $tags, ${tag} or $<pod::key>
-        Regex::new(r"(\$([a-z][a-zA-Z0-9_]+))|(\$\{([a-z][a-zA-Z0-9_]+)\})|(\$<([^>]+)>)").unwrap()
-    });
-
-    regex.replace_all(
-        pattern,
-        DisReplacer {
-            get_value: &get_value,
-            get_localized: &get_localized,
-        },
-    )
+    REG_EX
+        .get_or_init(|| {
+            // Replace $tags, ${tag} or $<pod::key>
+            Regex::new(r"(\$([a-z][a-zA-Z0-9_]+))|(\$\{([a-z][a-zA-Z0-9_]+)\})|(\$<([^>]+)>)")
+                .unwrap()
+        })
+        .replace_all(
+            pattern,
+            DisReplacer {
+                get_value: &get_value,
+                get_localized: &get_localized,
+            },
+        )
 }
 
 #[cfg(test)]
@@ -120,10 +123,9 @@ mod test {
     }
 
     fn i18n_cb<'a>(name: &str) -> Option<Cow<'a, str>> {
-        if name == "pod::hello" {
-            Some(Cow::Borrowed("world"))
-        } else {
-            None
+        match name {
+            "pod::hello" => Some(Cow::Borrowed("world")),
+            _ => None,
         }
     }
 

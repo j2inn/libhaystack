@@ -436,10 +436,9 @@ mod test {
     use crate::val::{dict_to_dis, Dict, HaystackDict, Value};
 
     fn get_localized<'a>(key: &str) -> Option<Cow<'a, str>> {
-        if key == "key" {
-            Some(Cow::Borrowed("translated"))
-        } else {
-            None
+        match key {
+            "key" => Some(Cow::Borrowed("translated")),
+            _ => None,
         }
     }
 
