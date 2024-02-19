@@ -114,6 +114,7 @@ where
     // Replace $<pod::key>
     let result = {
         static LOCALIZED_REG_EX: OnceLock<Regex> = OnceLock::new();
+
         let localized_regex = LOCALIZED_REG_EX.get_or_init(|| Regex::new(r"\$<([^>]+)>").unwrap());
 
         localized_regex.replace_all(
