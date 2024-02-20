@@ -35,7 +35,7 @@ fn main() {
     let gen = parse_and_generate(input.as_slice()).expect("Unit to parse.");
     File::create(out_path)
         .expect("Out file")
-        .write(gen.as_bytes())
+        .write_all(gen.as_bytes())
         .expect("Write units succeeded.");
 
     println!("unit-gen tool completed.");

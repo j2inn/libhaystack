@@ -7,9 +7,6 @@ use super::Filter;
 pub mod dict;
 pub mod grid;
 
-pub use dict::*;
-pub use grid::*;
-
 /// Generic trait that enables filtering evaluation over an object.
 /// Specifically this would be implemented by [Dict](crate::val::Dict)
 /// and [Grid](crate::val::Grid).

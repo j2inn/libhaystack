@@ -22,26 +22,24 @@ fn generate_units(units: Vec<Option<Unit>>) -> String {
     let mut last_quantity = String::default();
     let mut units_map: HashMap<String, String> = HashMap::new();
 
-    for unit in units.into_iter().filter(|u| u.is_some()) {
-        if let Some(unit) = unit {
-            if unit.name() == "" {
-                continue;
-            }
+    for unit in units.into_iter().filter(|u| u.is_some()).flatten() {
+        if unit.name() == "" {
+            continue;
+        }
 
-            if let Some(quantity) = unit.quantity.as_ref() {
-                if quantity != &last_quantity {
-                    lines.push(format!("\n// {quantity}\n"));
-                    last_quantity = quantity.clone();
-                }
+        if let Some(quantity) = unit.quantity.as_ref() {
+            if quantity != &last_quantity {
+                lines.push(format!("\n// {quantity}\n"));
+                last_quantity = quantity.clone();
             }
+        }
 
-            lines.push("\nlazy_static! { ".to_string());
-            lines.push(unit_to_code(&unit));
-            lines.push("}\n".to_string());
+        lines.push("\nlazy_static! { ".to_string());
+        lines.push(unit_to_code(&unit));
+        lines.push("}\n".to_string());
 
-            for id in &unit.ids {
-                units_map.insert(id.to_string(), unit.name().to_uppercase());
-            }
+        for id in &unit.ids {
+            units_map.insert(id.to_string(), unit.name().to_uppercase());
         }
     }
 
@@ -68,7 +66,7 @@ fn unit_to_code(unit: &Unit) -> String {
         "pub static ref {name}:Unit = {unit:#?};",
         name = unit.name().to_uppercase(),
     )
-    .replace("]", "].to_vec()")
+    .replace(']', "].to_vec()")
     .replace("\",", "\".to_string(),")
 }
 
