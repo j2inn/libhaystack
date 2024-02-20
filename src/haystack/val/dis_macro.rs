@@ -3,7 +3,7 @@
 use std::{borrow::Cow, sync::OnceLock};
 
 use super::Value;
-use regex::{Captures, Match, Regex, Replacer};
+use regex::{Captures, Regex, Replacer};
 
 /// A regular expression replacer implementation for replacing formatted
 /// values in a display macro string.
@@ -24,37 +24,31 @@ where
     GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,
 {
     fn replace_append(&mut self, caps: &Captures<'_>, dst: &mut String) {
-        let default_replace = |dst: &mut String| dst.push_str(caps.get(0).unwrap().as_str());
+        let mut default_replace = || dst.push_str(caps.get(0).unwrap().as_str());
 
-        let mut handle_value_capture = |cap_match: Match<'_>| {
+        // Replace $tag or ${tag}
+        if let Some(cap_match) = caps.get(2).or_else(|| caps.get(4)) {
             if let Some(value) = (self.get_value)(cap_match.as_str()) {
                 if let Value::Ref(val) = value {
                     dst.push_str(val.dis.as_ref().unwrap_or(&val.value));
                 } else if let Value::Str(val) = value {
                     dst.push_str(&val.value);
                 } else {
-                    dst.push_str(&value.to_string())
+                    dst.push_str(&value.to_string());
                 }
             } else {
-                default_replace(dst);
+                default_replace();
             }
-        };
-
-        // Replace $tag
-        if let Some(cap_match) = caps.get(2) {
-            handle_value_capture(cap_match);
-        // Replace ${tag}
-        } else if let Some(cap_match) = caps.get(4) {
-            handle_value_capture(cap_match);
+        }
         // Replace $<pod::key>
-        } else if let Some(cap_match) = caps.get(6) {
+        else if let Some(cap_match) = caps.get(6) {
             if let Some(value) = (self.get_localized)(cap_match.as_str()) {
                 dst.push_str(&value);
             } else {
-                default_replace(dst);
+                default_replace();
             }
         } else {
-            default_replace(dst);
+            default_replace();
         }
     }
 }

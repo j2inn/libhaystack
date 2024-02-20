@@ -385,16 +385,17 @@ where
     }
 
     if let Some(val) = dict.get("disMacro") {
-        return match val {
-            Value::Str(val) => dis_macro(&val.value, |val| dict.get(val), get_localized),
-            _ => decode_str_from_value(val),
+        return if let Value::Str(val) = val {
+            dis_macro(&val.value, |val| dict.get(val), get_localized)
+        } else {
+            decode_str_from_value(val)
         };
     }
 
     if let Some(val) = dict.get("disKey") {
-        if let Value::Str(val) = val {
-            if let Some(val) = get_localized(&val.value) {
-                return val;
+        if let Value::Str(val_str) = val {
+            if let Some(val_str) = get_localized(&val_str.value) {
+                return val_str;
             }
         }
         return decode_str_from_value(val);
@@ -413,9 +414,10 @@ where
     }
 
     if let Some(val) = dict.get("id") {
-        return match val {
-            Value::Ref(val) => Cow::Borrowed(val.dis.as_ref().unwrap_or(&val.value)),
-            _ => decode_str_from_value(val),
+        return if let Value::Ref(val) = val {
+            Cow::Borrowed(val.dis.as_ref().unwrap_or(&val.value))
+        } else {
+            decode_str_from_value(val)
         };
     }
 
