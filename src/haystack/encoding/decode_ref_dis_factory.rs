@@ -3,10 +3,10 @@
 use std::borrow::Cow;
 use std::sync::RwLock;
 
-/// Enables display values to be injected into decoded Ref objects.
+/// Enables display values to be injected into encoded/decoded Ref objects.
 ///
 /// This is used to handle the case whereby pre-calculated display
-/// names for Refs need to be utilized when decoding haystack data.
+/// names for Refs need to be utilized when encoding/decoding haystack data.
 ///
 /// Please note, the return type is a `Cow<str>`. At some point we'll make `Ref` a little
 /// more flexible regarding how it holds its display data.

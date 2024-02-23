@@ -6,9 +6,12 @@
 
 use chrono::SecondsFormat;
 
-use crate::haystack::val::{
-    Column, Coord, Date, DateTime, Dict, Grid, Marker, Na, Number, Ref, Remove, Symbol, Time, Uri,
-    Value as HVal, XStr,
+use crate::{
+    encoding::decode_ref_dis_factory::get_ref_dis_from_factory,
+    haystack::val::{
+        Column, Coord, Date, DateTime, Dict, Grid, Marker, Na, Number, Ref, Remove, Symbol, Time,
+        Uri, Value as HVal, XStr,
+    },
 };
 
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
@@ -54,8 +57,12 @@ impl Serialize for Ref {
         let mut map = serializer.serialize_map(Some(if self.dis.is_none() { 2 } else { 3 }))?;
         map.serialize_entry("_kind", "ref")?;
         map.serialize_entry("val", &self.value)?;
-        if self.dis.is_some() {
-            let dis = self.dis.clone();
+
+        let dis = get_ref_dis_from_factory(self.value.as_str(), self.dis.as_deref())
+            .map(|v| v.to_string())
+            .or_else(|| self.dis.clone());
+
+        if dis.is_some() {
             map.serialize_entry("dis", &dis)?;
         }
         map.end()
