@@ -3,6 +3,7 @@
 //!
 //! Implement Hayson decoding
 //!
+use crate::encoding::decode_ref_dis_factory::get_ref_dis_from_factory;
 use crate::haystack::val::{
     Column, Coord, Date, DateTime, Dict, Grid, HaystackDict, List, Marker, Na, Number, Ref, Remove,
     Str, Symbol, Time, Uri, Value as HVal, XStr,
@@ -103,7 +104,19 @@ impl<'de> Deserialize<'de> for Ref {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Ref, D::Error> {
         let val = deserializer.deserialize_any(HValVisitor)?;
         match val {
-            HVal::Ref(val) => Ok(val),
+            HVal::Ref(val) => {
+                let dis = get_ref_dis_from_factory(val.value.as_str(), val.dis.as_deref())
+                    .map(|v| v.to_string());
+
+                Ok(if dis == val.dis {
+                    val
+                } else {
+                    Ref {
+                        value: val.value,
+                        dis,
+                    }
+                })
+            }
             _ => Err(D::Error::custom("Invalid Hayson Ref")),
         }
     }
@@ -377,16 +390,26 @@ fn parse_number(dict: &Dict) -> Result<HVal, JsonErr> {
 fn parse_ref(dict: &Dict) -> Result<HVal, JsonErr> {
     match dict.get_str("val") {
         Some(val) => match dict.get_str("dis") {
-            Some(dis) => Ok(Ref {
-                value: val.value.clone(),
-                dis: Some(dis.value.clone()),
+            Some(dis) => {
+                let dis = get_ref_dis_from_factory(val.value.as_str(), Some(dis.as_str()))
+                    .map(|val| val.to_string());
+
+                Ok(Ref {
+                    value: val.value.clone(),
+                    dis,
+                }
+                .into())
             }
-            .into()),
-            None => Ok(Ref {
-                value: val.value.clone(),
-                dis: None,
+            None => {
+                let dis =
+                    get_ref_dis_from_factory(val.value.as_str(), None).map(|val| val.to_string());
+
+                Ok(Ref {
+                    value: val.value.clone(),
+                    dis,
+                }
+                .into())
             }
-            .into()),
         },
         None => Err(JsonErr::custom("Missing or invalid 'val'")),
     }

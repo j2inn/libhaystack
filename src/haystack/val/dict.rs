@@ -386,7 +386,11 @@ where
 
     if let Some(val) = dict.get("disMacro") {
         return if let Value::Str(val) = val {
-            dis_macro(&val.value, |val| dict.get(val), get_localized)
+            dis_macro(
+                &val.value,
+                |val| dict.get(val).map(Cow::Borrowed),
+                get_localized,
+            )
         } else {
             decode_str_from_value(val)
         };

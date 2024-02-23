@@ -9,7 +9,7 @@ use regex::{Captures, Regex, Replacer};
 /// values in a display macro string.
 struct DisReplacer<'a, 'b, GetValueFunc, GetLocalizedFunc>
 where
-    GetValueFunc: Fn(&str) -> Option<&'a Value>,
+    GetValueFunc: Fn(&str) -> Option<Cow<'a, Value>>,
     GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,
 {
     get_value: &'b GetValueFunc,
@@ -20,7 +20,7 @@ where
 impl<'a, 'b, GetValueFunc, GetLocalizedFunc> Replacer
     for DisReplacer<'a, 'b, GetValueFunc, GetLocalizedFunc>
 where
-    GetValueFunc: Fn(&str) -> Option<&'a Value>,
+    GetValueFunc: Fn(&str) -> Option<Cow<'a, Value>>,
     GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,
 {
     fn replace_append(&mut self, caps: &Captures<'_>, dst: &mut String) {
@@ -29,9 +29,9 @@ where
         // Replace $tag or ${tag}
         if let Some(cap_match) = caps.get(2).or_else(|| caps.get(4)) {
             if let Some(value) = (self.get_value)(cap_match.as_str()) {
-                if let Value::Ref(val) = value {
+                if let Value::Ref(val) = value.as_ref() {
                     dst.push_str(val.dis.as_ref().unwrap_or(&val.value));
-                } else if let Value::Str(val) = value {
+                } else if let Value::Str(val) = value.as_ref() {
                     dst.push_str(&val.value);
                 } else {
                     dst.push_str(&value.to_string());
@@ -70,7 +70,7 @@ pub fn dis_macro<'a, GetValueFunc, GetLocalizedFunc>(
     get_localized: GetLocalizedFunc,
 ) -> Cow<'a, str>
 where
-    GetValueFunc: Fn(&str) -> Option<&'a Value>,
+    GetValueFunc: Fn(&str) -> Option<Cow<'a, Value>>,
     GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,
 {
     // Cache the regular expression in memory so it doesn't need to compile on each invocation.
@@ -103,7 +103,7 @@ mod test {
 
     static DICT: OnceLock<Dict> = OnceLock::new();
 
-    fn dict_cb<'a>(name: &str) -> Option<&'a Value> {
+    fn dict_cb<'a>(name: &str) -> Option<Cow<'a, Value>> {
         DICT.get_or_init(|| {
             dict![
                 "equipRef" => Value::make_ref("ref"),
@@ -114,6 +114,7 @@ mod test {
             ]
         })
         .get(name)
+        .map(|val| Cow::Borrowed(val))
     }
 
     fn i18n_cb<'a>(name: &str) -> Option<Cow<'a, str>> {
