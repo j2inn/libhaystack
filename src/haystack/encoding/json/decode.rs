@@ -105,15 +105,14 @@ impl<'de> Deserialize<'de> for Ref {
         let val = deserializer.deserialize_any(HValVisitor)?;
         match val {
             HVal::Ref(val) => {
-                let dis = get_ref_dis_from_factory(val.value.as_str(), val.dis.as_deref())
-                    .map(|v| v.to_string());
+                let dis = get_ref_dis_from_factory(val.value.as_str(), val.dis.as_deref());
 
-                Ok(if dis == val.dis {
+                Ok(if dis.as_deref() == val.dis.as_deref() {
                     val
                 } else {
                     Ref {
                         value: val.value,
-                        dis,
+                        dis: dis.map(|d| d.into_owned()),
                     }
                 })
             }
@@ -388,31 +387,17 @@ fn parse_number(dict: &Dict) -> Result<HVal, JsonErr> {
 }
 
 fn parse_ref(dict: &Dict) -> Result<HVal, JsonErr> {
-    match dict.get_str("val") {
-        Some(val) => match dict.get_str("dis") {
-            Some(dis) => {
-                let dis = get_ref_dis_from_factory(val.value.as_str(), Some(dis.as_str()))
-                    .map(|val| val.to_string());
-
-                Ok(Ref {
-                    value: val.value.clone(),
-                    dis,
-                }
-                .into())
+    dict.get_str("val")
+        .map(|val| {
+            let dis_str = dict.get_str("dis").map(|d| d.as_str());
+            let dis = get_ref_dis_from_factory(&val.value, dis_str).map(|val| val.into_owned());
+            Ref {
+                value: val.value.clone(),
+                dis,
             }
-            None => {
-                let dis =
-                    get_ref_dis_from_factory(val.value.as_str(), None).map(|val| val.to_string());
-
-                Ok(Ref {
-                    value: val.value.clone(),
-                    dis,
-                }
-                .into())
-            }
-        },
-        None => Err(JsonErr::custom("Missing or invalid 'val'")),
-    }
+            .into()
+        })
+        .ok_or_else(|| JsonErr::custom("Missing or invalid 'val'"))
 }
 
 fn parse_symbol(dict: &Dict) -> Result<HVal, JsonErr> {

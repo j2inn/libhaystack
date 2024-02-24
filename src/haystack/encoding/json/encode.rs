@@ -59,7 +59,7 @@ impl Serialize for Ref {
         map.serialize_entry("val", &self.value)?;
 
         let dis = get_ref_dis_from_factory(self.value.as_str(), self.dis.as_deref())
-            .map(|v| v.to_string())
+            .map(|v| v.into_owned())
             .or_else(|| self.dis.clone());
 
         if dis.is_some() {
