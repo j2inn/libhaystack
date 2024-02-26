@@ -19,7 +19,7 @@ use std::fmt;
 /// Hayson Marker deserializer
 impl<'de> Deserialize<'de> for Marker {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Marker, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         if val.is_marker() {
             Ok(Marker)
         } else {
@@ -33,7 +33,7 @@ type JsonErr = serde_json::Error;
 /// Hayson Remove deserializer
 impl<'de> Deserialize<'de> for Remove {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Remove, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         if val.is_remove() {
             Ok(Remove)
         } else {
@@ -45,7 +45,7 @@ impl<'de> Deserialize<'de> for Remove {
 /// Hayson Remove deserializer
 impl<'de> Deserialize<'de> for Na {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Na, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         if val.is_na() {
             Ok(Na)
         } else {
@@ -57,7 +57,7 @@ impl<'de> Deserialize<'de> for Na {
 /// Hayson Number deserializer
 impl<'de> Deserialize<'de> for Number {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Number, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         match val {
             HVal::Number(val) => Ok(val),
             _ => Err(D::Error::custom("Invalid Hayson Number")),
@@ -68,7 +68,7 @@ impl<'de> Deserialize<'de> for Number {
 /// Hayson Date deserializer
 impl<'de> Deserialize<'de> for Date {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Date, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         match val {
             HVal::Date(val) => Ok(val),
             _ => Err(D::Error::custom("Invalid Hayson Date")),
@@ -79,7 +79,7 @@ impl<'de> Deserialize<'de> for Date {
 /// Hayson Time deserializer
 impl<'de> Deserialize<'de> for Time {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Time, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         match val {
             HVal::Time(val) => Ok(val),
             _ => Err(D::Error::custom("Invalid Hayson Time")),
@@ -90,7 +90,7 @@ impl<'de> Deserialize<'de> for Time {
 /// Hayson DateTime deserializer
 impl<'de> Deserialize<'de> for DateTime {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<DateTime, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         match val {
             HVal::DateTime(val) => Ok(val),
             _ => Err(D::Error::custom("Invalid Hayson DateTime")),
@@ -101,7 +101,7 @@ impl<'de> Deserialize<'de> for DateTime {
 /// Hayson Ref deserializer
 impl<'de> Deserialize<'de> for Ref {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Ref, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         match val {
             HVal::Ref(val) => Ok(val),
             _ => Err(D::Error::custom("Invalid Hayson Ref")),
@@ -112,7 +112,7 @@ impl<'de> Deserialize<'de> for Ref {
 /// Hayson Uri deserializer
 impl<'de> Deserialize<'de> for Uri {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Uri, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         match val {
             HVal::Uri(val) => Ok(val),
             _ => Err(D::Error::custom("Invalid Hayson Uri")),
@@ -123,7 +123,7 @@ impl<'de> Deserialize<'de> for Uri {
 /// Hayson Symbol deserializer
 impl<'de> Deserialize<'de> for Symbol {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Symbol, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         match val {
             HVal::Symbol(val) => Ok(val),
             _ => Err(D::Error::custom("Invalid Hayson Symbol")),
@@ -134,7 +134,7 @@ impl<'de> Deserialize<'de> for Symbol {
 /// Hayson Str deserializer
 impl<'de> Deserialize<'de> for Str {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Str, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         match val {
             HVal::Str(val) => Ok(val),
             _ => Err(D::Error::custom("Invalid Hayson Str")),
@@ -145,7 +145,7 @@ impl<'de> Deserialize<'de> for Str {
 /// Hayson Coord deserializer
 impl<'de> Deserialize<'de> for Coord {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Coord, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         match val {
             HVal::Coord(val) => Ok(val),
             _ => Err(D::Error::custom("Invalid Hayson Coord")),
@@ -156,7 +156,7 @@ impl<'de> Deserialize<'de> for Coord {
 /// Hayson XStr deserializer
 impl<'de> Deserialize<'de> for XStr {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<XStr, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         match val {
             HVal::XStr(val) => Ok(val),
             _ => Err(D::Error::custom("Invalid Hayson XStr")),
@@ -167,7 +167,7 @@ impl<'de> Deserialize<'de> for XStr {
 /// Hayson XStr deserializer
 impl<'de> Deserialize<'de> for Dict {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Dict, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         match val {
             HVal::Dict(val) => Ok(val),
             _ => Err(D::Error::custom("Invalid Hayson Dict")),
@@ -178,7 +178,7 @@ impl<'de> Deserialize<'de> for Dict {
 /// Hayson Grid deserializer
 impl<'de> Deserialize<'de> for Grid {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Grid, D::Error> {
-        let val = deserializer.deserialize_any(HValVisitor)?;
+        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
         match val {
             HVal::Grid(val) => Ok(val),
             _ => Err(D::Error::custom("Invalid Hayson Grid")),
@@ -189,13 +189,13 @@ impl<'de> Deserialize<'de> for Grid {
 /// Hayson deserializer
 impl<'de> Deserialize<'de> for HVal {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<HVal, D::Error> {
-        deserializer.deserialize_any(HValVisitor)
+        deserializer.deserialize_any(JsonValueDecoderVisitor)
     }
 }
 
-struct HValVisitor;
+pub struct JsonValueDecoderVisitor;
 /// Visitor for Hayson elements
-impl<'de> Visitor<'de> for HValVisitor {
+impl<'de> Visitor<'de> for JsonValueDecoderVisitor {
     type Value = HVal;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
