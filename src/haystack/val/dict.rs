@@ -417,6 +417,10 @@ where
         return decode_str_from_value(val);
     }
 
+    if let Some(val) = dict.get("navName") {
+        return decode_str_from_value(val);
+    }
+
     if let Some(val) = dict.get("id") {
         return if let Value::Ref(val) = val {
             Cow::Borrowed(val.dis.as_ref().unwrap_or(&val.value))
@@ -495,6 +499,12 @@ mod test {
     fn dict_to_dis_returns_tag() {
         let dict = dict!["tag" => Value::make_str("display")];
         assert_eq!(dict_to_dis(&dict, &|_| None, None), "display");
+    }
+
+    #[test]
+    fn dict_to_dis_returns_nav_name() {
+        let dict = dict!["navName" => Value::make_str("navName")];
+        assert_eq!(dict_to_dis(&dict, &|_| None, None), "navName");
     }
 
     #[test]
