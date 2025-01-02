@@ -249,7 +249,6 @@ fn test_namespace_all_supertypes_of() {
     assert_eq!(all_supertypes_of, query);
 }
 
-#[ignore]
 #[test]
 fn test_namespace_choices_for() {
     let ns = Namespace::make(parse_def());
@@ -260,12 +259,14 @@ fn test_namespace_choices_for() {
     let mut query = ns
         .all_matching_names(&[
             "discharge",
-            "exhaust",
-            "flue",
+            "economizer",
             "inlet",
+            "flue",
+            "exhaust",
             "mixed",
             "outside",
             "return",
+            "ventilation",
         ])
         .into_iter()
         .cloned()
@@ -284,69 +285,44 @@ fn test_namespace_choices_for() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_namespace_choices() {
     let ns = Namespace::make(parse_def());
 
+    let mut choices = ns
+        .choices
+        .keys()
+        .map(|k| k.value.as_str())
+        .collect::<Vec<&str>>();
+
+    choices.sort();
+
     assert_eq!(
-        ns.choices
-            .keys()
-            .map(|k| k.value.as_str())
-            .collect::<Vec<&str>>(),
+        choices,
         [
-            "ahuRef",
             "ahuZoneDelivery",
-            "association",
-            "calendarRef",
-            "childrenFlatten",
-            "chilledWaterPlantRef",
+            "airVolumeAdjustability",
+            "atesDesign",
             "chillerMechanism",
-            "connTuningRef",
-            "conveys",
+            "condenserLoop",
             "coolingProcess",
-            "cools",
-            "dehumidifies",
-            "depends",
             "ductConfig",
             "ductDeck",
             "ductSection",
-            "equipFunction",
-            "equipRef",
-            "haystackConnRef",
             "heatingProcess",
-            "heats",
-            "hotWaterPlantRef",
-            "humidifies",
-            "is",
-            "linter",
             "meterScope",
-            "moves",
+            "pfScope",
+            "phaseCount",
+            "pipeFluid",
             "pipeSection",
+            "plantLoop",
             "pointFunction",
             "pointQuantity",
             "pointSubject",
-            "prefUnit",
-            "processUses",
-            "produces",
-            "quantities",
-            "quantityOf",
-            "regulates",
-            "reheats",
-            "ruleType",
-            "scheduleRef",
-            "siteRef",
-            "spaceRef",
-            "steamPlantRef",
-            "stores",
-            "submeterOf",
-            "tagOn",
-            "tags",
-            "traitOn",
+            "simScenario",
+            "tankSubstance",
             "vavAirCircuit",
             "vavModulation",
-            "ventilates",
-            "weatherStationRef",
         ]
     )
 }
@@ -832,10 +808,9 @@ fn test_namespace_fits_val() {
     assert!(!DEFS_NS.fits_val(&Symbol::from("equip")));
 }
 
-#[ignore]
 #[test]
 fn test_namespace_fits_choice() {
-    assert!(DEFS_NS.fits_choice(&Symbol::from("equipFunction")));
+    assert!(DEFS_NS.fits_choice(&Symbol::from("pointFunction")));
     assert!(!DEFS_NS.fits_choice(&Symbol::from("site")));
 
     assert!(!DEFS_NS.fits_choice(&Symbol::from("equip")));
@@ -845,7 +820,7 @@ fn test_namespace_fits_choice() {
 fn test_namespace_fits_entity() {
     assert!(DEFS_NS.fits_entity(&Symbol::from("site")));
     assert!(DEFS_NS.fits_entity(&Symbol::from("equip")));
-    assert!(!DEFS_NS.fits_entity(&Symbol::from("equipFunction")));
+    assert!(!DEFS_NS.fits_entity(&Symbol::from("pointFunction")));
 }
 
 #[test]

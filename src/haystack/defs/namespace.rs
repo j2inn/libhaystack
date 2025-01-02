@@ -315,8 +315,12 @@ impl<'a> Namespace<'a> {
 
     /// Returns a list of choices for def.
     pub fn choices_for(&self, symbol: &Symbol) -> &Vec<Dict> {
-        if let Some(of) = self.get(symbol).and_then(|def| def.get_symbol("of")) {
-            self.subtypes_of(of)
+        if self
+            .get(symbol)
+            .and_then(|def| self.is_choice(def).then(|| Some(true)))
+            .is_some()
+        {
+            self.subtypes_of(symbol)
         } else {
             &EMPTY_VEC_DICT
         }
@@ -326,10 +330,22 @@ impl<'a> Namespace<'a> {
     /// all defs that are choices.
     fn compute_choices(&mut self) {
         for (sym, def) in &self.defs {
-            if def.get_symbol("of").is_some() {
+            // A choice extends directly from 'choice'.
+            if self.is_choice(def) {
                 self.choices
                     .insert(sym.clone(), self.choices_for(sym).clone());
             }
+        }
+    }
+
+    fn is_choice(&self, def: &Dict) -> bool {
+        if let Some(is_a_list) = def.get_list("is") {
+            is_a_list
+                .iter()
+                .find(|v| v == &&Value::make_symbol("choice"))
+                .is_some()
+        } else {
+            false
         }
     }
 
