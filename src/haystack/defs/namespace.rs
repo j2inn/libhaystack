@@ -424,7 +424,7 @@ impl<'a> Namespace<'a> {
 
             // If the association isn't computed then just get the associated defs.
             // For instance, this will return here if the association is 'tagOn'.
-            if !association_def.has("computed") {
+            if !association_def.has("computedFromReciprocal") {
                 return self
                     .get(parent)
                     .and_then(|def| def.get_list(&association.value))
@@ -700,7 +700,12 @@ impl<'a> Namespace<'a> {
             .keys()
             .map(|name| self.protos_from_def(parent, name))
             .fold(Vec::new(), |mut vec, cur| {
-                vec.extend(cur);
+                for x in cur.into_iter() {
+                    if !vec.contains(&x) {
+                        vec.push(x);
+                    }
+                }
+
                 vec
             })
     }
