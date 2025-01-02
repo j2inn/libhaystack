@@ -257,7 +257,7 @@ impl<'a> Namespace<'a> {
     }
 
     ///  Returns the supertypes of a def or an empty list if it can't be found.
-    pub fn supertypes_of(&'a self, symbol: &Symbol) -> MapReadRef<Symbol, Vec<&'a Dict>> {
+    pub fn supertypes_of(&'a self, symbol: &Symbol) -> MapReadRef<'a, Symbol, Vec<&'a Dict>> {
         if let Some(super_types) = self.supertypes_of_cache.get(symbol) {
             super_types
         } else {
@@ -386,7 +386,7 @@ impl<'a> Namespace<'a> {
     }
 
     /// Return the defs inheritance as a flattened array of defs.
-    pub fn inheritance(&'a self, symbol: &Symbol) -> MapReadRef<Symbol, Vec<&'a Dict>> {
+    pub fn inheritance(&'a self, symbol: &Symbol) -> MapReadRef<'a, Symbol, Vec<&'a Dict>> {
         if let Some(inheritance) = self.inheritance_of_cache.get(symbol) {
             inheritance
         } else {
@@ -410,7 +410,7 @@ impl<'a> Namespace<'a> {
     /// - parent The parent def.
     /// - association The association.
     ///
-    pub fn associations(&'a self, parent: &Symbol, association: &Symbol) -> Vec<&Dict> {
+    pub fn associations(&'a self, parent: &Symbol, association: &Symbol) -> Vec<&'a Dict> {
         if let Some(association_def) = self.get(association) {
             // Make sure the association exists and is an association.
             if matches!(
@@ -457,7 +457,7 @@ impl<'a> Namespace<'a> {
         &'a self,
         parent: &Symbol,
         reciprocal_of: &Symbol,
-    ) -> Vec<&Dict> {
+    ) -> Vec<&'a Dict> {
         let inheritance = self.inheritance(parent);
 
         let mut matches = HashSet::<&Dict>::new();
@@ -484,7 +484,7 @@ impl<'a> Namespace<'a> {
     /// - parent The parent def
     /// # Return
     /// The `is` association defs
-    pub fn is(&'a self, parent: &Symbol) -> Vec<&Dict> {
+    pub fn is(&'a self, parent: &Symbol) -> Vec<&'a Dict> {
         self.associations(parent, &Symbol::from("is"))
     }
 
@@ -493,7 +493,7 @@ impl<'a> Namespace<'a> {
     /// - parent The parent def
     /// # Return
     /// The `tagOn` association defs
-    pub fn tag_on(&'a self, parent: &Symbol) -> Vec<&Dict> {
+    pub fn tag_on(&'a self, parent: &Symbol) -> Vec<&'a Dict> {
         self.associations(parent, &Symbol::from("tagOn"))
     }
 
@@ -502,7 +502,7 @@ impl<'a> Namespace<'a> {
     /// - parent The parent def
     /// # Return
     /// The `tags` association defs
-    pub fn tags(&'a self, parent: &Symbol) -> Vec<&Dict> {
+    pub fn tags(&'a self, parent: &Symbol) -> Vec<&'a Dict> {
         self.associations(parent, &Symbol::from("tags"))
     }
 
@@ -511,7 +511,7 @@ impl<'a> Namespace<'a> {
     /// - subject The subject to reflect
     /// # Return
     /// The reflected defs
-    pub fn reflect(&'a self, subject: &Dict) -> Reflection {
+    pub fn reflect<'b>(&'a self, subject: &'b Dict) -> Reflection<'a> {
         let mut defs = Vec::<&Dict>::new();
         let mut markers = HashSet::<&str>::new();
 
