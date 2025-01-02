@@ -16,7 +16,7 @@ use std::cell::RefCell;
 use std::str::FromStr;
 
 thread_local! {
-    pub (super) static QUANTITY: RefCell<Option<String>> = RefCell::new(None);
+    pub (super) static QUANTITY: RefCell<Option<String>> = const { RefCell::new(None) };
 }
 
 fn parse_space<'a>() -> Parser<'a, u8, ()> {
