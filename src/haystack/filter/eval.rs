@@ -14,7 +14,7 @@ pub trait Eval {
     /// # Arguments
     /// * `dict` - the Dict to match the Filter against
     /// * `resolver` - a generic `PathResolver` that resolves `Path`s
-    /// indirection specified in the `Filter`
+    ///   indirection specified in the `Filter`
     fn eval<R: PathResolver>(&self, context: &EvalContext<R>) -> bool;
 }
 
@@ -34,7 +34,7 @@ impl<'a, 'b: 'a, R: PathResolver> EvalContext<'a, 'b, R> {
     /// * `dict` - the Dict to match the Filter against
     /// * `ns` - the Def namespace to match symbol definitions against
     /// * `resolver` - a generic `PathResolver` that resolves `Path`s
-    /// indirection specified in the `Filter`
+    ///   indirection specified in the `Filter`
     pub fn make(dict: &'a Dict, ns: &'b Namespace<'b>, resolver: &'a R) -> Self {
         Self { dict, ns, resolver }
     }

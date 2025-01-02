@@ -16,7 +16,7 @@ pub use unit_dimension::UnitDimensions;
 pub fn get_unit(unit: &str) -> Option<&'static Unit> {
     #[cfg(feature = "units-db")]
     {
-        return units_generated::UNITS.get(unit).copied();
+        units_generated::UNITS.get(unit).copied()
     }
     #[cfg(not(feature = "units-db"))]
     return None;

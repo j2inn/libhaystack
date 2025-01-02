@@ -17,9 +17,9 @@ pub struct Parser<Lexer> {
     pub(super) lexer: Lexer,
 }
 
-impl<'a, 'b: 'a, R: Read> Parser<Lexer<Scanner<'b, R>>> {
+impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
     /// Constructs a [Parser](self::Parser) for the provided [Read](std::io::Read)
-    pub fn make(input: &'b mut R) -> Result<Self, Error> {
+    pub fn make(input: &'a mut R) -> Result<Self, Error> {
         let mut lexer = Lexer::make(input)?;
         // Advance lexer to first token
         lexer.read()?;

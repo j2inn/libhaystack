@@ -3,6 +3,7 @@
 //! Zinc identifier decoding
 
 use super::scanner::Scanner;
+use std::fmt::Display;
 use std::io::{Error, Read};
 use std::string::ToString;
 
@@ -21,9 +22,9 @@ impl From<&str> for Id {
     }
 }
 
-impl ToString for Id {
-    fn to_string(&self) -> String {
-        self.value.clone()
+impl Display for Id {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.value.clone())
     }
 }
 

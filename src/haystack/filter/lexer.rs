@@ -292,7 +292,7 @@ impl<'a, R: Read> Lexer<Scanner<'a, R>> {
     }
 }
 
-impl<'a, R: Read> Iterator for Lexer<Scanner<'a, R>> {
+impl<R: Read> Iterator for Lexer<Scanner<'_, R>> {
     type Item = Result<LexerToken, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {

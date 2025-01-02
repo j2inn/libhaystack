@@ -52,13 +52,13 @@ impl Unit {
     /// True if the unit is for bytes.
     ///
     pub fn is_byte_unit(&self) -> bool {
-        return self.quantity == Some("bytes".to_string())
+        self.quantity == Some("bytes".to_string())
             || self.name() == "byte"
             || self.name() == "kilobyte"
             || self.name() == "megabyte"
             || self.name() == "gigabyte"
             || self.name() == "terabyte"
-            || self.name() == "petabyte";
+            || self.name() == "petabyte"
     }
 }
 
