@@ -317,7 +317,7 @@ impl<'a> Namespace<'a> {
     pub fn choices_for(&self, symbol: &Symbol) -> &Vec<Dict> {
         if self
             .get(symbol)
-            .and_then(|def| self.is_choice(def).then(|| Some(true)))
+            .and_then(|def| self.is_choice(def).then_some(Some(true)))
             .is_some()
         {
             self.subtypes_of(symbol)
@@ -340,10 +340,7 @@ impl<'a> Namespace<'a> {
 
     fn is_choice(&self, def: &Dict) -> bool {
         if let Some(is_a_list) = def.get_list("is") {
-            is_a_list
-                .iter()
-                .find(|v| v == &&Value::make_symbol("choice"))
-                .is_some()
+            is_a_list.iter().any(|v| v == &Value::make_symbol("choice"))
         } else {
             false
         }
