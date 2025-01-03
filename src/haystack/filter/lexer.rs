@@ -197,8 +197,6 @@ impl<'a, R: Read> Lexer<Scanner<'a, R>> {
                                     self.scanner.read()?;
                                     self.scanner.consume_white_spaces()?;
                                     self.cur = self.parse_path(id)?;
-                                } else if self.scanner.is_lower() {
-                                    self.cur = self.parse_rel(id)?;
                                 } else {
                                     return self.scanner.make_generic_err(&format!(
                                         "Invalid symbol: '{}'",
@@ -240,35 +238,6 @@ impl<'a, R: Read> Lexer<Scanner<'a, R>> {
             self.scanner.read().ok();
             LexerToken::make(variants.0)
         })
-    }
-
-    fn parse_rel(&mut self, id: Id) -> Result<LexerToken, Error> {
-        let mut ids = Vec::from([id]);
-        let mut complete = false;
-        while !self.scanner.is_eof {
-            let id = parse_id(&mut self.scanner)?;
-            ids.push(id);
-            if self.scanner.cur == b'-' {
-                self.scanner.read()?;
-                continue;
-            } else if self.scanner.cur == b'?' {
-                self.scanner.read().ok();
-                complete = true;
-                break;
-            }
-        }
-
-        if complete {
-            Ok(LexerToken::make(TokenValue::Rel(Symbol::from(
-                ids.iter()
-                    .map(|id| id.to_string())
-                    .collect::<Vec<String>>()
-                    .join("-")
-                    .as_str(),
-            ))))
-        } else {
-            self.scanner.make_expect_err(b'?')
-        }
     }
 
     fn parse_path(&mut self, id: Id) -> Result<LexerToken, Error> {
@@ -736,29 +705,19 @@ mod test {
             "Expect Rel"
         );
 
-        let mut input = Cursor::new("a-b-c?".as_bytes());
+        let mut input = Cursor::new("containedBy?".as_bytes());
         let mut lexer = Lexer::make(&mut input).expect("Should create lexer");
 
         assert_eq!(
             lexer.read().ok(),
-            Some(&LexerToken::make(TokenValue::Rel("a-b-c".into()))),
+            Some(&LexerToken::make(TokenValue::Rel("containedBy".into()))),
             "Expect Rel"
         );
-
-        let mut input = Cursor::new("a-b-?".as_bytes());
-        let mut lexer = Lexer::make(&mut input).expect("Should create lexer");
-
-        assert!(lexer.read().is_err(), "Expect Rel error");
-
-        let mut input = Cursor::new("a-b".as_bytes());
-        let mut lexer = Lexer::make(&mut input).expect("Should create lexer");
-
-        assert!(lexer.read().is_err(), "Expect Rel error");
     }
 
     #[test]
     fn test_filter_lexer_iterator() {
-        let mut input = Cursor::new("a ==(@foo)!=12 x-y?*==>< <=12:12:56`foo`a -> b->c".as_bytes());
+        let mut input = Cursor::new("a ==(@foo)!=12 xy?*==>< <=12:12:56`foo`a -> b->c".as_bytes());
         let lexer = Lexer::make(&mut input).expect("Should create lexer");
 
         for el in lexer.into_iter().enumerate() {
@@ -802,7 +761,7 @@ mod test {
                 ),
                 7 => assert_eq!(
                     tk.ok(),
-                    Some(LexerToken::make(TokenValue::Rel("x-y".into()))),
+                    Some(LexerToken::make(TokenValue::Rel("xy".into()))),
                     "Expect Rel"
                 ),
                 8 => assert_eq!(

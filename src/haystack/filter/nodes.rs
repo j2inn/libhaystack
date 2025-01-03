@@ -383,31 +383,31 @@ impl Visitable for WildcardEq {
 #[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct Relation {
     pub rel: Symbol,
+    pub rel_term: Option<Symbol>,
     pub ref_value: Option<Ref>,
 }
 impl Eval for Relation {
     fn eval<R: PathResolver>(&self, context: &EvalContext<R>) -> bool {
         let resolve = |id: &Ref| context.resolver.resolve_ref(id);
 
-        if let Some((rel_name, rel_term)) = self.rel.value.split_once('-') {
-            context.ns.has_relationship(
-                context.dict,
-                &Symbol::from(rel_name),
-                &Some(Symbol::from(rel_term)),
-                &self.ref_value,
-                &resolve,
-            )
-        } else {
-            context
-                .ns
-                .has_relationship(context.dict, &self.rel, &None, &self.ref_value, &resolve)
-        }
+        context.ns.has_relationship(
+            context.dict,
+            &Symbol::from(self.rel.value.as_str()),
+            &self.rel_term,
+            &self.ref_value,
+            &resolve,
+        )
     }
 }
 
 impl Display for Relation {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}?", self.rel.value)?;
+
+        if let Some(rel_term) = &self.rel_term {
+            write!(f, " {}", rel_term)?;
+        }
+
         if let Some(ref_value) = &self.ref_value {
             write!(f, " {}", ref_value)
         } else {
