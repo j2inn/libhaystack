@@ -99,6 +99,8 @@ fn test_filter_defs_containment() {
 
     let filter = Filter::try_from("containedBy? @equip2").expect("Filter");
     assert_eq!(db.read(&filter), db.recs.get(5));
+
+    assert!(Filter::try_from("containedBy? equip2").is_err());
 }
 
 #[test]

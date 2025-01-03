@@ -32,7 +32,13 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
 
     pub fn parse(&mut self) -> Result<Or, Error> {
         self.lexer.read()?;
-        self.parse_or()
+
+        // By the time everything has finished parsing, the current token value should be none.
+        // If there is something left over then we have an invalid haystack filter.
+        self.parse_or().and_then(|or| match &self.lexer.cur.value {
+            None => Ok(or),
+            Some(value) => self.make_generic_err(&format!("Unexpected token: {:?}.", value)),
+        })
     }
 
     fn parse_or(&mut self) -> Result<Or, Error> {
@@ -45,6 +51,7 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
             self.lexer.read()?;
             ands.push(self.parse_and()?);
         }
+
         Ok(Or { ands })
     }
 
@@ -267,6 +274,14 @@ mod test {
     }
 
     #[test]
+    fn test_filter_parser_error() {
+        let mut input = Cursor::new("a b".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        assert!(parser.parse().is_err());
+    }
+
+    #[test]
     fn test_filter_parser_or() {
         let mut input = Cursor::new("a or b".as_bytes());
         let mut parser = Parser::make(&mut input).expect("Should create parser");
@@ -395,6 +410,11 @@ mod test {
 
         let rel = parser.parse().expect("Relation");
         assert_eq!(rel.to_string(), "foo? and other");
+
+        let mut input = Cursor::new("foo? other".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        assert!(parser.parse().is_err());
     }
 
     #[test]
@@ -410,6 +430,11 @@ mod test {
 
         let rel = parser.parse().expect("Relation");
         assert_eq!(rel.to_string(), "foo? ^bar and other");
+
+        let mut input = Cursor::new("foo? ^bar other".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        assert!(parser.parse().is_err());
     }
 
     #[test]
@@ -425,6 +450,11 @@ mod test {
 
         let rel = parser.parse().expect("Relation");
         assert_eq!(rel.to_string(), "foo? ^bar @zoo and other");
+
+        let mut input = Cursor::new("foo? ^bar @zoo other".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        assert!(parser.parse().is_err());
     }
 
     #[test]
@@ -440,6 +470,11 @@ mod test {
 
         let rel = parser.parse().expect("Relation");
         assert_eq!(rel.to_string(), "foo? @zoo and other");
+
+        let mut input = Cursor::new("foo? @zoo other".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        assert!(parser.parse().is_err());
     }
 
     #[test]
