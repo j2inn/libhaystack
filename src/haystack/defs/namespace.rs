@@ -315,11 +315,7 @@ impl<'a> Namespace<'a> {
 
     /// Returns a list of choices for def.
     pub fn choices_for(&self, symbol: &Symbol) -> &Vec<Dict> {
-        if self
-            .get(symbol)
-            .and_then(|def| self.is_choice(def).then_some(Some(true)))
-            .is_some()
-        {
+        if self.get(symbol).is_some_and(|def| self.is_choice(def)) {
             self.subtypes_of(symbol)
         } else {
             &EMPTY_VEC_DICT
@@ -339,11 +335,10 @@ impl<'a> Namespace<'a> {
     }
 
     fn is_choice(&self, def: &Dict) -> bool {
-        if let Some(is_a_list) = def.get_list("is") {
-            is_a_list.iter().any(|v| v == &Value::make_symbol("choice"))
-        } else {
-            false
-        }
+        def.get_list("is")
+            .into_iter()
+            .flatten()
+            .any(|v| v == &Value::make_symbol("choice"))
     }
 
     /// Compute a list of the features names.
@@ -711,16 +706,10 @@ impl<'a> Namespace<'a> {
     pub fn protos(&'a self, parent: &Dict) -> Vec<Dict> {
         parent
             .keys()
-            .map(|name| self.protos_from_def(parent, name))
-            .fold(Vec::new(), |mut vec, cur| {
-                for x in cur.into_iter() {
-                    if !vec.contains(&x) {
-                        vec.push(x);
-                    }
-                }
-
-                vec
-            })
+            .flat_map(|name| self.protos_from_def(parent, name))
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect()
     }
 
     /// Return a reflected list of children prototypes for the parent dict.

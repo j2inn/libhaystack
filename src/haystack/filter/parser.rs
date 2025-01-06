@@ -216,7 +216,7 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
         let ref_value = match first_token {
             Some(TokenValue::Value(Value::Ref(ref_value))) => {
                 self.lexer.read().ok();
-                Some(ref_value.clone())
+                Some(ref_value)
             }
             _ => {
                 // If the first token is a term, the second token could be a ref.
@@ -224,7 +224,7 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
                     match self.lexer.read()?.value.clone() {
                         Some(TokenValue::Value(Value::Ref(ref_value))) => {
                             self.lexer.read().ok();
-                            Some(ref_value.clone())
+                            Some(ref_value)
                         }
                         _ => None,
                     }
