@@ -3,14 +3,13 @@
 //! Defs namespace tests
 
 #[cfg(test)]
-use super::utils::{parse_def, parse_features_def};
+use super::utils::parse_def;
 use libhaystack::defs::namespace::{DefDict, Namespace};
 use libhaystack::dict;
 use libhaystack::haystack::val::*;
 use std::collections::HashMap;
 
 lazy_static::lazy_static! {
-    static ref FEATURES_NS: Namespace<'static> = Namespace::make(parse_features_def());
     static ref DEFS_NS: Namespace<'static> = Namespace::make(parse_def());
 }
 
@@ -27,7 +26,7 @@ fn test_namespace_empty() {
 
 #[test]
 fn test_namespace_get_by_name() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     assert!(!ns.defs.is_empty());
 
@@ -41,7 +40,7 @@ fn test_namespace_get_by_name() {
 
 #[test]
 fn test_namespace_get_all_by_name() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     assert!(!ns.defs.is_empty());
 
@@ -59,7 +58,7 @@ fn test_namespace_get_all_by_name() {
 
 #[test]
 fn test_namespace_has_name() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     assert!(!ns.defs.is_empty());
 
@@ -70,7 +69,7 @@ fn test_namespace_has_name() {
 
 #[test]
 fn test_namespace_has() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     assert!(!ns.defs.is_empty());
 
@@ -84,7 +83,7 @@ fn test_namespace_has() {
 
 #[test]
 fn test_namespace_conjuncts() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
     assert!(!ns.defs.is_empty());
 
     assert!(!ns.conjuncts.is_empty(), "Non empty conjuncts");
@@ -109,7 +108,7 @@ fn test_namespace_is_conjunct() {
 
 #[test]
 fn test_namespace_conjuncts_defs() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     assert!(
         !ns.conjuncts_defs(&Symbol::from("hot-water")).is_empty(),
@@ -125,7 +124,7 @@ fn test_namespace_conjuncts_defs() {
 
 #[test]
 fn test_namespace_features() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     assert!(!ns.features.is_empty(), "Has features");
 
@@ -149,83 +148,26 @@ fn test_namespace_is_feature() {
 
 #[test]
 fn test_namespace_libs() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     assert!(!ns.libs.is_empty(), "Has libs");
 
     assert_eq!(
         ns.libs,
-        ns.all_matching_names(&[
-            "ext",
-            "lib:alert",
-            "lib:api",
-            "lib:brand",
-            "lib:cluster",
-            "lib:conn",
-            "lib:core",
-            "lib:crypto",
-            "lib:debug",
-            "lib:demo",
-            "lib:dev",
-            "lib:diag",
-            "lib:doc",
-            "lib:email",
-            "lib:energy",
-            "lib:equip",
-            "lib:geo",
-            "lib:haystack",
-            "lib:his",
-            "lib:hisKit",
-            "lib:host",
-            "lib:http",
-            "lib:hvac",
-            "lib:install",
-            "lib:io",
-            "lib:iot",
-            "lib:job",
-            "lib:legacy",
-            "lib:lic",
-            "lib:lighting",
-            "lib:lint",
-            "lib:log",
-            "lib:math",
-            "lib:mobile",
-            "lib:nav",
-            "lib:ph",
-            "lib:phIct",
-            "lib:phIoT",
-            "lib:phScience",
-            "lib:pod",
-            "lib:point",
-            "lib:proj",
-            "lib:pub",
-            "lib:repl",
-            "lib:rule",
-            "lib:schedule",
-            "lib:session",
-            "lib:tariff",
-            "lib:ui",
-            "lib:ui2",
-            "lib:user",
-            "lib:viz",
-            "lib:watchdog",
-            "lib:weather",
-            "lib:xquery",
-            "sysMod",
-        ])
-        .into_iter()
-        .cloned()
-        .collect::<Vec<Dict>>()
+        ns.all_matching_names(&["lib:ph", "lib:phIct", "lib:phIoT", "lib:phScience"])
+            .into_iter()
+            .cloned()
+            .collect::<Vec<Dict>>()
     )
 }
 
 #[test]
 fn test_namespace_subtypes_of() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     assert_eq!(
         ns.subtypes_of(&Symbol::from("liquid")),
-        &ns.all_matching_names(&["condensate", "fuelOil", "gasoline", "water"])
+        &ns.all_matching_names(&["condensate", "diesel", "fuelOil", "gasoline", "water"])
             .into_iter()
             .cloned()
             .collect::<Vec<Dict>>()
@@ -239,18 +181,20 @@ fn test_namespace_subtypes_of() {
 
 #[test]
 fn test_namespace_all_subtypes_of() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     let mut all_subtype = ns.all_subtypes_of(&Symbol::from("point"));
     all_subtype.sort();
 
     let mut query = ns.all_matching_names(&[
-        "writable-point",
-        "weather-point",
+        "computed-point",
         "cur-point",
-        "haystackPoint",
-        "connPoint",
         "his-point",
+        "ml-point",
+        "sim-point",
+        "synthetic-point",
+        "weather-point",
+        "writable-point",
     ]);
     query.sort();
 
@@ -259,7 +203,7 @@ fn test_namespace_all_subtypes_of() {
 
 #[test]
 fn test_namespace_has_subtype() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     assert!(
         ns.has_subtype(&Symbol::from("liquid")),
@@ -279,10 +223,10 @@ fn test_namespace_has_subtype() {
 
 #[test]
 fn test_namespace_supertypes_of() {
-    let mut supertypes_of = FEATURES_NS.supertypes_of(&Symbol::from("site")).clone();
+    let mut supertypes_of = DEFS_NS.supertypes_of(&Symbol::from("site")).clone();
     supertypes_of.sort();
 
-    let mut query = FEATURES_NS
+    let mut query = DEFS_NS
         .all_matching_names(&["entity", "geoPlace"])
         .into_iter()
         .collect::<Vec<&Dict>>();
@@ -293,10 +237,10 @@ fn test_namespace_supertypes_of() {
 
 #[test]
 fn test_namespace_all_supertypes_of() {
-    let mut all_supertypes_of = FEATURES_NS.all_supertypes_of(&Symbol::from("site"));
+    let mut all_supertypes_of = DEFS_NS.all_supertypes_of(&Symbol::from("site"));
     all_supertypes_of.sort();
 
-    let mut query = FEATURES_NS
+    let mut query = DEFS_NS
         .all_matching_names(&["marker", "entity", "geoPlace"])
         .into_iter()
         .collect::<Vec<&Dict>>();
@@ -307,7 +251,7 @@ fn test_namespace_all_supertypes_of() {
 
 #[test]
 fn test_namespace_choices_for() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     let mut choices_for = ns.choices_for(&Symbol::from("ductSection")).clone();
     choices_for.sort();
@@ -315,12 +259,14 @@ fn test_namespace_choices_for() {
     let mut query = ns
         .all_matching_names(&[
             "discharge",
-            "exhaust",
-            "flue",
+            "economizer",
             "inlet",
+            "flue",
+            "exhaust",
             "mixed",
             "outside",
             "return",
+            "ventilation",
         ])
         .into_iter()
         .cloned()
@@ -341,143 +287,123 @@ fn test_namespace_choices_for() {
 
 #[test]
 fn test_namespace_choices() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
+
+    let mut choices = ns
+        .choices
+        .keys()
+        .map(|k| k.value.as_str())
+        .collect::<Vec<&str>>();
+
+    choices.sort();
 
     assert_eq!(
-        ns.choices
-            .keys()
-            .map(|k| k.value.as_str())
-            .collect::<Vec<&str>>(),
+        choices,
         [
-            "ahuRef",
             "ahuZoneDelivery",
-            "association",
-            "calendarRef",
-            "childrenFlatten",
-            "chilledWaterPlantRef",
+            "airVolumeAdjustability",
+            "atesDesign",
             "chillerMechanism",
-            "connTuningRef",
-            "conveys",
+            "condenserLoop",
             "coolingProcess",
-            "cools",
-            "dehumidifies",
-            "depends",
             "ductConfig",
             "ductDeck",
             "ductSection",
-            "equipFunction",
-            "equipRef",
-            "haystackConnRef",
             "heatingProcess",
-            "heats",
-            "hotWaterPlantRef",
-            "humidifies",
-            "is",
-            "linter",
             "meterScope",
-            "moves",
+            "pfScope",
+            "phaseCount",
+            "pipeFluid",
             "pipeSection",
+            "plantLoop",
             "pointFunction",
             "pointQuantity",
             "pointSubject",
-            "prefUnit",
-            "processUses",
-            "produces",
-            "quantities",
-            "quantityOf",
-            "regulates",
-            "reheats",
-            "ruleType",
-            "scheduleRef",
-            "siteRef",
-            "spaceRef",
-            "steamPlantRef",
-            "stores",
-            "submeterOf",
-            "tagOn",
-            "tags",
-            "traitOn",
+            "simScenario",
+            "tankSubstance",
             "vavAirCircuit",
             "vavModulation",
-            "ventilates",
-            "weatherRef",
         ]
     )
 }
 
 #[test]
 fn test_namespace_feature_names() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     let mut feature_names = ns.feature_names.clone();
     feature_names.sort();
 
-    assert_eq!(
-        feature_names,
-        [
-            "app",
-            "filetype",
-            "func",
-            "lib",
-            "template",
-            "trait",
-            "traitView",
-            "typeScript",
-            "view",
-        ]
-    )
+    assert_eq!(feature_names, ["filetype", "lib", "op"])
 }
 
 #[test]
 fn test_namespace_tag_on_names() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     let mut tag_on_names = ns.tag_on_names.clone();
     tag_on_names.sort();
 
+    println!("{:?}", tag_on_names);
+
     assert_eq!(
         tag_on_names,
         [
-            "bacnetConn",
+            "ac-elec-meter",
+            "air-input",
+            "airHandlingEquip",
+            "airTerminalUnit",
+            "ates",
+            "blowdown-water-input",
+            "boiler",
+            "chilled-water-input",
+            "chilled-water-plant",
+            "chilledBeam",
             "chiller",
-            "conn",
-            "connPoint",
-            "connTuning",
+            "condensate-input",
+            "condenser-water-input",
             "controller",
+            "coolingCoil",
             "cur-point",
+            "damper-actuator",
             "def",
-            "energyStarConn",
+            "domestic-water-input",
+            "duct",
+            "elec-input",
             "entity",
             "equip",
+            "evse-cable",
+            "fan-motor",
             "filetype",
-            "filetype:pdf",
-            "filetype:svg",
             "floor",
-            "func",
+            "fuelOil-input",
+            "gasoline-input",
             "geoPlace",
-            "haystackConn",
-            "haystackPoint",
+            "heatingCoil",
             "his-point",
+            "hot-water-input",
             "lib",
+            "makeup-water-input",
             "meter",
-            "modbusConn",
+            "mlModel",
+            "mlVar",
             "motor",
-            "obixConn",
-            "opcConn",
+            "naturalGas-input",
+            "pipe",
             "point",
-            "projMeta",
-            "provBuild",
-            "provImage",
-            "provOverlay",
-            "provPatch",
-            "rule",
-            "sedonaConn",
+            "pump-motor",
+            "radiantFloor",
+            "radiator",
+            "refrig-input",
+            "sim-point",
             "site",
-            "snmpConn",
             "space",
-            "sqlConn",
-            "trait:point",
-            "view",
+            "steam-input",
+            "synthetic-point",
+            "system",
+            "tank",
+            "valve-actuator",
+            "vav",
             "weather-point",
             "weatherStation",
             "writable-point"
@@ -487,7 +413,7 @@ fn test_namespace_tag_on_names() {
 
 #[test]
 fn test_namespace_tag_on_defs() {
-    let ns = Namespace::make(parse_features_def());
+    let ns = Namespace::make(parse_def());
 
     let mut tag_on_defs = ns
         .tag_on_defs
@@ -499,31 +425,39 @@ fn test_namespace_tag_on_defs() {
     assert_eq!(
         tag_on_defs,
         [
-            "actorTimeout",
-            "admin",
+            "ahuZoneDelivery",
+            "airRef",
+            "airVolumeAdjustability",
             "area",
+            "atesDesign",
             "baseUri",
-            "connErr",
-            "connLinger",
-            "connPingFreq",
-            "connState",
-            "connStatus",
-            "connTuningRef",
+            "blowdownWaterRef",
+            "chilledWaterRef",
+            "chillerMechanism",
+            "condensateRef",
+            "condenserLoop",
+            "condenserWaterRef",
             "coolingCapacity",
+            "coolingProcess",
             "cur",
-            "curCalibration",
-            "curConvert",
             "curErr",
             "curStatus",
             "curVal",
             "depends",
             "dis",
-            "disMacro",
             "doc",
+            "domesticWaterRef",
+            "ductConfig",
+            "ductDeck",
+            "ductSection",
+            "elecRef",
             "enum",
             "equipRef",
+            "evseCableType",
             "fileExt",
             "floorNum",
+            "fuelOilRef",
+            "gasolineRef",
             "geoAddr",
             "geoCity",
             "geoCoord",
@@ -533,64 +467,64 @@ fn test_namespace_tag_on_defs() {
             "geoPostalCode",
             "geoState",
             "geoStreet",
-            "haystackConnRef",
-            "haystackCur",
-            "haystackHis",
-            "haystackPollFreq",
-            "haystackWrite",
-            "haystackWriteLevel",
-            "help",
+            "heatingProcess",
             "his",
-            "hisAppendNA",
-            "hisCollectCov",
-            "hisCollectInterval",
-            "hisCollectWriteFreq",
-            "hisConvert",
-            "hisEnd",
             "hisErr",
             "hisMode",
-            "hisSize",
-            "hisStart",
             "hisStatus",
             "hisTotalized",
+            "hotWaterRef",
             "id",
-            "imageSize",
             "is",
             "kind",
+            "makeupWaterRef",
             "mandatory",
             "maxVal",
+            "meterScope",
             "mime",
             "minVal",
-            "navName",
+            "mlIdentificationPeriod",
+            "mlInputVarRefs",
+            "mlModelMetrics",
+            "mlModelParameters",
+            "mlOutputVarRef",
+            "mlVarFilter",
+            "mlVarPoint",
+            "naturalGasRef",
             "notInherited",
             "of",
-            "pageSize",
-            "password",
-            "pollTime",
+            "phaseCount",
+            "pipeFluid",
+            "pipeSection",
+            "plantLoop",
+            "pointFunction",
+            "pointQuantity",
+            "pointRef",
+            "pointSubject",
             "primaryFunction",
-            "ruleOn",
+            "refrigRef",
+            "simScenario",
             "siteRef",
             "spaceRef",
-            "staleTime",
-            "su",
+            "steamRef",
             "submeterOf",
+            "synthetic",
+            "syntheticModelRef",
+            "systemRef",
             "tagOn",
-            "traitView:point",
+            "tankSubstance",
             "transient",
             "tz",
             "unit",
-            "uri",
-            "username",
+            "vavAirCircuit",
+            "vavModulation",
             "version",
             "vfd",
-            "weatherRef",
+            "weatherStationRef",
             "wikipedia",
             "writable",
-            "writeConvert",
             "writeErr",
             "writeLevel",
-            "writeMaxTime",
-            "writeMinTime",
             "writeStatus",
             "writeVal",
             "yearBuilt"
@@ -600,10 +534,10 @@ fn test_namespace_tag_on_defs() {
 
 #[test]
 fn test_namespace_inheritance() {
-    let mut inheritance = FEATURES_NS.inheritance(&Symbol::from("site")).clone();
+    let mut inheritance = DEFS_NS.inheritance(&Symbol::from("site")).clone();
     inheritance.sort();
 
-    let mut query = FEATURES_NS
+    let mut query = DEFS_NS
         .all_matching_names(&["site", "entity", "marker", "geoPlace"])
         .into_iter()
         .collect::<Vec<&Dict>>();
@@ -611,16 +545,15 @@ fn test_namespace_inheritance() {
 
     assert_eq!(inheritance, query);
 
-    assert!(FEATURES_NS.inheritance(&Symbol::from("")).is_empty());
+    assert!(DEFS_NS.inheritance(&Symbol::from("")).is_empty());
 }
 
 #[test]
 fn test_namespace_associations() {
-    let mut associations =
-        FEATURES_NS.associations(&Symbol::from("equipRef"), &Symbol::from("tagOn"));
+    let mut associations = DEFS_NS.associations(&Symbol::from("equipRef"), &Symbol::from("tagOn"));
     associations.sort();
 
-    let mut query = FEATURES_NS.all_matching_names(&["controller", "equip", "point"]);
+    let mut query = DEFS_NS.all_matching_names(&["controller", "equip", "point"]);
     query.sort();
 
     assert_eq!(
@@ -629,16 +562,16 @@ fn test_namespace_associations() {
     );
 
     assert!(
-        FEATURES_NS
+        DEFS_NS
             .associations(&Symbol::from(""), &Symbol::from("tagOn"))
             .is_empty(),
         "empty array for an invalid parent using symbols"
     );
 
-    let mut associations = FEATURES_NS.associations(&Symbol::from("site"), &Symbol::from("tags"));
+    let mut associations = DEFS_NS.associations(&Symbol::from("site"), &Symbol::from("tags"));
     associations.sort();
 
-    let mut query = FEATURES_NS.all_matching_names(&[
+    let mut query = DEFS_NS.all_matching_names(&[
         "area",
         "dis",
         "geoAddr",
@@ -653,7 +586,7 @@ fn test_namespace_associations() {
         "id",
         "primaryFunction",
         "tz",
-        "weatherRef",
+        "weatherStationRef",
         "yearBuilt",
     ]);
     query.sort();
@@ -663,10 +596,10 @@ fn test_namespace_associations() {
 
 #[test]
 fn test_namespace_tags() {
-    let mut tags = FEATURES_NS.tags(&Symbol::from("site"));
+    let mut tags = DEFS_NS.tags(&Symbol::from("site"));
     tags.sort();
 
-    let mut query = FEATURES_NS.all_matching_names(&[
+    let mut query = DEFS_NS.all_matching_names(&[
         "area",
         "dis",
         "geoAddr",
@@ -681,7 +614,7 @@ fn test_namespace_tags() {
         "id",
         "primaryFunction",
         "tz",
-        "weatherRef",
+        "weatherStationRef",
         "yearBuilt",
     ]);
     query.sort();
@@ -691,19 +624,19 @@ fn test_namespace_tags() {
 
 #[test]
 fn test_namespace_is() {
-    let is = FEATURES_NS.is(&Symbol::from("ac-elec"));
+    let is = DEFS_NS.is(&Symbol::from("ac-elec"));
 
-    let query = FEATURES_NS.all_matching_names(&["elec"]);
+    let query = DEFS_NS.all_matching_names(&["elec"]);
 
     assert_eq!(is, query, "associations for a `ac-elec`");
 }
 
 #[test]
 fn test_namespace_tag_on() {
-    let mut tag_on = FEATURES_NS.tag_on(&Symbol::from("equipRef"));
+    let mut tag_on = DEFS_NS.tag_on(&Symbol::from("equipRef"));
     tag_on.sort();
 
-    let mut query = FEATURES_NS.all_matching_names(&["controller", "equip", "point"]);
+    let mut query = DEFS_NS.all_matching_names(&["controller", "equip", "point"]);
     query.sort();
 
     assert_eq!(tag_on, query, "`tagOn` associations for a equipRef");
@@ -720,32 +653,34 @@ fn test_namespace_reflect() {
         "equip" =>  Value::Marker
     };
 
-    let reflect = FEATURES_NS.reflect(&subject);
+    let reflect = DEFS_NS.reflect(&subject);
     let mut defs = reflect.defs.to_vec();
     defs.sort();
 
     assert!(reflect.fits(&Symbol::from("equip")));
 
-    let mut query = FEATURES_NS
+    let mut query = DEFS_NS
         .all_matching_names(&[
-            "id",
-            "ref",
-            "scalar",
-            "val",
-            "dis",
-            "str",
-            "hot",
-            "marker",
-            "water",
-            "liquid",
-            "fluid",
-            "substance",
-            "phenomenon",
+            "hot-water-plant",
             "plant",
             "equip",
+            "dis",
             "entity",
+            "fluid",
+            "hot",
             "hot-water",
-            "hot-water-plant",
+            "hot-water-output",
+            "id",
+            "liquid",
+            "marker",
+            "output",
+            "phenomenon",
+            "ref",
+            "scalar",
+            "str",
+            "substance",
+            "val",
+            "water",
         ])
         .into_iter()
         .collect::<Vec<&Dict>>();
@@ -758,20 +693,20 @@ fn test_namespace_reflect() {
     "water" =>  Value::Marker
     };
 
-    let reflect = FEATURES_NS.reflect(&subject);
+    let reflect = DEFS_NS.reflect(&subject);
     let mut defs = reflect.defs.to_vec();
     defs.sort();
 
-    let mut query = FEATURES_NS
+    let mut query = DEFS_NS
         .all_matching_names(&[
             "chilled",
-            "marker",
-            "water",
-            "liquid",
-            "fluid",
-            "substance",
-            "phenomenon",
             "chilled-water",
+            "fluid",
+            "liquid",
+            "marker",
+            "phenomenon",
+            "substance",
+            "water",
         ])
         .into_iter()
         .collect::<Vec<&Dict>>();
@@ -792,7 +727,7 @@ fn test_namespace_reflect() {
     "air" =>  Value::Marker
     };
 
-    let reflect = FEATURES_NS.reflect(&subject);
+    let reflect = DEFS_NS.reflect(&subject);
 
     let names = reflect
         .defs
@@ -812,7 +747,7 @@ fn test_namespace_reflect() {
 
     assert_eq!(&reflect.subject, &subject);
 
-    let reflect = FEATURES_NS.reflect(&dict! {
+    let reflect = DEFS_NS.reflect(&dict! {
         "equip" => Value::Marker,
         "ahu" => Value::Marker
     });
@@ -822,7 +757,7 @@ fn test_namespace_reflect() {
         "returns the ahu tag when there is an equip and ahu tag"
     );
 
-    let reflect = FEATURES_NS.reflect(&dict! {
+    let reflect = DEFS_NS.reflect(&dict! {
         "ahu" => Value::Marker,
         "equip" => Value::Marker,
     });
@@ -832,7 +767,7 @@ fn test_namespace_reflect() {
         "returns the ahu tag when there is an ahu and equip tag"
     );
 
-    let reflect = FEATURES_NS.reflect(&dict! {
+    let reflect = DEFS_NS.reflect(&dict! {
         "heatExchanger" => Value::Marker,
         "coil" => Value::Marker,
         "coolingCoil" => Value::Marker,
@@ -847,53 +782,53 @@ fn test_namespace_reflect() {
 
 #[test]
 fn test_namespace_fits() {
-    assert!(FEATURES_NS.fits(&Symbol::from("site"), &Symbol::from("entity")));
+    assert!(DEFS_NS.fits(&Symbol::from("site"), &Symbol::from("entity")));
 
-    assert!(FEATURES_NS.fits(&Symbol::from("site"), &Symbol::from("marker")));
+    assert!(DEFS_NS.fits(&Symbol::from("site"), &Symbol::from("marker")));
 
-    assert!(FEATURES_NS.fits(&Symbol::from("air"), &Symbol::from("marker")));
+    assert!(DEFS_NS.fits(&Symbol::from("air"), &Symbol::from("marker")));
 
-    assert!(!FEATURES_NS.fits(&Symbol::from("fake"), &Symbol::from("marker")));
-    assert!(!FEATURES_NS.fits(&Symbol::from("site"), &Symbol::from("fake")));
+    assert!(!DEFS_NS.fits(&Symbol::from("fake"), &Symbol::from("marker")));
+    assert!(!DEFS_NS.fits(&Symbol::from("site"), &Symbol::from("fake")));
 }
 
 #[test]
 fn test_namespace_fits_maker() {
-    assert!(FEATURES_NS.fits_marker(&Symbol::from("site")));
-    assert!(FEATURES_NS.fits_marker(&Symbol::from("water")));
+    assert!(DEFS_NS.fits_marker(&Symbol::from("site")));
+    assert!(DEFS_NS.fits_marker(&Symbol::from("water")));
 
-    assert!(!FEATURES_NS.fits_marker(&Symbol::from("fake")));
+    assert!(!DEFS_NS.fits_marker(&Symbol::from("fake")));
 }
 
 #[test]
 fn test_namespace_fits_val() {
-    assert!(FEATURES_NS.fits_val(&Symbol::from("def")));
-    assert!(!FEATURES_NS.fits_val(&Symbol::from("site")));
+    assert!(DEFS_NS.fits_val(&Symbol::from("def")));
+    assert!(!DEFS_NS.fits_val(&Symbol::from("site")));
 
-    assert!(!FEATURES_NS.fits_val(&Symbol::from("equip")));
+    assert!(!DEFS_NS.fits_val(&Symbol::from("equip")));
 }
 
 #[test]
 fn test_namespace_fits_choice() {
-    assert!(FEATURES_NS.fits_choice(&Symbol::from("equipFunction")));
-    assert!(!FEATURES_NS.fits_choice(&Symbol::from("site")));
+    assert!(DEFS_NS.fits_choice(&Symbol::from("pointFunction")));
+    assert!(!DEFS_NS.fits_choice(&Symbol::from("site")));
 
-    assert!(!FEATURES_NS.fits_choice(&Symbol::from("equip")));
+    assert!(!DEFS_NS.fits_choice(&Symbol::from("equip")));
 }
 
 #[test]
 fn test_namespace_fits_entity() {
-    assert!(FEATURES_NS.fits_entity(&Symbol::from("site")));
-    assert!(FEATURES_NS.fits_entity(&Symbol::from("equip")));
-    assert!(!FEATURES_NS.fits_entity(&Symbol::from("equipFunction")));
+    assert!(DEFS_NS.fits_entity(&Symbol::from("site")));
+    assert!(DEFS_NS.fits_entity(&Symbol::from("equip")));
+    assert!(!DEFS_NS.fits_entity(&Symbol::from("pointFunction")));
 }
 
 #[test]
 fn test_namespace_fits_implementation() {
-    let mut implementation = FEATURES_NS.implementation(&Symbol::from("tank"));
+    let mut implementation = DEFS_NS.implementation(&Symbol::from("tank"));
     implementation.sort();
 
-    let mut query = FEATURES_NS
+    let mut query = DEFS_NS
         .all_matching_names(&["tank", "equip"])
         .into_iter()
         .collect::<Vec<&Dict>>();
@@ -901,10 +836,10 @@ fn test_namespace_fits_implementation() {
 
     assert_eq!(implementation, query);
 
-    let mut implementation = FEATURES_NS.implementation(&Symbol::from("hot-water"));
+    let mut implementation = DEFS_NS.implementation(&Symbol::from("hot-water"));
     implementation.sort();
 
-    let mut query = FEATURES_NS
+    let mut query = DEFS_NS
         .all_matching_names(&["hot", "water"])
         .into_iter()
         .collect::<Vec<&Dict>>();
@@ -912,7 +847,7 @@ fn test_namespace_fits_implementation() {
 
     assert_eq!(implementation, query);
 
-    assert!(FEATURES_NS
+    assert!(DEFS_NS
         .implementation(&Symbol::from("super-ultra-duper"))
         .is_empty())
 }
@@ -924,17 +859,20 @@ fn test_namespace_fits_protos() {
         "equip" =>  Value::Marker
     };
 
-    let mut protos = FEATURES_NS.protos(&parent);
+    let mut protos = DEFS_NS.protos(&parent);
     protos.sort();
 
     let expect = parse_dict_list(concat!(
         "[{pump motor equip},",
         "{valve actuator equip},",
-        "{flow point},",
-        "{pressure point},",
-        "{temp point},",
+        "{flow sensor point},",
+        "{flow sp point},",
+        "{pressure sensor point},",
+        "{pressure sp point},",
+        "{temp sensor point},",
+        "{temp sp point},",
         "{equip},",
-        "{point}]"
+        "{point}]",
     ));
 
     assert_eq!(protos, expect);
@@ -946,15 +884,20 @@ fn test_namespace_fits_protos() {
         "equip" =>  Value::Marker
     };
 
-    let mut protos = FEATURES_NS.protos(&parent);
+    let mut protos = DEFS_NS.protos(&parent);
     protos.sort();
 
     let expect = parse_dict_list(concat!(
         "[{steam leaving pump motor equip},",
         "{steam leaving valve actuator equip},",
-        "{steam leaving flow point},",
-        "{steam leaving pressure point},",
-        "{steam leaving temp point},",
+        "{steam leaving flow sensor point},",
+        "{steam leaving flow sp point},",
+        "{steam leaving pressure sensor point},",
+        "{steam leaving pressure sp point},",
+        "{steam leaving temp sensor point},",
+        "{steam leaving temp sp point},",
+        "{steam leaving equip},",
+        "{steam leaving point},",
         "{equip},",
         "{point}]",
     ));
@@ -968,15 +911,20 @@ fn test_namespace_fits_protos() {
         "equip" =>  Value::Marker
     };
 
-    let mut protos = FEATURES_NS.protos(&parent);
+    let mut protos = DEFS_NS.protos(&parent);
     protos.sort();
 
     let expect = parse_dict_list(concat!(
         "[{naturalGas leaving pump motor equip},",
         "{naturalGas leaving valve actuator equip},",
-        "{naturalGas leaving flow point},",
-        "{naturalGas leaving pressure point},",
-        "{naturalGas leaving temp point},",
+        "{naturalGas leaving flow sensor point},",
+        "{naturalGas leaving flow sp point},",
+        "{naturalGas leaving pressure sensor point},",
+        "{naturalGas leaving pressure sp point},",
+        "{naturalGas leaving temp sensor point},",
+        "{naturalGas leaving temp sp point},",
+        "{naturalGas leaving equip},",
+        "{naturalGas leaving point},",
         "{equip},",
         "{point}]",
     ));
@@ -987,20 +935,31 @@ fn test_namespace_fits_protos() {
         "ahu" =>  Value::Marker
     };
 
-    let mut protos = FEATURES_NS.protos(&parent);
+    let mut protos = DEFS_NS.protos(&parent);
     protos.sort();
 
     let expect = parse_dict_list(concat!(
-        "[{equip thermostat},",
+        "[{thermostat equip},",
         "{discharge duct equip},",
-        "{duct equip exhaust},",
-        "{duct equip mixed},",
-        "{duct equip outside},",
-        "{duct equip return},",
-        "{freezeStat point sensor},",
-        "{cmd heatWheel point},",
-        "{cmd faceBypass point},",
-        "{bypass cmd damper point}]",
+        "{exhaust duct equip},",
+        "{mixed duct equip},",
+        "{outside duct equip},",
+        "{ventilation duct equip},",
+        "{economizer duct equip},",
+        "{return duct equip},",
+        "{humidifier equip},",
+        "{hvacMode sp point},",
+        "{cool cmd point},",
+        "{heat cmd point},",
+        "{filter sensor point},",
+        "{freezeStat sensor point},",
+        "{economizing cmd point},",
+        "{heatWheel cmd point},",
+        "{dessicantDehumidifier cmd point},",
+        "{faceBypass cmd point},",
+        "{bypass damper cmd point},",
+        "{equip},",
+        "{point}]",
     ));
 
     assert_eq!(protos, expect);
@@ -1009,28 +968,34 @@ fn test_namespace_fits_protos() {
         "chiller" =>  Value::Marker
     };
 
-    let mut protos = FEATURES_NS.protos(&parent);
+    let mut protos = DEFS_NS.protos(&parent);
     protos.sort();
 
     let expect = parse_dict_list(concat!(
-        "[{point run state},",
-        "{enable point state},",
-        "{cmd load point},",
-        "{load point sensor},",
-        "{efficiency point sensor},",
-        "{chilled equip leaving pipe water},",
-        "{chilled entering equip pipe water},",
-        "{chilled delta point sensor temp water},",
-        "{chilled delta flow point sensor water},",
-        "{chilled cmd isolation point valve water},",
-        "{condenser equip leaving pipe water},",
-        "{condenser entering equip pipe water},",
-        "{cmd condenser isolation point valve water},",
-        "{condenser point run state},",
-        "{condenser point refrig sensor temp},",
-        "{condenser point pressure refrig sensor},",
-        "{evaporator point refrig sensor temp},",
-        "{evaporator point pressure refrig sensor}]",
+        "[{run cmd point},",
+        "{enable cmd point},",
+        "{run sensor point},",
+        "{enable sensor point},",
+        "{load cmd point},",
+        "{load sensor point},",
+        "{efficiency sensor point},",
+        "{alarm sensor point},",
+        "{chilled water leaving pipe equip},",
+        "{chilled water entering pipe equip},",
+        "{chilled water delta temp sensor point},",
+        "{chilled water delta flow sensor point},",
+        "{chilled water valve isolation cmd point},",
+        "{condenser water leaving pipe equip},",
+        "{condenser water entering pipe equip},",
+        "{condenser water valve isolation cmd point},",
+        "{condenser run cmd point},",
+        "{condenser run sensor point},",
+        "{condenser refrig temp sensor point},",
+        "{condenser refrig pressure sensor point},",
+        "{evaporator refrig temp sensor point},",
+        "{evaporator refrig pressure sensor point},",
+        "{equip},",
+        "{point}]",
     ));
 
     assert_eq!(protos, expect);
@@ -1040,43 +1005,58 @@ fn test_namespace_fits_protos() {
         "chiller" =>  Value::Marker
     };
 
-    let mut protos = FEATURES_NS.protos(&parent);
+    let mut protos = DEFS_NS.protos(&parent);
     protos.sort();
 
     let expect = parse_dict_list(concat!(
-        "[{equip thermostat},",
+        "[{thermostat equip},",
         "{discharge duct equip},",
-        "{duct equip exhaust},",
-        "{duct equip mixed},",
-        "{duct equip outside},",
-        "{duct equip return},",
-        "{freezeStat point sensor},",
-        "{cmd heatWheel point},",
-        "{cmd faceBypass point},",
-        "{bypass cmd damper point},",
-        "{point run state},",
-        "{enable point state},",
-        "{cmd load point},",
-        "{load point sensor},",
-        "{efficiency point sensor},",
-        "{chilled equip leaving pipe water},",
-        "{chilled entering equip pipe water},",
-        "{chilled delta point sensor temp water},",
-        "{chilled delta flow point sensor water},",
-        "{chilled cmd isolation point valve water},",
-        "{condenser equip leaving pipe water},",
-        "{condenser entering equip pipe water},",
-        "{cmd condenser isolation point valve water},",
-        "{condenser point run state},",
-        "{condenser point refrig sensor temp},",
-        "{condenser point pressure refrig sensor},",
-        "{evaporator point refrig sensor temp},",
-        "{evaporator point pressure refrig sensor}]",
+        "{exhaust duct equip},",
+        "{mixed duct equip},",
+        "{outside duct equip},",
+        "{ventilation duct equip},",
+        "{economizer duct equip},",
+        "{return duct equip},",
+        "{humidifier equip},",
+        "{hvacMode sp point},",
+        "{cool cmd point},",
+        "{heat cmd point},",
+        "{filter sensor point},",
+        "{freezeStat sensor point},",
+        "{economizing cmd point},",
+        "{heatWheel cmd point},",
+        "{dessicantDehumidifier cmd point},",
+        "{faceBypass cmd point},",
+        "{bypass damper cmd point},",
+        "{equip},",
+        "{point},",
+        "{run cmd point},",
+        "{enable cmd point},",
+        "{run sensor point},",
+        "{enable sensor point},",
+        "{load cmd point},",
+        "{load sensor point},",
+        "{efficiency sensor point},",
+        "{alarm sensor point},",
+        "{chilled water leaving pipe equip},",
+        "{chilled water entering pipe equip},",
+        "{chilled water delta temp sensor point},",
+        "{chilled water delta flow sensor point},",
+        "{chilled water valve isolation cmd point},",
+        "{condenser water leaving pipe equip},",
+        "{condenser water entering pipe equip},",
+        "{condenser water valve isolation cmd point},",
+        "{condenser run cmd point},",
+        "{condenser run sensor point},",
+        "{condenser refrig temp sensor point},",
+        "{condenser refrig pressure sensor point},",
+        "{evaporator refrig temp sensor point},",
+        "{evaporator refrig pressure sensor point}]",
     ));
 
     assert_eq!(protos, expect);
 
-    assert!(FEATURES_NS.protos(&Dict::default()).is_empty());
+    assert!(DEFS_NS.protos(&Dict::default()).is_empty());
 }
 
 fn parse_dict_list(zinc_str: &str) -> Vec<Dict> {
@@ -1207,7 +1187,7 @@ fn test_namespace_transitive_relationship() {
     let resolve = |id: &Ref| map.get(id.value.as_str()).map(|d| (*d).clone());
 
     // true for a fan that directly references an ahu
-    let has = FEATURES_NS.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &fan,
         &Symbol::from("containedBy"),
         &None,
@@ -1217,7 +1197,7 @@ fn test_namespace_transitive_relationship() {
     assert!(has);
 
     // true for a point that directly references a fan
-    let has = FEATURES_NS.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &status,
         &Symbol::from("containedBy"),
         &None,
@@ -1227,7 +1207,7 @@ fn test_namespace_transitive_relationship() {
     assert!(has);
 
     // true for a point that indirectly references an ahu
-    let has = FEATURES_NS.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &status,
         &Symbol::from("containedBy"),
         &None,
@@ -1237,7 +1217,7 @@ fn test_namespace_transitive_relationship() {
     assert!(has);
 
     // false for a fan that does not reference a point
-    let has = FEATURES_NS.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &fan,
         &Symbol::from("containedBy"),
         &None,
@@ -1247,7 +1227,7 @@ fn test_namespace_transitive_relationship() {
     assert!(!has);
 
     //  false for a point that references itself
-    let has = FEATURES_NS.has_relationship(
+    let has = DEFS_NS.has_relationship(
         &status,
         &Symbol::from("containedBy"),
         &None,
@@ -1332,7 +1312,7 @@ fn test_namespace_containment_relationship() {
     };
 
     let contained_by_refs = |ahu: Dict| {
-        let reflect = &FEATURES_NS.reflect(&ahu);
+        let reflect = &DEFS_NS.reflect(&ahu);
         reflect
             .defs
             .iter()

@@ -17,8 +17,8 @@ where
     get_localized: &'b GetLocalizedFunc,
 }
 
-impl<'a, 'b, GetValueFunc, GetLocalizedFunc> Replacer
-    for DisReplacer<'a, 'b, GetValueFunc, GetLocalizedFunc>
+impl<'a, GetValueFunc, GetLocalizedFunc> Replacer
+    for DisReplacer<'a, '_, GetValueFunc, GetLocalizedFunc>
 where
     GetValueFunc: Fn(&str) -> Option<Cow<'a, Value>>,
     GetLocalizedFunc: Fn(&str) -> Option<Cow<'a, str>>,

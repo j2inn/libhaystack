@@ -43,7 +43,7 @@ pub unsafe extern "C" fn haystack_value_get_grid_len(val: *const Value) -> usize
 /// [Dict](crate::val::Dict) [Value](crate::val::Value)s
 /// # Arguments
 /// - rows List](crate::val::List) [Value](crate::val::Value) of
-/// [Dict](crate::val::Dict) [Value](crate::val::Value)s
+///   [Dict](crate::val::Dict) [Value](crate::val::Value)s
 /// # Returns
 /// - The value pointer
 /// - None if there was an error, in which case use [last_error_message](super::err::last_error_message)
@@ -112,7 +112,7 @@ pub unsafe extern "C" fn haystack_value_make_grid_from_rows(
 /// [Dict](crate::val::Dict) [Value](crate::val::Value)s
 /// # Arguments
 /// - rows a [List](crate::val::List) [Value](crate::val::Value) of
-/// [Dict](crate::val::Dict) [Value](crate::val::Value)s
+///   [Dict](crate::val::Dict) [Value](crate::val::Value)s
 /// # Returns
 /// - The value pointer
 /// - None if there was an error, in which case use [last_error_message](super::err::last_error_message)

@@ -19,7 +19,7 @@ use crate::{haystack::val::Value, val::List};
 /// # Returns
 /// - number of elements
 /// - -1 if there was an error getting the length, in which case the [last_error_message](super::err::last_error_message)
-/// can be called to get the error message.
+///   can be called to get the error message.
 /// # Example
 /// ```rust
 /// # use crate::libhaystack::val::Value;
@@ -53,7 +53,7 @@ pub unsafe extern "C" fn haystack_value_get_dict_len(val: *const Value) -> usize
 /// - result The Value to be updated with the result Str List.
 /// # Returns
 /// - 1 (True) if the operation was successful, -1 otherwise in which case the [last_error_message](super::err::last_error_message)
-/// can be called to get the error message.
+///   can be called to get the error message.
 /// # Example
 /// ```rust
 /// # use crate::libhaystack::val::Value;
@@ -113,7 +113,7 @@ pub unsafe extern "C" fn haystack_value_get_dict_keys(
 /// - entry A [Value](crate::val::Value) to be inserted into the dict
 /// # Returns
 /// - 1 (True) if the operation was successful, -1 otherwise in which case the [last_error_message](super::err::last_error_message)
-/// can be called to get the error message.
+///   can be called to get the error message.
 /// # Example
 /// ```rust
 /// # use crate::libhaystack::val::Value;
@@ -170,7 +170,7 @@ pub unsafe extern "C" fn haystack_value_insert_dict_entry(
 /// - result The Value to be updated.
 /// # Returns
 /// - 1 (True) if the operation was successful, 0 (false) if no element found, -1 otherwise in which case the [last_error_message](super::err::last_error_message)
-/// can be called to get the error message.
+///   can be called to get the error message.
 /// # Example
 /// ```rust
 /// # use crate::libhaystack::val::Value;
@@ -230,7 +230,7 @@ pub unsafe extern "C" fn haystack_value_get_dict_entry(
 /// - key The key to be removed
 /// # Returns
 /// - 1 (True) if the operation was successful, -1 otherwise in which case the [last_error_message](super::err::last_error_message)
-/// can be called to get the error message.
+///   can be called to get the error message.
 /// # Example
 /// ```rust
 /// # use crate::libhaystack::val::Value;

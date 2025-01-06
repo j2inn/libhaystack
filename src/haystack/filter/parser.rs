@@ -32,7 +32,13 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
 
     pub fn parse(&mut self) -> Result<Or, Error> {
         self.lexer.read()?;
-        self.parse_or()
+
+        // By the time everything has finished parsing, the current token value should be none.
+        // If there is something left over then we have an invalid haystack filter.
+        self.parse_or().and_then(|or| match &self.lexer.cur.value {
+            None => Ok(or),
+            Some(value) => self.make_generic_err(&format!("Unexpected token: {:?}.", value)),
+        })
     }
 
     fn parse_or(&mut self) -> Result<Or, Error> {
@@ -45,6 +51,7 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
             self.lexer.read()?;
             ands.push(self.parse_and()?);
         }
+
         Ok(Or { ands })
     }
 
@@ -93,7 +100,6 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
                 // Relation Expressions
                 TokenValue::Rel(rel) => {
                     let term = Term::Relation(self.parse_rel(rel)?);
-                    self.lexer.read().ok();
                     Ok(term)
                 }
                 _ => self.make_generic_err(&format!("Unexpected term token: {token:?}.")),
@@ -198,24 +204,41 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
     }
 
     fn parse_rel(&mut self, rel: &Symbol) -> Result<Relation, Error> {
-        if let Some(token) = if let Ok(token) = self.lexer.read() {
-            &token.value
-        } else {
-            &None
-        } {
-            match token {
-                TokenValue::Value(Value::Ref(ref_value)) => Ok(Relation {
-                    rel: rel.clone(),
-                    ref_value: Some(ref_value.clone()),
-                }),
-                _ => self.make_generic_err("Invalid relation target, expecting a Ref."),
+        let first_token = self.lexer.read()?.value.clone();
+
+        // The first token can be either a term...
+        let rel_term = match first_token.clone() {
+            Some(TokenValue::Value(Value::Symbol(rel_term))) => Some(rel_term.clone()),
+            _ => None,
+        };
+
+        // ..or a ref.
+        let ref_value = match first_token {
+            Some(TokenValue::Value(Value::Ref(ref_value))) => {
+                self.lexer.read().ok();
+                Some(ref_value)
             }
-        } else {
-            Ok(Relation {
-                rel: rel.clone(),
-                ref_value: None,
-            })
-        }
+            _ => {
+                // If the first token is a term, the second token could be a ref.
+                if rel_term.is_some() {
+                    match self.lexer.read()?.value.clone() {
+                        Some(TokenValue::Value(Value::Ref(ref_value))) => {
+                            self.lexer.read().ok();
+                            Some(ref_value)
+                        }
+                        _ => None,
+                    }
+                } else {
+                    None
+                }
+            }
+        };
+
+        Ok(Relation {
+            rel: rel.clone(),
+            rel_term,
+            ref_value,
+        })
     }
 
     fn to_cmp_op(&self, token: &TokenValue) -> Result<CmpOp, Error> {
@@ -248,6 +271,14 @@ mod test {
         let mut parser = Parser::make(&mut input).expect("Should create parser");
 
         assert_eq!(parser.parse().ok(), None);
+    }
+
+    #[test]
+    fn test_filter_parser_error() {
+        let mut input = Cursor::new("a b".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        assert!(parser.parse().is_err());
     }
 
     #[test]
@@ -367,18 +398,83 @@ mod test {
     }
 
     #[test]
-    fn test_filter_parser_rel() {
-        let mut input = Cursor::new("foo-bar?".as_bytes());
+    fn test_filter_parser_rel_no_term_no_id() {
+        let mut input = Cursor::new("foo?".as_bytes());
         let mut parser = Parser::make(&mut input).expect("Should create parser");
 
         let rel = parser.parse().expect("Relation");
-        assert_eq!(rel.to_string(), "foo-bar?");
+        assert_eq!(rel.to_string(), "foo?");
 
-        let mut input = Cursor::new("foo-bar?@zoo".as_bytes());
+        let mut input = Cursor::new("foo? and other".as_bytes());
         let mut parser = Parser::make(&mut input).expect("Should create parser");
 
         let rel = parser.parse().expect("Relation");
-        assert_eq!(rel.to_string(), "foo-bar? @zoo");
+        assert_eq!(rel.to_string(), "foo? and other");
+
+        let mut input = Cursor::new("foo? other".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        assert!(parser.parse().is_err());
+    }
+
+    #[test]
+    fn test_filter_parser_rel_term_no_id() {
+        let mut input = Cursor::new("foo? ^bar".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        let rel = parser.parse().expect("Relation");
+        assert_eq!(rel.to_string(), "foo? ^bar");
+
+        let mut input = Cursor::new("foo? ^bar and other".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        let rel = parser.parse().expect("Relation");
+        assert_eq!(rel.to_string(), "foo? ^bar and other");
+
+        let mut input = Cursor::new("foo? ^bar other".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        assert!(parser.parse().is_err());
+    }
+
+    #[test]
+    fn test_filter_parser_rel_term_id() {
+        let mut input = Cursor::new("foo? ^bar @zoo".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        let rel = parser.parse().expect("Relation");
+        assert_eq!(rel.to_string(), "foo? ^bar @zoo");
+
+        let mut input = Cursor::new("foo? ^bar @zoo and other".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        let rel = parser.parse().expect("Relation");
+        assert_eq!(rel.to_string(), "foo? ^bar @zoo and other");
+
+        let mut input = Cursor::new("foo? ^bar @zoo other".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        assert!(parser.parse().is_err());
+    }
+
+    #[test]
+    fn test_filter_parser_rel_no_term_id() {
+        let mut input = Cursor::new("foo? @zoo".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        let rel = parser.parse().expect("Relation");
+        assert_eq!(rel.to_string(), "foo? @zoo");
+
+        let mut input = Cursor::new("foo? @zoo and other".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        let rel = parser.parse().expect("Relation");
+        assert_eq!(rel.to_string(), "foo? @zoo and other");
+
+        let mut input = Cursor::new("foo? @zoo other".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        assert!(parser.parse().is_err());
     }
 
     #[test]

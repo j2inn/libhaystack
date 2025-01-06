@@ -11,11 +11,6 @@ pub(crate) fn parse_def() -> Grid {
     parse_def_file("defs.zinc")
 }
 
-// Parse the test features def file
-pub(crate) fn parse_features_def() -> Grid {
-    parse_def_file("defsWithFeatures.zinc")
-}
-
 // Parse a def file
 pub(crate) fn parse_def_file(file: &str) -> Grid {
     let file = format!(

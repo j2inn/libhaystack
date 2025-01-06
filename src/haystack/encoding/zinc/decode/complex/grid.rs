@@ -7,13 +7,6 @@ use super::dict::parse_dict_parts;
 use crate::haystack::val::{Column, Dict, Grid, Value};
 use std::io::{Error, Read};
 
-// Zinc [Grid](crate::val::Grid) meta
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
-struct GridMeta {
-    ver: String,
-    meta: Option<Dict>,
-}
-
 /// Parses a Zinc [Grid](crate::val::Grid)
 /// # Arguments
 /// - a generic ParserType

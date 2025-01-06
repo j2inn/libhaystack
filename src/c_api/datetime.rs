@@ -17,7 +17,7 @@ use std::os::raw::c_char;
 /// - result The Value to be updated with the result DateTime.
 /// # Returns
 /// - 1 (True) if the operation was successful, -1 otherwise in which case the [last_error_message](super::err::last_error_message)
-/// can be called to get the error message.
+///   can be called to get the error message.
 /// # Example
 /// ```rust
 /// # use crate::libhaystack::val::Value;
@@ -79,7 +79,7 @@ pub unsafe extern "C" fn haystack_value_get_datetime_date(
 /// - result The Value to be updated with the result Time.
 /// # Returns
 /// - 1 (True) if the operation was successful, -1 otherwise in which case the [last_error_message](super::err::last_error_message)
-/// can be called to get the error message.
+///   can be called to get the error message.
 /// # Example
 /// ```rust
 /// # use crate::libhaystack::val::Value;

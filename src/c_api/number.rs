@@ -49,7 +49,7 @@ pub unsafe extern "C" fn haystack_value_get_number_value(val: *const Value) -> f
 /// # Returns
 /// - 1 if has unit, 0 otherwise
 /// - -1 if there was an error, in which case the [last_error_message](super::err::last_error_message)
-/// can be called to get the error message.
+///   can be called to get the error message.
 /// # Example
 /// ```rust
 /// # use crate::libhaystack::val::Value;

@@ -2,6 +2,8 @@
 
 //! Haystack Symbol
 
+use std::fmt;
+
 use crate::haystack::val::Value;
 
 /// Haystack `Symbol`
@@ -54,5 +56,11 @@ impl TryFrom<&Value> for Symbol {
             Value::Symbol(v) => Ok(v.clone()),
             _ => Err("Value is not an `Symbol`"),
         }
+    }
+}
+
+impl fmt::Display for Symbol {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "^{}", self.value)
     }
 }
