@@ -51,36 +51,28 @@ pub fn timezone_short_name(date: &DateTimeType) -> String {
     tz_id[tz_id.find('/').map_or(0, |v| v + 1)..].to_string()
 }
 
-fn find_timezone(name: &str) -> Result<Tz, String> {
-    match name.parse() {
-        Ok(tz) => Ok(tz),
-        Err(err) => {
-            // Fallback search based on the City/Town name
-            let prefixes = vec![
-                "Africa",
-                "America",
-                "Asia",
-                "Atlantic",
-                "Australia",
-                "Brazil",
-                "Canada",
-                "Chile",
-                "Etc",
-                "Europe",
-                "Indian",
-                "Mexico",
-                "Pacific",
-                "US",
-            ];
+static PREFIXES: [&str; 14] = [
+    "Africa",
+    "America",
+    "Asia",
+    "Atlantic",
+    "Australia",
+    "Brazil",
+    "Canada",
+    "Chile",
+    "Etc",
+    "Europe",
+    "Indian",
+    "Mexico",
+    "Pacific",
+    "US",
+];
 
-            if let Some(tz) = prefixes
-                .into_iter()
-                .find_map(|prefix| -> Option<Tz> { format!("{prefix}/{name}").parse().ok() })
-            {
-                Ok(tz)
-            } else {
-                Err(err)
-            }
-        }
-    }
+fn find_timezone(name: &str) -> Result<Tz, String> {
+    name.parse().or_else(|err| {
+        PREFIXES
+            .into_iter()
+            .find_map(|prefix| format!("{prefix}/{name}").parse().ok())
+            .ok_or(err)
+    })
 }
