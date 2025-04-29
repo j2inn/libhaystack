@@ -402,7 +402,7 @@ mod test {
         let mut input = Cursor::new("siteRef->dis and equip".as_bytes());
         let mut parser = Parser::make(&mut input).expect("Should create parser");
 
-        let parens = parser.parse().expect("Parens");
+        let parens = parser.parse().expect("Arrow has with and");
         assert_eq!(parens.to_string(), "siteRef->dis and equip");
     }
 
@@ -411,7 +411,7 @@ mod test {
         let mut input = Cursor::new("siteRef->equipRef->equip and foo".as_bytes());
         let mut parser = Parser::make(&mut input).expect("Should create parser");
 
-        let parens = parser.parse().expect("Parens");
+        let parens = parser.parse().expect("Arrow arrow has with and");
         assert_eq!(parens.to_string(), "siteRef->equipRef->equip and foo");
     }
 
