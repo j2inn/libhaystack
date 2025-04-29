@@ -142,6 +142,97 @@ fn test_filter_path() {
 }
 
 #[test]
+fn test_filter_path_siteref_site() {
+    let recs = vec![
+        dict! {
+            "id" => Value::make_ref("site"),
+            "site" => Value::Marker,
+            "dis" => "site".into(),
+        },
+        dict! {
+            "id" => Value::make_ref("equip"),
+            "equip" => Value::Marker,
+            "siteRef" => Value::make_ref("site"),
+        },
+    ];
+
+    let db = Records { recs };
+
+    let filter = Filter::try_from(r#"siteRef->dis"#).expect("Filter");
+    assert_eq!(db.read(&filter), db.recs.get(1));
+}
+
+#[test]
+fn test_filter_path_siteref_site_and_equip() {
+    let recs = vec![
+        dict! {
+            "id" => Value::make_ref("site"),
+            "site" => Value::Marker,
+            "dis" => "site".into(),
+        },
+        dict! {
+            "id" => Value::make_ref("equip"),
+            "equip" => Value::Marker,
+            "siteRef" => Value::make_ref("site"),
+        },
+    ];
+
+    let db = Records { recs };
+
+    let filter = Filter::try_from(r#"siteRef->dis and equip"#).expect("Filter");
+
+    assert_eq!(db.read(&filter), db.recs.get(1));
+}
+
+#[test]
+fn test_filter_path_equipref_siteref_dis_and_point() {
+    let recs = vec![
+        dict! {
+            "id" => Value::make_ref("site"),
+            "site" => Value::Marker,
+            "dis" => "site".into(),
+        },
+        dict! {
+            "id" => Value::make_ref("equip"),
+            "equip" => Value::Marker,
+            "siteRef" => Value::make_ref("site"),
+        },
+        dict! {
+            "id" => Value::make_ref("point"),
+            "point" => Value::Marker,
+            "equipRef" => Value::make_ref("equip"),
+        },
+    ];
+
+    let db = Records { recs };
+
+    let filter = Filter::try_from(r#"equipRef->siteRef->dis and point"#).expect("Filter");
+
+    assert_eq!(db.read(&filter), db.recs.get(2));
+}
+
+#[test]
+fn test_filter_path_siteref_site_and_equip_with_parens() {
+    let recs = vec![
+        dict! {
+            "id" => Value::make_ref("site"),
+            "site" => Value::Marker,
+            "dis" => "site".into(),
+        },
+        dict! {
+            "id" => Value::make_ref("equip"),
+            "equip" => Value::Marker,
+            "siteRef" => Value::make_ref("site"),
+        },
+    ];
+
+    let db = Records { recs };
+
+    let filter = Filter::try_from(r#"(siteRef->dis) and (equip)"#).expect("Filter");
+    assert_eq!(db.read(&filter), db.recs.get(1));
+}
+
+#[test]
 fn test_filter_ref_list_path() {
     let recs = vec![
         dict! {

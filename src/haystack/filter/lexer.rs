@@ -242,6 +242,7 @@ impl<'a, R: Read> Lexer<Scanner<'a, R>> {
 
     fn parse_path(&mut self, id: Id) -> Result<LexerToken, Error> {
         let mut path = Vec::from([id]);
+
         while !self.scanner.is_eof {
             let id = parse_id(&mut self.scanner)?;
             path.push(id);
@@ -253,10 +254,11 @@ impl<'a, R: Read> Lexer<Scanner<'a, R>> {
                 if !self.scanner.is_lower() {
                     return self.scanner.make_generic_err("Expecting path segment");
                 }
-            } else if !self.scanner.is_lower() {
+            } else {
                 break;
             }
         }
+
         Ok(LexerToken::make(TokenValue::Path(Path::from(path))))
     }
 }
@@ -583,6 +585,55 @@ mod test {
         let mut lexer = Lexer::make(&mut input).expect("Should create lexer");
 
         assert!(lexer.read().is_err(), "Expect Path error");
+
+        let mut input = Cursor::new("siteRef->site and equip".as_bytes());
+        let mut lexer = Lexer::make(&mut input).expect("Should create lexer");
+
+        assert_eq!(
+            lexer.read().ok(),
+            Some(&LexerToken::make_path(Path::from(vec![
+                "siteRef".into(),
+                "site".into(),
+            ]))),
+            "Expect Path"
+        );
+
+        assert_eq!(
+            lexer.read().ok(),
+            Some(&LexerToken::make_path(Path::from(vec!["and".into(),]))),
+            "Expect Path"
+        );
+
+        assert_eq!(
+            lexer.read().ok(),
+            Some(&LexerToken::make_path(Path::from(vec!["equip".into(),]))),
+            "Expect Path"
+        );
+
+        let mut input = Cursor::new("siteRef->equipRef->equip and foo".as_bytes());
+        let mut lexer = Lexer::make(&mut input).expect("Should create lexer");
+
+        assert_eq!(
+            lexer.read().ok(),
+            Some(&LexerToken::make_path(Path::from(vec![
+                "siteRef".into(),
+                "equipRef".into(),
+                "equip".into(),
+            ]))),
+            "Expect Path"
+        );
+
+        assert_eq!(
+            lexer.read().ok(),
+            Some(&LexerToken::make_path(Path::from(vec!["and".into(),]))),
+            "Expect Path"
+        );
+
+        assert_eq!(
+            lexer.read().ok(),
+            Some(&LexerToken::make_path(Path::from(vec!["foo".into(),]))),
+            "Expect Path"
+        );
     }
 
     #[test]
