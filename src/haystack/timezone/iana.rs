@@ -73,12 +73,10 @@ fn find_timezone(name: &str) -> Result<Tz, String> {
                 "US",
             ];
 
-            if let Some(tz) = prefixes.into_iter().find_map(|prefix| -> Option<Tz> {
-                match format!("{prefix}/{name}").parse() {
-                    Ok(tz) => Some(tz),
-                    Err(_) => None,
-                }
-            }) {
+            if let Some(tz) = prefixes
+                .into_iter()
+                .find_map(|prefix| -> Option<Tz> { format!("{prefix}/{name}").parse().ok() })
+            {
                 Ok(tz)
             } else {
                 Err(err)
