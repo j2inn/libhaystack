@@ -398,6 +398,24 @@ mod test {
     }
 
     #[test]
+    fn test_filter_parser_siteref_site_and_equip() {
+        let mut input = Cursor::new("siteRef->dis and equip".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        let parens = parser.parse().expect("Arrow has with and");
+        assert_eq!(parens.to_string(), "siteRef->dis and equip");
+    }
+
+    #[test]
+    fn test_filter_parser_siteref_equipref_equip_and_foo() {
+        let mut input = Cursor::new("siteRef->equipRef->equip and foo".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Should create parser");
+
+        let parens = parser.parse().expect("Arrow arrow has with and");
+        assert_eq!(parens.to_string(), "siteRef->equipRef->equip and foo");
+    }
+
+    #[test]
     fn test_filter_parser_rel_no_term_no_id() {
         let mut input = Cursor::new("foo?".as_bytes());
         let mut parser = Parser::make(&mut input).expect("Should create parser");
