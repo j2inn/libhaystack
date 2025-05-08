@@ -69,10 +69,10 @@ static PREFIXES: [&str; 14] = [
 ];
 
 fn find_timezone(name: &str) -> Result<Tz, String> {
-    name.parse().or_else(|err| {
+    name.parse().or_else(|err: chrono_tz::ParseError| {
         PREFIXES
             .into_iter()
             .find_map(|prefix| format!("{prefix}/{name}").parse().ok())
-            .ok_or(err)
+            .ok_or(err.to_string())
     })
 }
