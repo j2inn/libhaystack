@@ -249,5 +249,41 @@ mod test {
                 Some(DateTime::from_str("2010-03-11T23:55:00-05:00").expect("DateTime"))
             )
         }
+
+        {
+            let mut input = Cursor::new("2010-11-28T07:23:02.773-04:00 Port-au-Prince".as_bytes());
+            let mut scanner = super::Scanner::make(&mut input).expect("Scanner");
+
+            let datetime = parse_datetime(&mut scanner);
+
+            assert_eq!(
+                datetime.ok(),
+                Some(DateTime::from_str("2010-11-28T07:23:02.773-04:00").expect("DateTime"))
+            )
+        }
+
+        {
+            let mut input = Cursor::new("2025-06-12T15:22:11.518+02:00 GMT-2".as_bytes());
+            let mut scanner = super::Scanner::make(&mut input).expect("Scanner");
+
+            let datetime = parse_datetime(&mut scanner);
+
+            assert_eq!(
+                datetime.ok(),
+                Some(DateTime::from_str("2025-06-12T15:22:11.518+02:00").expect("DateTime"))
+            )
+        }
+
+        {
+            let mut input = Cursor::new("2025-06-12T11:23:32.488-02:00 GMT+2".as_bytes());
+            let mut scanner = super::Scanner::make(&mut input).expect("Scanner");
+
+            let datetime = parse_datetime(&mut scanner);
+
+            assert_eq!(
+                datetime.ok(),
+                Some(DateTime::from_str("2025-06-12T11:23:32.488-02:00").expect("DateTime"))
+            )
+        }
     }
 }
