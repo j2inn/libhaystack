@@ -45,7 +45,7 @@ pub unsafe extern "C" fn haystack_filter_parse(val: *const c_char) -> Option<Box
             }
         },
         Err(err) => {
-            new_error(&format!("Invalid C string. {}", err));
+            new_error(&format!("Invalid C string. {err}"));
             None
         }
     }

@@ -405,11 +405,11 @@ impl Display for Relation {
         write!(f, "{}?", self.rel.value)?;
 
         if let Some(rel_term) = &self.rel_term {
-            write!(f, " {}", rel_term)?;
+            write!(f, " {rel_term}")?;
         }
 
         if let Some(ref_value) = &self.ref_value {
-            write!(f, " {}", ref_value)
+            write!(f, " {ref_value}")
         } else {
             Ok(())
         }
