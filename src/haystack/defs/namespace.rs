@@ -831,89 +831,97 @@ impl<'a> Namespace<'a> {
         ref_target: &Option<Ref>,
         resolve: &F,
     ) -> bool {
-        if let Some(relationship) = self.get(rel_name) {
-            if !self
-                .inheritance(rel_name)
-                .iter()
-                .any(|def| def.def_name() == "relationship")
-            {
-                return false;
-            }
+        // Def must be registered.
+        let Some(relationship) = self.get(rel_name) else {
+            return false;
+        };
 
-            let transitive = relationship.has_marker("transitive");
+        // Def must be a relationship.
+        if !self
+            .inheritance(rel_name)
+            .iter()
+            .any(|def| def.def_name() == "relationship")
+        {
+            return false;
+        }
 
-            // https://project-haystack.dev/doc/docHaystack/Relationships#reciprocalOf
-            let reciprocal_of = relationship.get_symbol("reciprocalOf");
+        let transitive = relationship.has_marker("transitive");
 
-            let mut queried_refs = HashSet::<Ref>::new();
-            let mut ref_tag: Option<Ref> = ref_target.as_ref().cloned();
-            let mut cur_subject: Dict = subject.clone();
+        // https://project-haystack.dev/doc/docHaystack/Relationships#reciprocalOf
+        let reciprocal_of = relationship.get_symbol("reciprocalOf");
 
-            'search: loop {
-                let id = cur_subject.get_ref("id");
-                for (subject_key, subject_val) in cur_subject.iter() {
-                    let subject_def = self.get_by_name(subject_key);
-                    let mut rel_val = subject_def.and_then(|def| def.get(&rel_name.value));
+        let mut queried_refs = HashSet::<Ref>::new();
+        let mut ref_tag: Option<Ref> = ref_target.as_ref().cloned();
+        let mut subjects = vec![subject.clone()];
 
-                    // Handle a reciprocal relationship. A reciprocal relationship can only
-                    // be inverted when a ref is specified.
-                    if rel_val.is_none() && ref_tag.as_ref() == id && subject_val.is_ref() {
-                        if let Some(reciprocal_of) = reciprocal_of {
-                            rel_val = subject_def.and_then(|def| def.get(&reciprocal_of.value));
+        'search: loop {
+            let Some(cur_subject) = subjects.pop() else {
+                break;
+            };
 
-                            if rel_val.is_some() {
-                                if let Value::Ref(val) = subject_val {
-                                    ref_tag = Some(val.clone())
-                                }
+            let id = cur_subject.get_ref("id");
+            for (subject_key, subject_val) in cur_subject.iter() {
+                let subject_def = self.get_by_name(subject_key);
+                let mut rel_val = subject_def.and_then(|def| def.get(&rel_name.value));
+
+                // Handle a reciprocal relationship. A reciprocal relationship can only
+                // be inverted when a ref is specified.
+                if rel_val.is_none() && ref_tag.as_ref() == id && subject_val.is_ref() {
+                    if let Some(reciprocal_of) = reciprocal_of {
+                        rel_val = subject_def.and_then(|def| def.get(&reciprocal_of.value));
+
+                        if rel_val.is_some() {
+                            if let Value::Ref(val) = subject_val {
+                                ref_tag = Some(val.clone())
                             }
                         }
                     }
+                }
 
-                    // Test to see if the relationship exists on any of the
-                    // reflected defs for an entry in subject.
-                    if let Some(Value::Symbol(rel_val)) = rel_val {
-                        // If we're testing against a relationship value then
-                        // ensure the target is also a symbol so we can see if it fits.
-                        let mut has_match = if let Some(rel_term) = rel_term.as_ref() {
-                            self.fits(rel_val, rel_term)
-                        } else {
-                            true
-                        };
+                // Test to see if the relationship exists on any of the
+                // reflected defs for an entry in subject.
+                if let Some(Value::Symbol(rel_val)) = rel_val {
+                    // If we're testing against a relationship value then
+                    // ensure the target is also a symbol so we can see if it fits.
+                    let mut has_match = if let Some(rel_term) = rel_term.as_ref() {
+                        self.fits(rel_val, rel_term)
+                    } else {
+                        true
+                    };
 
-                        // Test to see if the value matches.
-                        if has_match && ref_tag.is_some() {
-                            has_match = false;
+                    // Test to see if the value matches.
+                    if has_match && ref_tag.is_some() {
+                        has_match = false;
 
-                            if matches!(subject_val, Value::Ref(val) if Some(val) == ref_tag.as_ref())
-                            {
-                                has_match = true;
-                            } else if transitive {
-                                if let Value::Ref(subject_val) = subject_val {
-                                    if !queried_refs.contains(subject_val) {
-                                        queried_refs.insert(subject_val.clone());
+                        if matches!(subject_val, Value::Ref(val) if Some(val) == ref_tag.as_ref()) {
+                            has_match = true;
+                        } else if transitive {
+                            if let Value::Ref(subject_val) = subject_val {
+                                if !queried_refs.contains(subject_val) {
+                                    queried_refs.insert(subject_val.clone());
 
-                                        // If the value doesn't match but the relationship is transitive
-                                        // then follow the refs until we find a match or not.
-                                        // https://project-haystack.dev/doc/docHaystack/Relationships#transitive
-                                        if let Some(new_subject) = resolve(subject_val) {
-                                            if !new_subject.is_empty() {
-                                                cur_subject = new_subject;
-                                                continue 'search;
-                                            }
+                                    // If the value doesn't match but the relationship is transitive
+                                    // then follow the refs until we find a match or not.
+                                    // https://project-haystack.dev/doc/docHaystack/Relationships#transitive
+                                    if let Some(new_subject) = resolve(subject_val) {
+                                        if !new_subject.is_empty() {
+                                            subjects.push(cur_subject);
+                                            subjects.push(new_subject);
+                                            continue 'search;
                                         }
                                     }
                                 }
                             }
                         }
+                    }
 
-                        if has_match {
-                            return true;
-                        }
+                    if has_match {
+                        return true;
                     }
                 }
-                break;
             }
         }
+
         false
     }
 }
