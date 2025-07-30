@@ -109,7 +109,7 @@ pub(super) fn parse_unit<'a>() -> Parser<'a, u8, Unit> {
                                 "A" => cur.a = *scale,
                                 "mol" => cur.mol = *scale,
                                 "cd" => cur.cd = *scale,
-                                _ => panic!("Invalid dimension {}", dim),
+                                _ => panic!("Invalid dimension {dim}"),
                             };
                             cur
                         })
