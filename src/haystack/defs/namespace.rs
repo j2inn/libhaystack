@@ -855,23 +855,23 @@ impl<'a> Namespace<'a> {
         let mut subjects = vec![subject.clone()];
 
         'search: loop {
-            let Some(cur_subject) = subjects.pop() else {
+            let Some(mut cur_subject) = subjects.pop() else {
                 break;
             };
 
-            let id = cur_subject.get_ref("id");
-            for (subject_key, subject_val) in cur_subject.iter() {
-                let subject_def = self.get_by_name(subject_key);
+            let id = cur_subject.get_ref("id").cloned();
+            while let Some((subject_key, subject_val)) = cur_subject.pop_first() {
+                let subject_def = self.get_by_name(&subject_key);
                 let mut rel_val = subject_def.and_then(|def| def.get(&rel_name.value));
 
                 // Handle a reciprocal relationship. A reciprocal relationship can only
                 // be inverted when a ref is specified.
-                if rel_val.is_none() && ref_tag.as_ref() == id && subject_val.is_ref() {
+                if rel_val.is_none() && ref_tag.as_ref() == id.as_ref() && subject_val.is_ref() {
                     if let Some(reciprocal_of) = reciprocal_of {
                         rel_val = subject_def.and_then(|def| def.get(&reciprocal_of.value));
 
                         if rel_val.is_some() {
-                            if let Value::Ref(val) = subject_val {
+                            if let Value::Ref(ref val) = subject_val {
                                 ref_tag = Some(val.clone())
                             }
                         }
@@ -893,17 +893,18 @@ impl<'a> Namespace<'a> {
                     if has_match && ref_tag.is_some() {
                         has_match = false;
 
-                        if matches!(subject_val, Value::Ref(val) if Some(val) == ref_tag.as_ref()) {
+                        if matches!(subject_val, Value::Ref(ref val) if Some(val) == ref_tag.as_ref())
+                        {
                             has_match = true;
                         } else if transitive {
                             if let Value::Ref(subject_val) = subject_val {
-                                if !queried_refs.contains(subject_val) {
+                                if !queried_refs.contains(&subject_val) {
                                     queried_refs.insert(subject_val.clone());
 
                                     // If the value doesn't match but the relationship is transitive
                                     // then follow the refs until we find a match or not.
                                     // https://project-haystack.dev/doc/docHaystack/Relationships#transitive
-                                    if let Some(new_subject) = resolve(subject_val) {
+                                    if let Some(new_subject) = resolve(&subject_val) {
                                         if !new_subject.is_empty() {
                                             subjects.push(cur_subject);
                                             subjects.push(new_subject);
