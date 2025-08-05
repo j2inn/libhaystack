@@ -845,13 +845,13 @@ impl<'a> Namespace<'a> {
             return false;
         }
 
-        let transitive = relationship.has_marker("transitive");
+        let is_transitive = relationship.has_marker("transitive");
 
         // https://project-haystack.dev/doc/docHaystack/Relationships#reciprocalOf
         let reciprocal_of = relationship.get_symbol("reciprocalOf");
 
-        let mut queried_refs = HashSet::<Ref>::new();
-        let mut ref_tag: Option<Ref> = ref_target.as_ref().cloned();
+        let mut queried_refs = HashSet::new();
+        let mut ref_tag = ref_target.as_ref().cloned();
         let mut subjects = vec![subject.clone()];
 
         'search: loop {
@@ -896,7 +896,7 @@ impl<'a> Namespace<'a> {
                         if matches!(subject_val, Value::Ref(ref val) if Some(val) == ref_tag.as_ref())
                         {
                             has_match = true;
-                        } else if transitive {
+                        } else if is_transitive {
                             if let Value::Ref(subject_val) = subject_val {
                                 if !queried_refs.contains(&subject_val) {
                                     queried_refs.insert(subject_val.clone());
