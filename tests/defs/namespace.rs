@@ -1159,6 +1159,12 @@ fn test_namespace_relationship() {
 fn test_namespace_transitive_relationship() {
     let mut map = HashMap::<&str, &Dict>::new();
 
+    let site = dict! {
+        "id" =>  Value::make_ref("site"),
+        "site" =>  Value::Marker,
+    };
+    map.insert("site", &site);
+
     let ahu = dict! {
         "id" =>  Value::make_ref("ahu"),
         "ahu" =>  Value::Marker,
@@ -1171,6 +1177,8 @@ fn test_namespace_transitive_relationship() {
         "discharge" =>  Value::Marker,
         "fan" =>  Value::Marker,
         "equip" =>  Value::Marker,
+        // Not typically done but used for indirectly multiple transitive relationships.
+        "siteRef" =>  Value::make_ref("site"),
         "equipRef" =>  Value::make_ref("ahu"),
     };
     map.insert("fan", &fan);
@@ -1235,6 +1243,18 @@ fn test_namespace_transitive_relationship() {
         &resolve,
     );
     assert!(!has);
+
+    // true for a point that indirectly references a site
+    // The fan has a siteRef that also needs to be traversed as well as the equipRef. This
+    // tests multiple transitive relationships on the same dict.
+    let has = DEFS_NS.has_relationship(
+        &status,
+        &Symbol::from("containedBy"),
+        &None,
+        &Some(Ref::from("site")),
+        &resolve,
+    );
+    assert!(has);
 }
 
 #[test]

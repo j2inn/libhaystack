@@ -146,9 +146,9 @@ impl ToZinc for Number {
             } else {
                 ""
             };
-            writer.write_fmt(format_args!("{}INF", sign))?
+            writer.write_fmt(format_args!("{sign}INF"))?
         } else if let Some(unit) = &self.unit {
-            writer.write_fmt(format_args!("{}{}", self.value, unit))?
+            writer.write_fmt(format_args!("{value}{unit}", value = self.value))?
         } else {
             writer.write_fmt(format_args!("{}", self.value))?
         }
@@ -203,7 +203,7 @@ impl ToZinc for Str {
                 writer.write_all(br"\$")?
             } else {
                 let chunk = c.encode_utf8(&mut buf);
-                writer.write_fmt(format_args!("{}", chunk))?
+                writer.write_fmt(format_args!("{chunk}"))?
             }
         }
         writer.write_all(b"\"")?;

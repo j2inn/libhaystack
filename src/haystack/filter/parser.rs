@@ -37,7 +37,7 @@ impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
         // If there is something left over then we have an invalid haystack filter.
         self.parse_or().and_then(|or| match &self.lexer.cur.value {
             None => Ok(or),
-            Some(value) => self.make_generic_err(&format!("Unexpected token: {:?}.", value)),
+            Some(value) => self.make_generic_err(&format!("Unexpected token: {value:?}")),
         })
     }
 
