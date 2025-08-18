@@ -30,7 +30,7 @@ impl Path {
     }
 
     /// Obtain an `Id` iterator over `Path`s segments
-    pub fn iter(&self) -> std::slice::Iter<Id> {
+    pub fn iter(&'_ self) -> std::slice::Iter<'_, Id> {
         self.segments.iter()
     }
 }

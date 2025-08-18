@@ -785,7 +785,7 @@ impl<'a> Namespace<'a> {
     }
 
     /// The defs for all of the core haystack value types.
-    pub fn core_type_defs(&self) -> CoreTypeDefs {
+    pub fn core_type_defs(&'_ self) -> CoreTypeDefs<'_> {
         CoreTypeDefs {
             marker: self.get_by_name("marker").unwrap_or(&EMPTY_DICT),
             na: self.get_by_name("na").unwrap_or(&EMPTY_DICT),
