@@ -71,7 +71,7 @@ impl DateTime {
 
 impl PartialOrd for DateTime {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.value.cmp(&other.value))
+        Some(self.cmp(other))
     }
 }
 
