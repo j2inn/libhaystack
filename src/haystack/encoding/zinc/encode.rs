@@ -21,7 +21,7 @@ pub trait ToZinc {
     /// use libhaystack::encoding::zinc::encode::*;
     /// use libhaystack::units::get_unit_or_default;
     /// let val = Number::make_with_unit(100.0, get_unit_or_default("s"));
-    /// assert_eq!(val.to_zinc_string(), Ok("100s".to_string()));
+    /// assert_eq!(val.to_zinc_string(), Ok("100sec".to_string()));
     /// ```
     fn to_zinc_string(&self) -> Result<String> {
         let mut output = Vec::new();

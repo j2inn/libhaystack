@@ -99,7 +99,7 @@ pub unsafe extern "C" fn haystack_value_number_has_unit(val: *const Value) -> Re
 /// # use crate::libhaystack::val::Value;
 /// # use crate::libhaystack::c_api::value::*;
 /// # use crate::libhaystack::c_api::number::*;
-/// let unit = std::ffi::CString::new("s").unwrap();
+/// let unit = std::ffi::CString::new("sec").unwrap();
 /// # unsafe {
 /// let val = haystack_value_make_number_with_unit(42.0, unit.as_ptr());
 /// # let val = Box::<Value>::leak(val.unwrap());
