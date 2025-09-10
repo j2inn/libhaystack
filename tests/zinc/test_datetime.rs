@@ -61,8 +61,13 @@ fn test_zinc_datetime_utc_decode_millis() {
 }
 
 #[test]
-fn test_zinc_datetime_utc_decode_tz() {
+fn test_zinc_datetime_utc_decode_tz_london() {
     assert!(from_str("2020-02-10T16:00:00.0Z London").is_ok());
+}
+
+#[test]
+fn test_zinc_datetime_utc_decode_tz_la_rioja() {
+    assert!(from_str("2020-02-10T16:00:00.0+02:00 La_Rioja").is_ok());
 }
 
 #[test]

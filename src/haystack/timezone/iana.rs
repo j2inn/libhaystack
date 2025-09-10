@@ -51,7 +51,7 @@ pub fn timezone_short_name(date: &DateTimeType) -> String {
     tz_id[tz_id.find('/').map_or(0, |v| v + 1)..].to_string()
 }
 
-static PREFIXES: [&str; 14] = [
+static PREFIXES: [&str; 18] = [
     "Africa",
     "America",
     "Asia",
@@ -66,6 +66,10 @@ static PREFIXES: [&str; 14] = [
     "Mexico",
     "Pacific",
     "US",
+    "America/Argentina",
+    "America/Indiana",
+    "America/Kentucky",
+    "America/North_Dakota",
 ];
 
 fn find_timezone(name: &str) -> Result<Tz, String> {
