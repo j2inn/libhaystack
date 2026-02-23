@@ -10,7 +10,7 @@ use crate::haystack::val::{
 
 use crate::haystack::timezone::make_date_time_with_tz;
 use crate::units::get_unit;
-use crate::val::GRID_FORMAT_VERSION;
+use crate::val::{GRID_FORMAT_VERSION, VER};
 
 use chrono::{Offset, Utc};
 use serde::de::{Deserialize, Deserializer, Error, MapAccess, SeqAccess, Visitor};
@@ -470,53 +470,12 @@ fn parse_grid(dict: &Dict) -> Result<HVal, JsonErr> {
     match dict.get_list("rows") {
         Some(rows) => match dict.get_list("cols") {
             Some(cols) => {
-                let mut grid_ver = GRID_FORMAT_VERSION.to_string();
-
+                let (meta, ver) = parse_grid_meta_and_ver(dict);
                 let grid = Grid {
-                    meta: dict.get_dict("meta").cloned().map(|mut meta| {
-                        if let Some(ver) = meta.get_str("ver") {
-                            grid_ver = ver.value.to_owned();
-                        };
-                        meta.remove("ver");
-                        meta
-                    }),
-                    columns: {
-                        let cols: Result<Vec<Column>, JsonErr> = cols
-                            .iter()
-                            .map(|col| match col {
-                                HVal::Dict(dict) => match dict.get_str("name") {
-                                    Some(name) => match dict.get("meta") {
-                                        Some(meta) => match meta {
-                                            HVal::Dict(meta) => Ok(Column {
-                                                name: name.value.clone(),
-                                                meta: Some(meta.clone()),
-                                            }),
-                                            _ => Err(JsonErr::custom("Invalid 'meta'")),
-                                        },
-                                        None => Ok(Column {
-                                            name: name.value.clone(),
-                                            meta: None,
-                                        }),
-                                    },
-                                    None => Err(JsonErr::custom("Missing or invalid 'name'")),
-                                },
-                                _ => Err(JsonErr::custom("Invalid column type, expected a Dict")),
-                            })
-                            .collect();
-                        cols?
-                    },
-
-                    rows: {
-                        let rows: Result<Vec<Dict>, JsonErr> = rows
-                            .iter()
-                            .map(|row| match row {
-                                HVal::Dict(row) => Ok(row.clone()),
-                                _ => Err(JsonErr::custom("Invalid row type, expected a Dict")),
-                            })
-                            .collect();
-                        rows?
-                    },
-                    ver: grid_ver,
+                    meta,
+                    columns: parse_grid_columns(cols)?,
+                    rows: parse_grid_rows(rows)?,
+                    ver,
                 };
                 Ok(grid.into())
             }
@@ -524,4 +483,54 @@ fn parse_grid(dict: &Dict) -> Result<HVal, JsonErr> {
         },
         None => Err(JsonErr::custom("Missing or invalid 'rows'")),
     }
+}
+
+fn parse_grid_meta_and_ver(dict: &Dict) -> (Option<Dict>, String) {
+    let mut meta = dict.get_dict("meta").cloned();
+    let mut grid_ver = GRID_FORMAT_VERSION.to_string();
+
+    if let Some(ref mut meta_dict) = meta {
+        if let Some(ver) = meta_dict.get_str(VER) {
+            grid_ver = ver.value.to_owned();
+            meta_dict.remove(VER);
+        }
+
+        // If the meta dict is empty then use none.
+        if meta_dict.is_empty() {
+            meta = None;
+        }
+    }
+
+    (meta, grid_ver)
+}
+
+fn parse_grid_columns(cols: &List) -> Result<Vec<Column>, JsonErr> {
+    cols.iter()
+        .map(|col| match col {
+            HVal::Dict(dict) => match dict.get_str("name") {
+                Some(name) => match dict.get("meta") {
+                    Some(HVal::Dict(meta)) => Ok(Column {
+                        name: name.value.clone(),
+                        meta: Some(meta.clone()),
+                    }),
+                    Some(_) => Err(JsonErr::custom("Invalid 'meta'")),
+                    None => Ok(Column {
+                        name: name.value.clone(),
+                        meta: None,
+                    }),
+                },
+                None => Err(JsonErr::custom("Missing or invalid 'name'")),
+            },
+            _ => Err(JsonErr::custom("Invalid column type, expected a Dict")),
+        })
+        .collect()
+}
+
+fn parse_grid_rows(rows: &List) -> Result<Vec<Dict>, JsonErr> {
+    rows.iter()
+        .map(|row| match row {
+            HVal::Dict(row) => Ok(row.clone()),
+            _ => Err(JsonErr::custom("Invalid row type, expected a Dict")),
+        })
+        .collect()
 }

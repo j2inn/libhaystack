@@ -5,10 +5,14 @@
 //!
 
 use chrono::SecondsFormat;
+use std::borrow::Cow;
 
-use crate::haystack::val::{
-    Column, Coord, Date, DateTime, Dict, Grid, Marker, Na, Number, Ref, Remove, Symbol, Time, Uri,
-    Value as HVal, XStr,
+use crate::{
+    haystack::val::{
+        Column, Coord, Date, DateTime, Dict, Grid, Marker, Na, Number, Ref, Remove, Symbol, Time,
+        Uri, Value as HVal, XStr,
+    },
+    val::HaystackDict,
 };
 
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
@@ -160,14 +164,29 @@ impl Serialize for Grid {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(Some(4))?;
         map.serialize_entry("_kind", "grid")?;
-        if self.meta.is_some() {
-            map.serialize_entry("meta", &self.meta)?;
-        } else {
-            map.serialize_entry("meta", &Dict::new())?;
-        }
+
+        let meta = ensure_meta_has_ver(self.meta.as_ref());
+        map.serialize_entry("meta", meta.as_ref())?;
+
         map.serialize_entry("cols", &self.columns)?;
         map.serialize_entry("rows", &self.rows)?;
         map.end()
+    }
+}
+
+fn ensure_meta_has_ver<'a>(meta: Option<&'a Dict>) -> Cow<'a, Dict> {
+    match meta {
+        Some(meta) if meta.has("ver") => Cow::Borrowed(meta),
+        Some(meta) => {
+            let mut with_ver = meta.clone();
+            with_ver.insert("ver".into(), "3.0".into());
+            Cow::Owned(with_ver)
+        }
+        None => {
+            let mut meta = Dict::new();
+            meta.insert("ver".into(), "3.0".into());
+            Cow::Owned(meta)
+        }
     }
 }
 
@@ -219,5 +238,42 @@ impl Serialize for HVal {
 
             HVal::Grid(val) => Grid::serialize(val, serializer),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ensure_meta_has_ver_when_ver_exists() {
+        let mut meta = Dict::new();
+        meta.insert("ver".into(), "3.0".into());
+        meta.insert("site".into(), "alpha".into());
+
+        let result = ensure_meta_has_ver(Some(&meta));
+
+        assert!(result.has("ver"));
+        assert!(result.has("site"));
+    }
+
+    #[test]
+    fn ensure_meta_has_ver_when_missing() {
+        let mut meta = Dict::new();
+        meta.insert("site".into(), "alpha".into());
+
+        let result = ensure_meta_has_ver(Some(&meta));
+
+        assert!(result.has("ver"));
+        assert!(result.has("site"));
+        assert!(!meta.has("ver"));
+    }
+
+    #[test]
+    fn ensure_meta_has_ver_creates_meta_when_none() {
+        let result = ensure_meta_has_ver(None);
+
+        assert!(result.has("ver"));
+        assert_eq!(result.len(), 1);
     }
 }

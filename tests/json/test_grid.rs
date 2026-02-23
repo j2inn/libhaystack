@@ -25,7 +25,7 @@ fn test_json_grid_empty_encode() {
         },
     ];
     let grid = Value::make_grid(Grid {
-        meta: Some(Dict::default()),
+        meta: None,
         columns: vec![
             Column {
                 name: "dis".into(),
