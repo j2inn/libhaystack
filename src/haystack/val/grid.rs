@@ -21,6 +21,9 @@ pub struct Column {
 /// The version of the grid format supported by this library
 pub const GRID_FORMAT_VERSION: &str = "3.0";
 
+/// The grid meta version tag name.
+pub const VER: &str = "ver";
+
 /// Haystack Grid
 ///
 /// # Example
@@ -128,7 +131,7 @@ impl Grid {
     ///```
     pub fn make_from_dicts_with_meta(rows: Vec<Dict>, meta: Dict) -> Self {
         let mut grid = Grid::make_from_dicts(rows);
-        grid.meta = Some(meta);
+        grid.meta = if meta.is_empty() { None } else { Some(meta) };
         grid
     }
 

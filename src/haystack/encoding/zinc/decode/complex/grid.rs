@@ -4,7 +4,10 @@
 
 use super::super::parser::ParserType;
 use super::dict::parse_dict_parts;
-use crate::haystack::val::{Column, Dict, Grid, Value};
+use crate::{
+    haystack::val::{Column, Dict, Grid, Value},
+    val::VER,
+};
 use std::io::{Error, Read};
 
 /// Parses a Zinc [Grid](crate::val::Grid)
@@ -55,7 +58,9 @@ fn parse_grid_content<'a, 'b: 'a, R: Read>(
 
     parser.lexer.read()?;
 
-    let meta = parse_grid_meta(parser)?;
+    let mut meta = parse_grid_meta(parser)?;
+    meta.remove(VER);
+
     parser.lexer.expect_char(b'\n', "Grid meta")?;
 
     let columns = parse_grid_columns(parser)?;
