@@ -129,7 +129,7 @@ pub fn decode_varint<R: Read>(reader: &mut R) -> Result<i64> {
         return Ok(((v & 0x1f) as i64) << 24 | b1 << 16 | b23);
     }
     if v == 0xe0 {
-        return Ok(read_i64(reader)?);
+        return read_i64(reader);
     }
     // 0xe1–0xfe are not produced by encode_varint and have no defined meaning
     Err(Error::Message(format!(
@@ -361,7 +361,6 @@ fn dict_or_none<R: Read>(reader: &mut R) -> Result<Option<Dict>> {
 /// inspecting a ctrl byte).  All scalar and singleton types are decoded only
 /// through `Value::from_brio`, which is the natural entry-point for
 /// ctrl-byte-driven stream decoding.
-
 impl FromBrio for Dict {
     fn from_brio<R: Read>(reader: &mut R) -> Result<Self> {
         match read_u8(reader)? {

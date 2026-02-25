@@ -402,7 +402,7 @@ impl ToBrio for Dict {
                 encode_str(writer, key)?;
                 val.to_brio(writer)?;
             }
-            writer.write_all(&[b'}'])?;
+            writer.write_all(b"}")?;
         }
         Ok(())
     }
@@ -418,7 +418,7 @@ impl ToBrio for List {
             for val in self.iter() {
                 val.to_brio(writer)?;
             }
-            writer.write_all(&[b']'])?;
+            writer.write_all(b"]")?;
         }
         Ok(())
     }
@@ -455,7 +455,7 @@ impl ToBrio for Grid {
             }
         }
 
-        writer.write_all(&[b'>'])?;
+        writer.write_all(b">")?;
         Ok(())
     }
 }
