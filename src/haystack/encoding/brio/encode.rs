@@ -6,7 +6,7 @@
 
 use std::io::Write;
 
-use super::consts::lookup_const;
+use super::consts::{lookup_const, FANTOM_EPOCH_UNIX_SECS};
 use crate::haystack::val::{
     Bool, Coord, Date, DateTime, Dict, Grid, List, Marker, Na, Number, Ref, Remove, Str, Symbol,
     Time, Uri, Value, XStr,
@@ -41,9 +41,6 @@ pub const CTRL_LIST_EMPTY: u8 = 0x16;
 pub const CTRL_LIST: u8 = 0x17;
 pub const CTRL_GRID: u8 = 0x18;
 pub const CTRL_SYMBOL: u8 = 0x19;
-
-/// Seconds between Unix epoch (1970-01-01) and Fantom epoch (2000-01-01).
-pub const FANTOM_EPOCH_UNIX_SECS: i64 = 946_684_800;
 
 // ---------------------------------------------------------------------------
 // Error / Result

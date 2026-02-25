@@ -11,12 +11,12 @@ use crate::haystack::val::{
     Time, Uri, Value, XStr,
 };
 
-use super::consts::get_const;
+use super::consts::{get_const, FANTOM_EPOCH_UNIX_SECS};
 use super::encode::{
     CTRL_COORD, CTRL_DATE, CTRL_DATETIME_I4, CTRL_DATETIME_I8, CTRL_DICT, CTRL_DICT_EMPTY,
     CTRL_FALSE, CTRL_GRID, CTRL_LIST, CTRL_LIST_EMPTY, CTRL_MARKER, CTRL_NA, CTRL_NULL,
     CTRL_NUMBER_F8, CTRL_NUMBER_I2, CTRL_NUMBER_I4, CTRL_REF_I8, CTRL_REF_STR, CTRL_REMOVE,
-    CTRL_STR, CTRL_SYMBOL, CTRL_TIME, CTRL_TRUE, CTRL_URI, CTRL_XSTR, FANTOM_EPOCH_UNIX_SECS,
+    CTRL_STR, CTRL_SYMBOL, CTRL_TIME, CTRL_TRUE, CTRL_URI, CTRL_XSTR,
 };
 
 // ---------------------------------------------------------------------------
@@ -128,8 +128,13 @@ pub fn decode_varint<R: Read>(reader: &mut R) -> Result<i64> {
         let b23 = read_u16(reader)? as i64;
         return Ok(((v & 0x1f) as i64) << 24 | b1 << 16 | b23);
     }
-    // v == 0xe0
-    Ok(read_i64(reader)?)
+    if v == 0xe0 {
+        return Ok(read_i64(reader)?);
+    }
+    // 0xe1–0xfe are not produced by encode_varint and have no defined meaning
+    Err(Error::Message(format!(
+        "Invalid varint leading byte: {v:#x}"
+    )))
 }
 
 /// Read one CESU-8 byte sequence and return the UTF-16 code unit it encodes.
@@ -229,7 +234,7 @@ fn datetime_from_nanos(fantom_nanos: i64, tz: &str) -> Result<DateTime> {
     let utc = Utc
         .timestamp_opt(unix_secs, nanos)
         .single()
-        .ok_or_else(|| Error::Message(format!("Invalid nanosecond timestamp")))?;
+        .ok_or_else(|| Error::Message(format!("Invalid nanosecond timestamp: {fantom_nanos}")))?;
     let rfc3339 = utc.to_rfc3339_opts(SecondsFormat::Nanos, true);
     DateTime::parse_from_rfc3339_with_timezone(&rfc3339, tz).map_err(Error::Message)
 }
@@ -837,6 +842,19 @@ mod tests {
         let bytes: Vec<u8> = vec![0xc0, 0x00, 0x27, 0x0f]; // varint(9999)
         let result = decode_str(&mut bytes.as_slice());
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_decode_varint_invalid_leading_byte() {
+        // 0xe1–0xfe are never written by encode_varint; decoding them must return an error
+        // rather than silently consuming 8 bytes as if they were 0xe0.
+        for byte in [0xe1u8, 0xf0, 0xfe] {
+            let result = decode_varint(&mut [byte].as_ref());
+            assert!(
+                result.is_err(),
+                "expected error for leading byte {byte:#x}, got Ok"
+            );
+        }
     }
 
     #[test]

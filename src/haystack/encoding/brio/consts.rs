@@ -11,6 +11,9 @@
 //! wire (confirmed by `BrioTest.fan`: `verifyConsts(cp, "", 0)`).  All other
 //! entries are 1-based.
 
+/// Seconds between the Unix epoch (1970-01-01) and the Fantom epoch (2000-01-01).
+pub const FANTOM_EPOCH_UNIX_SECS: i64 = 946_684_800;
+
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
