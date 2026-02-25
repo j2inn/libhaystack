@@ -7,3 +7,5 @@
 pub mod json;
 #[cfg(feature = "zinc")]
 pub mod zinc;
+#[cfg(feature = "brio")]
+pub mod brio;
