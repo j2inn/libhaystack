@@ -24,6 +24,10 @@ crate-type = ["cdylib", "rlib"]
 name = "main"
 harness = false
 
+[[bench]]
+name = "gen_trio_fixture"
+harness = false
+
 [workspace]
 members = ["unit-gen"]
 
@@ -33,10 +37,12 @@ members = ["unit-gen"]
 default = ["encoders", "filter", "timezone", "units", "c-api"]
 
 # C API Features
-c-api = ["c-api-filter", "c-api-json", "c-api-zinc"]
+c-api = ["c-api-filter", "c-api-json", "c-api-zinc", "c-api-brio", "c-api-trio"]
 c-api-filter = ["filter"]
 c-api-zinc = ["zinc"]
 c-api-json = ["json"]
+c-api-brio = ["brio"]
+c-api-trio = ["trio"]
 
 # Lib features
 value = ["units", "timezone", "encoders"]
@@ -46,7 +52,7 @@ units = ["units-db"]
 units-db = []
 timezone = ["timezone-db"]
 timezone-db = []
-encoders = ["value", "json", "zinc", "brio"]
+encoders = ["value", "json", "zinc", "brio", "trio"]
 json = ["json-encoding", "json-decoding"]
 json-encoding = []
 json-decoding = []
@@ -56,6 +62,9 @@ zinc-decoding = []
 brio = ["brio-encoding", "brio-decoding"]
 brio-encoding = []
 brio-decoding = []
+trio = ["trio-encoding", "trio-decoding"]
+trio-encoding = ["zinc-encoding"]
+trio-decoding = ["zinc-decoding"]
 
 [dependencies]
 serde = "1.0"

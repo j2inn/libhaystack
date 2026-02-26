@@ -21,7 +21,7 @@ fn test_zinc_grid_empty_encode() {
 fn test_zinc_grid_empty_decode() {
     let string = concat!(r#"ver:"3.0""#, "\n", r#"empty"#, "\n");
 
-    let value = from_str(&string);
+    let value = from_str(string);
     assert_eq!(value.unwrap(), Value::make_grid(Grid::make_empty()));
 }
 
@@ -29,13 +29,13 @@ fn test_zinc_grid_empty_decode() {
 fn test_zinc_grid_version_decode() {
     let string = concat!(r#"ver:"3.0""#, "\n", r#"empty"#, "\n");
 
-    let value = from_str(&string).expect("Grid");
+    let value = from_str(string).expect("Grid");
 
     assert!(matches!(value, Value::Grid(grid) if grid.ver == GRID_FORMAT_VERSION));
 
     let string = concat!(r#"ver:"2.0""#, "\n", r#"empty"#, "\n");
 
-    let value = from_str(&string).expect("Grid");
+    let value = from_str(string).expect("Grid");
 
     assert!(matches!(value, Value::Grid(grid) if grid.ver == "2.0"));
 }

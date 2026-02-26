@@ -73,7 +73,7 @@ fn test_value_bool() {
     assert_eq!(value, Value::make_bool(true));
 
     let bool_val = bool::try_from(&value);
-    assert!(!bool_val.is_err());
+    assert!(bool_val.is_ok());
     assert!(bool_val.unwrap());
 
     value = Value::from(true);
@@ -339,7 +339,8 @@ fn test_value_grid() {
         }
     );
 
-    let mut cols = (&grid.columns)
+    let mut cols = grid
+        .columns
         .iter()
         .map(|col| col.name.clone())
         .collect::<Vec<String>>();

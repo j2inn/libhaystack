@@ -17,7 +17,7 @@ pub(crate) fn parse_def_file(file: &str) -> Grid {
         "{root}/tests/defs/{file}",
         root = std::env::var("CARGO_MANIFEST_DIR").unwrap_or(format!(
             "{cwd}",
-            cwd = std::env::current_dir().unwrap().display().to_string()
+            cwd = std::env::current_dir().unwrap().display()
         ))
     );
 

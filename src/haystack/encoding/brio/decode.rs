@@ -574,7 +574,7 @@ mod tests {
 
     #[test]
     fn test_number_f8() {
-        let v = Value::from(Number::make(3.14));
+        let v = Value::from(Number::make(std::f64::consts::PI));
         assert_eq!(round_trip(&v), v);
     }
 

@@ -114,7 +114,7 @@ mod test {
             ]
         })
         .get(name)
-        .map(|val| Cow::Borrowed(val))
+        .map(Cow::Borrowed)
     }
 
     fn i18n_cb<'a>(name: &str) -> Option<Cow<'a, str>> {
