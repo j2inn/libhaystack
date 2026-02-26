@@ -591,6 +591,34 @@ mod tests {
     }
 
     #[test]
+    fn test_number_nan() {
+        // NaN != NaN so we can't use round_trip with assert_eq; extract the f64 directly.
+        let v = Value::from(Number::make(f64::NAN));
+        let bytes = v.to_brio_vec().expect("encode");
+        let got = from_brio(&mut bytes.as_slice()).expect("decode");
+        let n = Number::try_from(&got).expect("expected a Number");
+        assert!(n.value.is_nan(), "expected NaN, got {}", n.value);
+    }
+
+    #[test]
+    fn test_number_inf() {
+        let v = Value::from(Number::make(f64::INFINITY));
+        let bytes = v.to_brio_vec().expect("encode");
+        let got = from_brio(&mut bytes.as_slice()).expect("decode");
+        let n = Number::try_from(&got).expect("expected a Number");
+        assert!(n.value.is_infinite() && n.value.is_sign_positive());
+    }
+
+    #[test]
+    fn test_number_neg_inf() {
+        let v = Value::from(Number::make(f64::NEG_INFINITY));
+        let bytes = v.to_brio_vec().expect("encode");
+        let got = from_brio(&mut bytes.as_slice()).expect("decode");
+        let n = Number::try_from(&got).expect("expected a Number");
+        assert!(n.value.is_infinite() && n.value.is_sign_negative());
+    }
+
+    #[test]
     fn test_str_empty() {
         let v = Value::from("");
         assert_eq!(round_trip(&v), v);
@@ -773,6 +801,69 @@ mod tests {
         let got = round_trip(&v);
         let got_g = Grid::try_from(&got).unwrap();
         assert_eq!(got_g.rows.len(), 2);
+    }
+
+    #[test]
+    fn test_grid_with_meta() {
+        let meta = dict! {
+            "dis"  => Value::from("My Grid"),
+            "site" => Value::make_marker()
+        };
+
+        let g = Grid::make_from_dicts_with_meta(
+            vec![dict! { "dis" => Value::from("Row 1"), "val" => Value::from(Number::make(42.0)) }],
+            meta.clone(),
+        );
+
+        let v = Value::from(g);
+        let got = round_trip(&v);
+        let got_g = Grid::try_from(&got).unwrap();
+
+        assert_eq!(got_g.rows.len(), 1);
+        assert_eq!(got_g.meta, Some(meta));
+    }
+
+    #[test]
+    fn test_grid_with_column_meta() {
+        let g = Grid {
+            meta: None,
+            columns: vec![
+                Column {
+                    name: "dis".to_string(),
+                    meta: Some(dict! { "doc" => Value::from("Display name") }),
+                },
+                Column {
+                    name: "val".to_string(),
+                    meta: Some(
+                        dict! { "doc" => Value::from("Numeric value"), "unit" => Value::from("kW") },
+                    ),
+                },
+            ],
+            rows: vec![dict! {
+                "dis" => Value::from("Site A"),
+                "val" => Value::from(Number::make_with_unit(100.0, get_unit_or_default("kW")))
+            }],
+            ver: GRID_FORMAT_VERSION.to_string(),
+        };
+
+        let v = Value::from(g.clone());
+        let got = round_trip(&v);
+        let got_g = Grid::try_from(&got).unwrap();
+
+        assert_eq!(got_g.rows.len(), 1);
+        // Verify column meta survived the round-trip
+        let dis_col = got_g.columns.iter().find(|c| c.name == "dis").unwrap();
+
+        assert_eq!(
+            dis_col.meta,
+            Some(dict! { "doc" => Value::from("Display name") })
+        );
+
+        let val_col = got_g.columns.iter().find(|c| c.name == "val").unwrap();
+        assert_eq!(
+            val_col.meta,
+            Some(dict! { "doc" => Value::from("Numeric value"), "unit" => Value::from("kW") })
+        );
     }
 
     #[test]
