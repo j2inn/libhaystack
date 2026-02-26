@@ -16,7 +16,7 @@ lazy_static! {
 }
 
 fn eval_in_context(filter: &Filter, dict: &Dict) -> bool {
-    let cx = EvalContext::make(&dict, &NS, dict);
+    let cx = EvalContext::make(dict, &NS, dict);
     filter.eval(&cx)
 }
 
@@ -288,7 +288,7 @@ struct Records {
 impl Records {
     fn read(&self, filter: &Filter) -> Option<&Dict> {
         self.recs.iter().find(|rec| {
-            let cx = EvalContext::make(&rec, &NS, self);
+            let cx = EvalContext::make(rec, &NS, self);
             filter.eval(&cx)
         })
     }
@@ -296,13 +296,9 @@ impl Records {
     fn read_all(&self, filter: &Filter) -> Vec<&Dict> {
         self.recs
             .iter()
-            .filter_map(|rec| {
-                let cx = EvalContext::make(&rec, &NS, self);
-                if filter.eval(&cx) {
-                    Some(rec)
-                } else {
-                    None
-                }
+            .filter(|rec| {
+                let cx = EvalContext::make(rec, &NS, self);
+                filter.eval(&cx)
             })
             .collect()
     }

@@ -526,11 +526,11 @@ mod tests {
 
     #[test]
     fn test_number_f8() {
-        let v = Value::from(Number::make(3.14));
+        let v = Value::from(Number::make(std::f64::consts::PI));
         let bytes = enc(&v);
         assert_eq!(bytes[0], CTRL_NUMBER_F8);
         let f = f64::from_be_bytes(bytes[1..9].try_into().unwrap());
-        assert!((f - 3.14).abs() < 1e-10);
+        assert!((f - std::f64::consts::PI).abs() < 1e-10);
     }
 
     #[test]

@@ -1347,13 +1347,13 @@ fn test_namespace_containment_relationship() {
     };
 
     assert!(
-        contained_by_refs(ahu).contains(&&"siteRef".to_string()),
+        contained_by_refs(ahu).contains(&"siteRef".to_string()),
         "ahu must be contained by a site"
     );
 
     let refs = contained_by_refs(fan);
     assert!(
-        refs.contains(&&"siteRef".to_string()) && refs.contains(&&"equipRef".to_string()),
+        refs.contains(&"siteRef".to_string()) && refs.contains(&"equipRef".to_string()),
         "fan must be contained by equip and site"
     )
 }

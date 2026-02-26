@@ -59,5 +59,5 @@ criterion_group!(
 );
 criterion_main!(benches);
 
-#[cfg(never)]
+#[cfg(any())]
 fn main() {}
