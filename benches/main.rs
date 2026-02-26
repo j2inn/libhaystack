@@ -7,6 +7,7 @@
 
 use criterion::{criterion_group, criterion_main, Criterion};
 
+use libhaystack::haystack::encoding::brio::decode::from_brio;
 use libhaystack::haystack::encoding::zinc::decode::*;
 use libhaystack::haystack::val::*;
 use std::fs;
@@ -37,7 +38,25 @@ fn criterion_zinc_parse(bench: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, criterion_zinc_parse, criterion_json_parse);
+fn criterion_brio_parse(bench: &mut Criterion) {
+    let bytes = fs::read("benches/brio/points.brio").expect("Invalid brio test file");
+    bench.bench_function("Brio parse points", |b| {
+        b.iter(|| {
+            let value = from_brio(&mut bytes.as_slice()).expect("Value");
+
+            let grid = Grid::try_from(&value).expect("Grid");
+
+            assert!(!grid.is_empty());
+        });
+    });
+}
+
+criterion_group!(
+    benches,
+    criterion_zinc_parse,
+    criterion_json_parse,
+    criterion_brio_parse
+);
 criterion_main!(benches);
 
 #[cfg(never)]
