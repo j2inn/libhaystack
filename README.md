@@ -112,23 +112,119 @@ assert_eq!(dict.filter(&filter), true);
 
 ### Encoding
 
-The library provides support for [JSON](https://project-haystack.org/doc/docHaystack/Json) and [Zinc](https://project-haystack.org/doc/docHaystack/Zinc) encoding.
+The library provides support for [JSON](https://project-haystack.org/doc/docHaystack/Json), [Zinc](https://project-haystack.org/doc/docHaystack/Zinc), [Trio](https://project-haystack.org/doc/docHaystack/Trio), and [Brio](https://haxall.io/doc/docHaxall/Brio) encoding.
 
-JSON is provided through the excellent Serde library, and Zinc
-is provided as a hand tuned decoder and encoder, with a performance
-oriented streaming lazy Grid rows parser.
+JSON is provided through the excellent Serde library. Zinc, Trio, and Brio are hand-tuned decoders and encoders built for performance.
+
+Each format is opt-in via a cargo feature (`json`, `zinc`, `trio`, `brio`).
+
+#### JSON
+
+[JSON](https://project-haystack.org/doc/docHaystack/Json) encoding is provided through the excellent [Serde](https://serde.rs) library. All Haystack types implement `Serialize` and `Deserialize`.
 
 ```rust
 use libhaystack::val::*;
-// Decode a `Str` haystack `Value` from JSON encoding
-let value: Value = serde_json::from_str("'hello'").unwrap();
+use libhaystack::dict;
+
+// Decode a Dict from Hayson (Haystack JSON) encoding
+let json = r#"{"_kind":"dict","dis":{"_kind":"str","val":"Chiller Plant"},"site":{"_kind":"marker"}}"#;
+let value: Value = serde_json::from_str(json).expect("decode");
+let dict = Dict::try_from(&value).expect("dict");
+assert_eq!(dict.get_str("dis"), Some(&"Chiller Plant".into()));
 ```
 
 ```rust
 use libhaystack::val::*;
-use libhaystack::encoding::zinc::*;
-// Decode a `Number` haystack `Value` from Zinc encoding
-let value: Value = decode::from_str("42s").unwrap();
+use libhaystack::dict;
+
+// Encode a Dict to Hayson JSON
+let value = Value::make_dict(dict! {
+    "dis"  => Value::from("Chiller Plant"),
+    "site" => Value::make_marker()
+});
+let json = serde_json::to_string(&value).expect("encode");
+println!("{json}");
+// {"_kind":"dict","dis":{"_kind":"str","val":"Chiller Plant"},"site":{"_kind":"marker"}}
+```
+
+#### Zinc
+
+[Zinc](https://project-haystack.org/doc/docHaystack/Zinc) is a human-readable text format with a performance-oriented streaming Grid parser.
+
+```rust
+use libhaystack::val::*;
+use libhaystack::encoding::zinc::decode;
+
+// Decode a Number with unit from Zinc encoding
+let value: Value = decode::from_str("42kW").expect("decode");
+assert_eq!(value, Value::from(Number::make_with_unit(42.0, "kW".into())));
+```
+
+```rust
+use libhaystack::val::*;
+use libhaystack::dict;
+use libhaystack::encoding::zinc::encode::to_zinc_string;
+
+// Encode a Dict to Zinc
+let value = Value::make_dict(dict! {
+    "dis"  => Value::from("Chiller Plant"),
+    "site" => Value::make_marker()
+});
+let zinc = to_zinc_string(&value).expect("encode");
+println!("{zinc}");
+// {dis:"Chiller Plant",site:M}
+```
+
+#### Trio
+
+[Trio](https://project-haystack.org/doc/docHaystack/Trio) ("Text Record Input/Output") is a human-friendly plain-text format derived from YAML, used for hand-authoring Haystack records.
+
+```rust
+use libhaystack::val::*;
+use libhaystack::encoding::trio::decode::TrioReader;
+
+// Decode a sequence of dicts from Trio text
+let trio = "dis: \"Chiller Plant\"\nsite\n---\ndis: \"AHU-1\"\nequip\n";
+let dicts = TrioReader::dicts_from_str(trio).expect("dicts");
+assert_eq!(dicts.len(), 2);
+```
+
+```rust
+use libhaystack::val::*;
+use libhaystack::dict;
+use libhaystack::encoding::trio::encode::TrioWriter;
+
+// Encode a dict to Trio text
+let mut writer = TrioWriter::new();
+writer.add_dict(dict! {
+    "dis"  => Value::from("Chiller Plant"),
+    "site" => Value::make_marker()
+});
+println!("{}", writer.to_trio_string());
+// dis: "Chiller Plant"
+// site
+```
+
+#### Brio
+
+Brio is a compact binary format used by the [Haxall](https://haxall.io) platform. It provides the most efficient serialization of all supported formats — benchmarks show it decoding ~43% faster than JSON and ~69% faster than Zinc on real-world point grids.
+
+```rust
+use libhaystack::val::*;
+use libhaystack::dict;
+use libhaystack::encoding::brio::encode::ToBrio;
+use libhaystack::encoding::brio::decode::from_brio;
+
+// Encode any Value to a compact binary Vec<u8>
+let val = Value::make_dict(dict! {
+    "site" => Value::make_marker(),
+    "dis"  => Value::from("Main Campus")
+});
+let bytes = val.to_brio_vec().expect("encode");
+
+// Decode back from a byte slice
+let decoded = from_brio(&mut bytes.as_slice()).expect("decode");
+assert_eq!(val, decoded);
 ```
 ## C API
 
