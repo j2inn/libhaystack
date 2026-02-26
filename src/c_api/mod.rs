@@ -2,6 +2,8 @@
 
 //! Haystack C based API for the core data types, encoders, and filters
 
+#[cfg(feature = "c-api-brio")]
+pub mod brio;
 pub mod coord;
 pub mod date;
 pub mod datetime;
@@ -17,6 +19,8 @@ pub mod reference;
 pub mod str;
 pub mod symbol;
 pub mod time;
+#[cfg(feature = "c-api-trio")]
+pub mod trio;
 pub mod uri;
 pub mod value;
 pub mod xstr;

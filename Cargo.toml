@@ -33,10 +33,12 @@ members = ["unit-gen"]
 default = ["encoders", "filter", "timezone", "units", "c-api"]
 
 # C API Features
-c-api = ["c-api-filter", "c-api-json", "c-api-zinc"]
+c-api = ["c-api-filter", "c-api-json", "c-api-zinc", "c-api-brio", "c-api-trio"]
 c-api-filter = ["filter"]
 c-api-zinc = ["zinc"]
 c-api-json = ["json"]
+c-api-brio = ["brio"]
+c-api-trio = ["trio"]
 
 # Lib features
 value = ["units", "timezone", "encoders"]
