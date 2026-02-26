@@ -137,5 +137,37 @@ class BrioGen {
     g.p("list_empty",  Obj?[,])
     g.p("list_marker", Obj?[Marker.val])
     g.p("list_mixed",  Obj?["hello", Number(42f), Marker.val])
+
+    // Grids
+    // Empty grid - no columns, no rows, no meta
+    gbEmpty := GridBuilder()
+    g.p("grid_empty", gbEmpty.toGrid)
+
+    // Grid with two columns only, no rows, no meta
+    gbCols := GridBuilder()
+    gbCols.addCol("dis")
+    gbCols.addCol("val")
+    g.p("grid_cols_only", gbCols.toGrid)
+
+    // Grid with column meta
+    gbColMeta := GridBuilder()
+    gbColMeta.addCol("dis", ["doc": "Display name"])
+    gbColMeta.addCol("val", ["doc": "Numeric value", "unit": "kW"])
+    g.p("grid_col_meta", gbColMeta.toGrid)
+
+    // Grid with rows
+    gbRows := GridBuilder()
+    gbRows.addCol("dis")
+    gbRows.addCol("val")
+    gbRows.addRow(["Site A", Number(100f, Unit("kW"))])
+    gbRows.addRow(["Site B", Number(200f, Unit("kW"))])
+    g.p("grid_rows", gbRows.toGrid)
+
+    // Grid with grid-level meta
+    gbMeta := GridBuilder()
+    gbMeta.setMeta(["dis": "My Grid", "view": Marker.val])
+    gbMeta.addCol("equip")
+    gbMeta.addRow([Marker.val])
+    g.p("grid_meta", gbMeta.toGrid)
   }
 }

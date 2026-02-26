@@ -25,7 +25,8 @@ mod tests {
     use crate::encoding::brio::decode::from_brio;
     use crate::encoding::brio::encode::ToBrio;
     use crate::haystack::val::{
-        Coord, Date, DateTime, Dict, List, Number, Ref, Symbol, Time, Uri, Value, XStr,
+        Column, Coord, Date, DateTime, Dict, Grid, List, Number, Ref, Symbol, Time, Uri, Value,
+        XStr, GRID_FORMAT_VERSION,
     };
     use crate::units::get_unit_or_default;
 
@@ -709,5 +710,124 @@ mod tests {
             Value::make_marker(),
         ]);
         assert_fixture("175b0309ff0568656c6c6f06002a00015d", &Value::from(list));
+    }
+
+    // -----------------------------------------------------------------------
+    // Grid
+    // -----------------------------------------------------------------------
+
+    fn make_col(name: &str) -> Column {
+        Column {
+            name: name.to_string(),
+            meta: None,
+        }
+    }
+
+    fn make_col_with_meta(name: &str, meta: Dict) -> Column {
+        Column {
+            name: name.to_string(),
+            meta: Some(meta),
+        }
+    }
+
+    /// Empty grid - no columns, no rows, no meta.
+    /// Fantom: GridBuilder().toGrid
+    #[test]
+    fn fixture_grid_empty() {
+        let expected = Value::from(Grid::default());
+        assert_fixture("183c0000143e", &expected);
+    }
+
+    /// Grid with two columns (dis, val), no rows, no meta.
+    /// Fantom: addCol("dis") + addCol("val")
+    #[test]
+    fn fixture_grid_cols_only() {
+        let expected = Value::from(Grid {
+            meta: None,
+            columns: vec![make_col("dis"), make_col("val")],
+            rows: vec![],
+            ver: GRID_FORMAT_VERSION.to_string(),
+        });
+        assert_fixture("183c02001480b91481aa143e", &expected);
+    }
+
+    /// Grid with column-level meta dicts, no rows.
+    /// Fantom: addCol("dis", ["doc":"Display name"]) + addCol("val", ["doc":"Numeric value", "unit":"kW"])
+    ///
+    /// Fantom insertion order for the "val" col meta is (unit, doc); Rust BTreeMap
+    /// iterates alphabetically (doc, unit), so re-encoding produces different bytes.
+    /// We verify the Fantom bytes decode to the correct Grid, using assert_decode.
+    #[test]
+    fn fixture_grid_col_meta() {
+        let expected = Value::from(Grid {
+            meta: None,
+            columns: vec![
+                make_col_with_meta("dis", dict! { "doc" => Value::from("Display name") }),
+                make_col_with_meta(
+                    "val",
+                    dict! {
+                        "doc"  => Value::from("Numeric value"),
+                        "unit" => Value::from("kW")
+                    },
+                ),
+            ],
+            rows: vec![],
+            ver: GRID_FORMAT_VERSION.to_string(),
+        });
+        assert_decode(
+            "183c02001480b9157b01830709ff0c446973706c6179206e616d657d81aa157b02819a098276830709ff0d4e756d657269632076616c75657d3e",
+            &expected,
+        );
+    }
+
+    /// Grid with two columns and two rows.
+    /// Fantom: addRow(["Site A", 100kW]) + addRow(["Site B", 200kW])
+    ///
+    /// Row cells are written in column order (no dict keys), so encoding is
+    /// stable and byte-for-byte identical to Fantom.
+    #[test]
+    fn fixture_grid_rows() {
+        let expected = Value::from(Grid {
+            meta: None,
+            columns: vec![make_col("dis"), make_col("val")],
+            rows: vec![
+                dict! {
+                    "dis" => Value::from("Site A"),
+                    "val" => Value::from(Number::make_with_unit(100.0, get_unit_or_default("kW")))
+                },
+                dict! {
+                    "dis" => Value::from("Site B"),
+                    "val" => Value::from(Number::make_with_unit(200.0, get_unit_or_default("kW")))
+                },
+            ],
+            ver: GRID_FORMAT_VERSION.to_string(),
+        });
+        assert_fixture(
+            "183c02021480b91481aa1409ff06536974652041060064827609ff065369746520420600c882763e",
+            &expected,
+        );
+    }
+
+    /// Grid with grid-level meta, one column, one row.
+    /// Fantom: setMeta(["dis":"My Grid", "view":M]) + addCol("equip") + addRow([M])
+    ///
+    /// Fantom insertion order for the meta dict is (dis, view); Rust BTreeMap
+    /// iterates alphabetically (dis, view) — same order here — but we still use
+    /// assert_decode because dict key ordering may differ across Fantom versions.
+    #[test]
+    fn fixture_grid_meta() {
+        let expected = Value::from(Grid {
+            meta: Some(dict! {
+                "dis"  => Value::from("My Grid"),
+                "view" => Value::make_marker()
+            }),
+            columns: vec![make_col("equip")],
+            rows: vec![dict! { "equip" => Value::make_marker() }],
+            ver: GRID_FORMAT_VERSION.to_string(),
+        });
+        assert_decode(
+            "183c0101157b0283660180b909ff074d7920477269647d80cf14013e",
+            &expected,
+        );
     }
 }
