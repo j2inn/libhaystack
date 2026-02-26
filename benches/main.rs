@@ -8,6 +8,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 
 use libhaystack::haystack::encoding::brio::decode::from_brio;
+use libhaystack::haystack::encoding::trio::decode::TrioReader;
 use libhaystack::haystack::encoding::zinc::decode::*;
 use libhaystack::haystack::val::*;
 use std::fs;
@@ -51,11 +52,23 @@ fn criterion_brio_parse(bench: &mut Criterion) {
     });
 }
 
+fn criterion_trio_parse(bench: &mut Criterion) {
+    let string = fs::read_to_string("benches/trio/points.trio").expect("Invalid trio test file");
+    bench.bench_function("Trio parse points", |b| {
+        b.iter(|| {
+            let grid = TrioReader::grid_from_str(&string).expect("Grid");
+
+            assert!(!grid.is_empty());
+        });
+    });
+}
+
 criterion_group!(
     benches,
     criterion_zinc_parse,
     criterion_json_parse,
-    criterion_brio_parse
+    criterion_brio_parse,
+    criterion_trio_parse
 );
 criterion_main!(benches);
 

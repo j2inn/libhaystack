@@ -24,6 +24,10 @@ crate-type = ["cdylib", "rlib"]
 name = "main"
 harness = false
 
+[[bench]]
+name = "gen_trio_fixture"
+harness = false
+
 [workspace]
 members = ["unit-gen"]
 
