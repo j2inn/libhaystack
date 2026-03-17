@@ -77,17 +77,19 @@ impl IntoFilterPath for Vec<&str> {
     }
 }
 
-/// Typestate marker for [`FilterBuilder`] — no term has been added yet.
+/// Typestate marker for [`FilterBuilder`] — a term must be added next.
 ///
-/// In this state, connectives (`and`, `or`), `end_parens`, and `build` are not
-/// available. Add a term first (e.g. [`has`](FilterBuilder::has),
-/// [`eq`](FilterBuilder::eq), [`is_a`](FilterBuilder::is_a), …).
+/// Term-producing methods ([`has`](FilterBuilder::has), [`eq`](FilterBuilder::eq),
+/// [`is_a`](FilterBuilder::is_a), …) are available. Connectives (`and`, `or`),
+/// `end_parens`, and `build` are **not** available until a term has been added.
 pub struct NeedsTerm;
 
-/// Typestate marker for [`FilterBuilder`] — at least one term is pending.
+/// Typestate marker for [`FilterBuilder`] — a term has just been added.
 ///
-/// In this state all methods are available, including connectives (`and`, `or`),
-/// `end_parens`, and `build`.
+/// Connectives ([`and`](FilterBuilder::and), [`or`](FilterBuilder::or)),
+/// [`end_parens`](FilterBuilder::end_parens), and [`build`](FilterBuilder::build)
+/// are available. To add another term, call `and()` or `or()` first to return
+/// to the [`NeedsTerm`] state.
 pub struct HasTerm;
 
 /// Fluent builder for constructing a Haystack [`Filter`] via its AST.
@@ -115,6 +117,12 @@ pub struct HasTerm;
 /// # use libhaystack::filter::FilterBuilder;
 /// // cannot build an empty filter
 /// let _ = FilterBuilder::new().build();
+/// ```
+///
+/// ```compile_fail
+/// # use libhaystack::filter::FilterBuilder;
+/// // consecutive terms require an explicit and() or or() between them
+/// let _ = FilterBuilder::new().has("site").has("equip").build();
 /// ```
 ///
 /// # Path arguments
@@ -160,10 +168,45 @@ impl Default for FilterBuilder<NeedsTerm> {
 }
 
 // ---------------------------------------------------------------------------
-// Methods available in any state (term producers + start_parens)
+// Private helpers (available in any state)
 // ---------------------------------------------------------------------------
 
 impl<S> FilterBuilder<S> {
+    /// Reinterprets the builder's state marker without moving any data.
+    fn transition<T>(self) -> FilterBuilder<T> {
+        FilterBuilder {
+            _state: PhantomData,
+            ands: self.ands,
+            current_terms: self.current_terms,
+            paren_stack: self.paren_stack,
+        }
+    }
+
+    /// Finalises the accumulated terms into an `And` node and clears `current_terms`.
+    /// Does nothing if `current_terms` is empty.
+    fn flush_and(&mut self) {
+        if !self.current_terms.is_empty() {
+            self.ands.push(And {
+                terms: std::mem::take(&mut self.current_terms),
+            });
+        }
+    }
+
+    fn cmp(mut self, path: impl IntoFilterPath, op: CmpOp, value: Value) -> FilterBuilder<HasTerm> {
+        self.current_terms.push(Term::Cmp(Cmp {
+            path: path.into_filter_path(),
+            op,
+            value,
+        }));
+        self.transition()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Methods available only when a term is needed (NeedsTerm state)
+// ---------------------------------------------------------------------------
+
+impl FilterBuilder<NeedsTerm> {
     // -------------------------------------------------------------------------
     // Parentheses
     // -------------------------------------------------------------------------
@@ -366,39 +409,6 @@ impl<S> FilterBuilder<S> {
             .push(Term::Parens(Parens { or: filter.or }));
         self.transition()
     }
-
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
-
-    /// Reinterprets the builder's state marker without moving any data.
-    fn transition<T>(self) -> FilterBuilder<T> {
-        FilterBuilder {
-            _state: PhantomData,
-            ands: self.ands,
-            current_terms: self.current_terms,
-            paren_stack: self.paren_stack,
-        }
-    }
-
-    /// Finalises the accumulated terms into an `And` node and clears `current_terms`.
-    /// Does nothing if `current_terms` is empty.
-    fn flush_and(&mut self) {
-        if !self.current_terms.is_empty() {
-            self.ands.push(And {
-                terms: std::mem::take(&mut self.current_terms),
-            });
-        }
-    }
-
-    fn cmp(mut self, path: impl IntoFilterPath, op: CmpOp, value: Value) -> FilterBuilder<HasTerm> {
-        self.current_terms.push(Term::Cmp(Cmp {
-            path: path.into_filter_path(),
-            op,
-            value,
-        }));
-        self.transition()
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -410,18 +420,18 @@ impl FilterBuilder<HasTerm> {
     // Logical connectives
     // -------------------------------------------------------------------------
 
-    /// Separator between conditions in the same `and` group.
+    /// Transitions to the [`NeedsTerm`] state, requiring an explicit term next.
     ///
-    /// In the AST, consecutive terms are implicitly and-ed, so this is a no-op
-    /// that exists purely for readability.
+    /// In the AST, consecutive terms are implicitly and-ed; this method signals
+    /// that intent at the type level and prevents accidental omissions.
     ///
     /// ```
     /// # use libhaystack::filter::FilterBuilder;
     /// let f = FilterBuilder::new().has("site").and().has("equip").build();
     /// assert_eq!(f.to_string(), "site and equip");
     /// ```
-    pub fn and(self) -> FilterBuilder<HasTerm> {
-        self
+    pub fn and(self) -> FilterBuilder<NeedsTerm> {
+        self.transition()
     }
 
     /// Finalises the current `and`-group and starts a new one, producing an `or` in the output.
