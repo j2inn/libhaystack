@@ -394,7 +394,7 @@ mod test {
         let mut parser = Parser::make(&mut input).expect("Should create parser");
 
         let parens = parser.parse().expect("Parens");
-        assert_eq!(parens.to_string(), "a or ( b and c )");
+        assert_eq!(parens.to_string(), "a or (b and c)");
     }
 
     #[test]

@@ -20,6 +20,7 @@
 //! assert_eq!(dict.filter(&filter), true);
 //! ```
 
+pub mod builder;
 pub mod eval;
 pub mod filtered;
 mod lexer;
@@ -29,6 +30,7 @@ pub mod path;
 pub mod resolver;
 
 // Export common types
+pub use builder::{FilterBuilder, HasTerm, IntoFilterPath, NeedsTerm};
 pub use eval::Eval;
 pub use filtered::{Filtered, ListFiltered};
 pub use resolver::PathResolver;
