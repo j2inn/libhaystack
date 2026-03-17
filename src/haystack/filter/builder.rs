@@ -44,6 +44,7 @@ use super::path::Path;
 use super::Filter;
 use crate::haystack::encoding::zinc::decode::id::Id;
 use crate::haystack::val::{Ref, Symbol, Value};
+use std::marker::PhantomData;
 
 /// Converts a value into a filter [`Path`].
 ///
@@ -76,10 +77,45 @@ impl IntoFilterPath for Vec<&str> {
     }
 }
 
+/// Typestate marker for [`FilterBuilder`] — no term has been added yet.
+///
+/// In this state, connectives (`and`, `or`), `end_parens`, and `build` are not
+/// available. Add a term first (e.g. [`has`](FilterBuilder::has),
+/// [`eq`](FilterBuilder::eq), [`is_a`](FilterBuilder::is_a), …).
+pub struct NeedsTerm;
+
+/// Typestate marker for [`FilterBuilder`] — at least one term is pending.
+///
+/// In this state all methods are available, including connectives (`and`, `or`),
+/// `end_parens`, and `build`.
+pub struct HasTerm;
+
 /// Fluent builder for constructing a Haystack [`Filter`] via its AST.
 ///
-/// Methods consume and return `self`, enabling method chaining. Call [`build`](FilterBuilder::build)
-/// at the end to obtain the finished [`Filter`].
+/// Uses a [typestate] pattern to prevent invalid filter sequences at compile
+/// time. The builder starts in the [`NeedsTerm`] state; only term-producing
+/// methods are available. After adding a term the builder transitions to
+/// [`HasTerm`], where `and`, `or`, `end_parens`, and `build` become available.
+///
+/// # Invalid sequences that do not compile
+///
+/// ```compile_fail
+/// # use libhaystack::filter::FilterBuilder;
+/// // cannot call or() without a preceding term
+/// let _ = FilterBuilder::new().or();
+/// ```
+///
+/// ```compile_fail
+/// # use libhaystack::filter::FilterBuilder;
+/// // cannot call or() twice in a row
+/// let _ = FilterBuilder::new().has("site").or().or();
+/// ```
+///
+/// ```compile_fail
+/// # use libhaystack::filter::FilterBuilder;
+/// // cannot build an empty filter
+/// let _ = FilterBuilder::new().build();
+/// ```
 ///
 /// # Path arguments
 ///
@@ -93,8 +129,10 @@ impl IntoFilterPath for Vec<&str> {
 /// Comparison methods accept a [`Value`] directly. Use the `Value::make_*` helpers
 /// (e.g. [`Value::make_str`], [`Value::make_number`], [`Value::make_ref`]) to construct
 /// the right type.
-#[derive(Default)]
-pub struct FilterBuilder {
+///
+/// [typestate]: https://cliffle.com/blog/rust-typestate/
+pub struct FilterBuilder<S = NeedsTerm> {
+    _state: PhantomData<S>,
     /// Completed `And` nodes for the top-level `Or`.
     ands: Vec<And>,
     /// Terms accumulating for the current `And` node.
@@ -103,43 +141,29 @@ pub struct FilterBuilder {
     paren_stack: Vec<(Vec<And>, Vec<Term>)>,
 }
 
-impl FilterBuilder {
-    /// Create a new, empty [`FilterBuilder`].
+impl FilterBuilder<NeedsTerm> {
+    /// Create a new, empty [`FilterBuilder`] in the [`NeedsTerm`] state.
     pub fn new() -> Self {
-        FilterBuilder::default()
+        Self::default()
     }
+}
 
-    // -------------------------------------------------------------------------
-    // Logical connectives
-    // -------------------------------------------------------------------------
-
-    /// Separator between conditions in the same `and` group.
-    ///
-    /// In the AST, consecutive terms are implicitly and-ed, so this is a no-op
-    /// that exists purely for readability.
-    ///
-    /// ```
-    /// # use libhaystack::filter::FilterBuilder;
-    /// # use libhaystack::val::Value;
-    /// let f = FilterBuilder::new().has("site").and().has("equip").build();
-    /// assert_eq!(f.to_string(), "site and equip");
-    /// ```
-    pub fn and(self) -> Self {
-        self
+impl Default for FilterBuilder<NeedsTerm> {
+    fn default() -> Self {
+        FilterBuilder {
+            _state: PhantomData,
+            ands: Vec::new(),
+            current_terms: Vec::new(),
+            paren_stack: Vec::new(),
+        }
     }
+}
 
-    /// Finalises the current `and`-group and starts a new one, producing an `or` in the output.
-    ///
-    /// ```
-    /// # use libhaystack::filter::FilterBuilder;
-    /// let f = FilterBuilder::new().has("site").or().has("equip").build();
-    /// assert_eq!(f.to_string(), "site or equip");
-    /// ```
-    pub fn or(mut self) -> Self {
-        self.flush_and();
-        self
-    }
+// ---------------------------------------------------------------------------
+// Methods available in any state (term producers + start_parens)
+// ---------------------------------------------------------------------------
 
+impl<S> FilterBuilder<S> {
     // -------------------------------------------------------------------------
     // Parentheses
     // -------------------------------------------------------------------------
@@ -161,30 +185,12 @@ impl FilterBuilder {
     ///     .build();
     /// assert_eq!(f.to_string(), "( site or equip )");
     /// ```
-    pub fn start_parens(mut self) -> Self {
+    pub fn start_parens(mut self) -> FilterBuilder<NeedsTerm> {
         self.paren_stack.push((
             std::mem::take(&mut self.ands),
             std::mem::take(&mut self.current_terms),
         ));
-        self
-    }
-
-    /// Closes the current parenthesised sub-expression and adds it as a single
-    /// [`Parens`] term in the outer context.
-    pub fn end_parens(mut self) -> Self {
-        self.flush_and();
-        let inner_or = Or {
-            ands: std::mem::take(&mut self.ands),
-        };
-
-        if let Some((outer_ands, outer_terms)) = self.paren_stack.pop() {
-            self.ands = outer_ands;
-            self.current_terms = outer_terms;
-        }
-
-        self.current_terms
-            .push(Term::Parens(Parens { or: inner_or }));
-        self
+        self.transition()
     }
 
     // -------------------------------------------------------------------------
@@ -200,11 +206,11 @@ impl FilterBuilder {
     /// let f = FilterBuilder::new().has("site").build();
     /// assert_eq!(f.to_string(), "site");
     /// ```
-    pub fn has(mut self, path: impl IntoFilterPath) -> Self {
+    pub fn has(mut self, path: impl IntoFilterPath) -> FilterBuilder<HasTerm> {
         self.current_terms.push(Term::Has(Has {
             path: path.into_filter_path(),
         }));
-        self
+        self.transition()
     }
 
     /// Adds a *missing* condition — the tag at `path` must **not** exist.
@@ -216,11 +222,11 @@ impl FilterBuilder {
     /// let f = FilterBuilder::new().not("site").build();
     /// assert_eq!(f.to_string(), "not site");
     /// ```
-    pub fn not(mut self, path: impl IntoFilterPath) -> Self {
+    pub fn not(mut self, path: impl IntoFilterPath) -> FilterBuilder<HasTerm> {
         self.current_terms.push(Term::Missing(Missing {
             path: path.into_filter_path(),
         }));
-        self
+        self.transition()
     }
 
     /// Adds an *is-a* condition using a type symbol.
@@ -233,11 +239,11 @@ impl FilterBuilder {
     /// let f = FilterBuilder::new().is_a("point").build();
     /// assert_eq!(f.to_string(), "^point");
     /// ```
-    pub fn is_a(mut self, symbol: impl Into<Symbol>) -> Self {
+    pub fn is_a(mut self, symbol: impl Into<Symbol>) -> FilterBuilder<HasTerm> {
         self.current_terms.push(Term::IsA(IsA {
             symbol: symbol.into(),
         }));
-        self
+        self.transition()
     }
 
     /// Adds a *wildcard equality* condition.
@@ -253,12 +259,16 @@ impl FilterBuilder {
     ///     .build();
     /// assert_eq!(f.to_string(), "siteRef *== @mySite");
     /// ```
-    pub fn wildcard_eq(mut self, id: impl IntoFilterPath, ref_value: Ref) -> Self {
+    pub fn wildcard_eq(
+        mut self,
+        id: impl IntoFilterPath,
+        ref_value: Ref,
+    ) -> FilterBuilder<HasTerm> {
         self.current_terms.push(Term::WildcardEq(WildcardEq {
             id: id.into_filter_path(),
             ref_value,
         }));
-        self
+        self.transition()
     }
 
     /// Adds a *relationship* condition.
@@ -282,13 +292,13 @@ impl FilterBuilder {
         rel: impl Into<Symbol>,
         term: Option<Symbol>,
         ref_value: Option<Ref>,
-    ) -> Self {
+    ) -> FilterBuilder<HasTerm> {
         self.current_terms.push(Term::Relation(Relation {
             rel: rel.into(),
             rel_term: term,
             ref_value,
         }));
-        self
+        self.transition()
     }
 
     // -------------------------------------------------------------------------
@@ -303,32 +313,32 @@ impl FilterBuilder {
     /// let f = FilterBuilder::new().eq("dis", Value::make_str("Chiller")).build();
     /// assert_eq!(f.to_string(), r#"dis == "Chiller""#);
     /// ```
-    pub fn eq(self, path: impl IntoFilterPath, value: Value) -> Self {
+    pub fn eq(self, path: impl IntoFilterPath, value: Value) -> FilterBuilder<HasTerm> {
         self.cmp(path, CmpOp::Eq, value)
     }
 
     /// Adds a not-equal comparison: `path != value`.
-    pub fn ne(self, path: impl IntoFilterPath, value: Value) -> Self {
+    pub fn ne(self, path: impl IntoFilterPath, value: Value) -> FilterBuilder<HasTerm> {
         self.cmp(path, CmpOp::NotEq, value)
     }
 
     /// Adds a less-than comparison: `path < value`.
-    pub fn lt(self, path: impl IntoFilterPath, value: Value) -> Self {
+    pub fn lt(self, path: impl IntoFilterPath, value: Value) -> FilterBuilder<HasTerm> {
         self.cmp(path, CmpOp::LessThan, value)
     }
 
     /// Adds a less-than-or-equal comparison: `path <= value`.
-    pub fn lte(self, path: impl IntoFilterPath, value: Value) -> Self {
+    pub fn lte(self, path: impl IntoFilterPath, value: Value) -> FilterBuilder<HasTerm> {
         self.cmp(path, CmpOp::LessThanEq, value)
     }
 
     /// Adds a greater-than comparison: `path > value`.
-    pub fn gt(self, path: impl IntoFilterPath, value: Value) -> Self {
+    pub fn gt(self, path: impl IntoFilterPath, value: Value) -> FilterBuilder<HasTerm> {
         self.cmp(path, CmpOp::GreatThan, value)
     }
 
     /// Adds a greater-than-or-equal comparison: `path >= value`.
-    pub fn gte(self, path: impl IntoFilterPath, value: Value) -> Self {
+    pub fn gte(self, path: impl IntoFilterPath, value: Value) -> FilterBuilder<HasTerm> {
         self.cmp(path, CmpOp::GreatThanEq, value)
     }
 
@@ -351,9 +361,101 @@ impl FilterBuilder {
     ///     .build();
     /// assert_eq!(f.to_string(), "( equip or point ) and site");
     /// ```
-    pub fn filter(mut self, filter: Filter) -> Self {
+    pub fn filter(mut self, filter: Filter) -> FilterBuilder<HasTerm> {
         self.current_terms
             .push(Term::Parens(Parens { or: filter.or }));
+        self.transition()
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    /// Reinterprets the builder's state marker without moving any data.
+    fn transition<T>(self) -> FilterBuilder<T> {
+        FilterBuilder {
+            _state: PhantomData,
+            ands: self.ands,
+            current_terms: self.current_terms,
+            paren_stack: self.paren_stack,
+        }
+    }
+
+    /// Finalises the accumulated terms into an `And` node and clears `current_terms`.
+    /// Does nothing if `current_terms` is empty.
+    fn flush_and(&mut self) {
+        if !self.current_terms.is_empty() {
+            self.ands.push(And {
+                terms: std::mem::take(&mut self.current_terms),
+            });
+        }
+    }
+
+    fn cmp(mut self, path: impl IntoFilterPath, op: CmpOp, value: Value) -> FilterBuilder<HasTerm> {
+        self.current_terms.push(Term::Cmp(Cmp {
+            path: path.into_filter_path(),
+            op,
+            value,
+        }));
+        self.transition()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Methods available only when a term has been added
+// ---------------------------------------------------------------------------
+
+impl FilterBuilder<HasTerm> {
+    // -------------------------------------------------------------------------
+    // Logical connectives
+    // -------------------------------------------------------------------------
+
+    /// Separator between conditions in the same `and` group.
+    ///
+    /// In the AST, consecutive terms are implicitly and-ed, so this is a no-op
+    /// that exists purely for readability.
+    ///
+    /// ```
+    /// # use libhaystack::filter::FilterBuilder;
+    /// let f = FilterBuilder::new().has("site").and().has("equip").build();
+    /// assert_eq!(f.to_string(), "site and equip");
+    /// ```
+    pub fn and(self) -> FilterBuilder<HasTerm> {
+        self
+    }
+
+    /// Finalises the current `and`-group and starts a new one, producing an `or` in the output.
+    ///
+    /// ```
+    /// # use libhaystack::filter::FilterBuilder;
+    /// let f = FilterBuilder::new().has("site").or().has("equip").build();
+    /// assert_eq!(f.to_string(), "site or equip");
+    /// ```
+    pub fn or(mut self) -> FilterBuilder<NeedsTerm> {
+        self.flush_and();
+        self.transition()
+    }
+
+    // -------------------------------------------------------------------------
+    // Parentheses
+    // -------------------------------------------------------------------------
+
+    /// Closes the current parenthesised sub-expression and adds it as a single
+    /// [`Parens`] term in the outer context.
+    ///
+    /// If called without a matching [`start_parens`](FilterBuilder::start_parens)
+    /// the call is silently ignored and the builder state is left unchanged.
+    pub fn end_parens(mut self) -> FilterBuilder<HasTerm> {
+        if let Some((outer_ands, outer_terms)) = self.paren_stack.pop() {
+            self.flush_and();
+            let inner_or = Or {
+                ands: std::mem::take(&mut self.ands),
+            };
+            self.ands = outer_ands;
+            self.current_terms = outer_terms;
+            self.current_terms
+                .push(Term::Parens(Parens { or: inner_or }));
+        }
         self
     }
 
@@ -370,34 +472,14 @@ impl FilterBuilder {
             or: Or { ands: self.ands },
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
-
-    /// Finalises the accumulated terms into an `And` node and clears `current_terms`.
-    /// Does nothing if `current_terms` is empty.
-    fn flush_and(&mut self) {
-        if !self.current_terms.is_empty() {
-            self.ands.push(And {
-                terms: std::mem::take(&mut self.current_terms),
-            });
-        }
-    }
-
-    fn cmp(mut self, path: impl IntoFilterPath, op: CmpOp, value: Value) -> Self {
-        self.current_terms.push(Term::Cmp(Cmp {
-            path: path.into_filter_path(),
-            op,
-            value,
-        }));
-        self
-    }
 }
 
-/// Convert a [`FilterBuilder`] into a [`Filter`] (calls [`build`](FilterBuilder::build)).
-impl From<FilterBuilder> for Filter {
-    fn from(builder: FilterBuilder) -> Self {
+/// Convert a [`FilterBuilder<HasTerm>`] into a [`Filter`].
+///
+/// Enforces at compile time that only a builder with at least one term can be
+/// converted — an empty builder (in [`NeedsTerm`] state) does not implement this.
+impl From<FilterBuilder<HasTerm>> for Filter {
+    fn from(builder: FilterBuilder<HasTerm>) -> Self {
         builder.build()
     }
 }
@@ -665,7 +747,7 @@ mod tests {
 
     #[test]
     fn test_filter_from_builder() {
-        let builder = FilterBuilder::new().has("site").and().has("equip");
+        let builder: FilterBuilder<HasTerm> = FilterBuilder::new().has("site").and().has("equip");
         let f: Filter = builder.into();
         assert_eq!(f.to_string(), "site and equip");
     }
