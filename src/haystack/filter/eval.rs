@@ -21,13 +21,13 @@ pub trait Eval {
 /// Filter Eval context.
 /// Captures the required elements for a filter to be evaluated.
 ///
-pub struct EvalContext<'a, 'b: 'a, R: PathResolver> {
+pub struct EvalContext<'a, 'b, R: PathResolver> {
     pub dict: &'a Dict,
-    pub ns: &'b Namespace<'b>,
+    pub ns: &'b Namespace,
     pub resolver: &'a R,
 }
 
-impl<'a, 'b: 'a, R: PathResolver> EvalContext<'a, 'b, R> {
+impl<'a, 'b, R: PathResolver> EvalContext<'a, 'b, R> {
     /// Make a FilterEval context
     ///
     /// # Arguments
@@ -35,7 +35,7 @@ impl<'a, 'b: 'a, R: PathResolver> EvalContext<'a, 'b, R> {
     /// * `ns` - the Def namespace to match symbol definitions against
     /// * `resolver` - a generic `PathResolver` that resolves `Path`s
     ///   indirection specified in the `Filter`
-    pub fn make(dict: &'a Dict, ns: &'b Namespace<'b>, resolver: &'a R) -> Self {
+    pub fn make(dict: &'a Dict, ns: &'b Namespace, resolver: &'a R) -> Self {
         Self { dict, ns, resolver }
     }
 

@@ -10,7 +10,7 @@ use libhaystack::haystack::val::*;
 use std::collections::HashMap;
 
 lazy_static::lazy_static! {
-    static ref DEFS_NS: Namespace<'static> = Namespace::make(parse_def());
+    static ref DEFS_NS: Namespace = Namespace::make(parse_def());
 }
 
 #[test]

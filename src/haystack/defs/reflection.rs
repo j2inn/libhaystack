@@ -15,13 +15,13 @@ pub struct Reflection<'a> {
     /// Matching definitions for the target dictionary
     pub defs: Vec<&'a Dict>,
     /// The def namespace used for the reflection
-    pub ns: &'a Namespace<'a>,
+    pub ns: &'a Namespace,
     /// The entity type of the target dictionary
     pub entity_type: Dict,
 }
 
 impl<'a> Reflection<'a> {
-    pub fn make(subject: &Dict, defs: Vec<&'a Dict>, ns: &'a Namespace<'a>) -> Self {
+    pub fn make(subject: &Dict, defs: Vec<&'a Dict>, ns: &'a Namespace) -> Self {
         let mut reflect = Reflection {
             subject: subject.clone(),
             defs,
