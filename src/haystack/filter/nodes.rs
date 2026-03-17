@@ -266,9 +266,9 @@ impl Eval for Parens {
 
 impl Display for Parens {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        f.write_str("( ")?;
+        f.write_str("(")?;
         self.or.fmt(f)?;
-        f.write_str(" )")
+        f.write_str(")")
     }
 }
 

@@ -36,7 +36,7 @@
 //!     .eq("siteRef", Value::make_ref("mySite"))
 //!     .build();
 //!
-//! assert_eq!(filter.to_string(), "( equip or point ) and siteRef == @mySite");
+//! assert_eq!(filter.to_string(), "(equip or point) and siteRef == @mySite");
 //! ```
 
 use super::nodes::{And, Cmp, CmpOp, Has, IsA, Missing, Or, Parens, Relation, Term, WildcardEq};
@@ -183,7 +183,7 @@ impl<S> FilterBuilder<S> {
     ///         .has("equip")
     ///     .end_parens()
     ///     .build();
-    /// assert_eq!(f.to_string(), "( site or equip )");
+    /// assert_eq!(f.to_string(), "(site or equip)");
     /// ```
     pub fn start_parens(mut self) -> FilterBuilder<NeedsTerm> {
         self.paren_stack.push((
@@ -359,7 +359,7 @@ impl<S> FilterBuilder<S> {
     ///     .and()
     ///     .has("site")
     ///     .build();
-    /// assert_eq!(f.to_string(), "( equip or point ) and site");
+    /// assert_eq!(f.to_string(), "(equip or point) and site");
     /// ```
     pub fn filter(mut self, filter: Filter) -> FilterBuilder<HasTerm> {
         self.current_terms
@@ -557,7 +557,7 @@ mod tests {
             .has("point")
             .end_parens()
             .build();
-        assert_eq!(f.to_string(), "( equip or point )");
+        assert_eq!(f.to_string(), "(equip or point)");
     }
 
     #[test]
@@ -571,7 +571,7 @@ mod tests {
             .and()
             .eq("siteRef", Value::make_ref("mySite"))
             .build();
-        assert_eq!(f.to_string(), "( equip or point ) and siteRef == @mySite");
+        assert_eq!(f.to_string(), "(equip or point) and siteRef == @mySite");
     }
 
     // ------------------------------------------------------------------
@@ -738,7 +738,7 @@ mod tests {
     fn test_builder_embed_filter() {
         let inner = Filter::try_from("equip or point").unwrap();
         let f = FilterBuilder::new().filter(inner).and().has("site").build();
-        assert_eq!(f.to_string(), "( equip or point ) and site");
+        assert_eq!(f.to_string(), "(equip or point) and site");
     }
 
     // ------------------------------------------------------------------
