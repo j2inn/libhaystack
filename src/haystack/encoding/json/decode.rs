@@ -289,7 +289,7 @@ impl<'de> Visitor<'de> for JsonValueDecoderVisitor {
                             _ => {
                                 return Err(A::Error::custom(format!(
                                     "Invalid Hayson kind: {kind}"
-                                )))
+                                )));
                             }
                         }
                     }

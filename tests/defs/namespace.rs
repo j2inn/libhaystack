@@ -8,10 +8,9 @@ use libhaystack::defs::namespace::{DefDict, Namespace};
 use libhaystack::dict;
 use libhaystack::haystack::val::*;
 use std::collections::HashMap;
+use std::sync::LazyLock;
 
-lazy_static::lazy_static! {
-    static ref DEFS_NS: Namespace = Namespace::make(parse_def());
-}
+static DEFS_NS: LazyLock<Namespace> = LazyLock::new(|| Namespace::make(parse_def()));
 
 #[test]
 fn test_namespace_empty() {
@@ -735,15 +734,17 @@ fn test_namespace_reflect() {
         .map(|def| def.def_name().as_str())
         .collect::<Vec<&str>>();
 
-    assert!([
-        "point",
-        "cur-point",
-        "his-point",
-        "weather-point",
-        "writable-point",
-    ]
-    .iter()
-    .all(|def| names.contains(def)));
+    assert!(
+        [
+            "point",
+            "cur-point",
+            "his-point",
+            "weather-point",
+            "writable-point",
+        ]
+        .iter()
+        .all(|def| names.contains(def))
+    );
 
     assert_eq!(&reflect.subject, &subject);
 
@@ -847,9 +848,11 @@ fn test_namespace_fits_implementation() {
 
     assert_eq!(implementation, query);
 
-    assert!(DEFS_NS
-        .implementation(&Symbol::from("super-ultra-duper"))
-        .is_empty())
+    assert!(
+        DEFS_NS
+            .implementation(&Symbol::from("super-ultra-duper"))
+            .is_empty()
+    )
 }
 
 #[test]

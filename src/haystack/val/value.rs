@@ -216,7 +216,7 @@ impl Value {
 
     /// Construct a `Ref` `Value` by generating an unique `Ref`
     pub fn make_ref_gen() -> Value {
-        Value::from(Ref::gen())
+        Value::from(Ref::generate())
     }
 
     /// Construct a `Ref` `Value` from a string with a display name

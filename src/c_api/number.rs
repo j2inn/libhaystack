@@ -4,8 +4,8 @@
 //! C API for working with the [Number](crate::val::Number) type.
 //!
 
-use super::err::{new_error, update_last_error};
 use super::ResultType;
+use super::err::{new_error, update_last_error};
 use std::ffi::CString;
 use std::os::raw::c_char;
 
@@ -31,9 +31,9 @@ use crate::haystack::val::Value;
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_number_value(val: *const Value) -> f64 {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Number(num) => return num.value,
             _ => new_error("Not a Number Value"),
@@ -70,16 +70,16 @@ pub unsafe extern "C" fn haystack_value_get_number_value(val: *const Value) -> f
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_number_has_unit(val: *const Value) -> ResultType {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Number(num) => {
                 return if num.unit.is_some() {
                     ResultType::TRUE
                 } else {
                     ResultType::FALSE
-                }
+                };
             }
             _ => new_error("Not a Number Value"),
         },
@@ -110,9 +110,9 @@ pub unsafe extern "C" fn haystack_value_number_has_unit(val: *const Value) -> Re
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_number_unit(val: *const Value) -> *const c_char {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Number(num) => match &num.unit {
                 Some(unit) => match CString::new(unit.symbol().as_bytes()) {

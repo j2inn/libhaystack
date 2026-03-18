@@ -241,7 +241,7 @@ Please consult the [pre-generated](https://github.com/j2inn/libhaystack/blob/mas
 
 By leveraging the C API, the function exposed can be called in browsers, Node.js, or Deno.
 
-For this [wasm-pack](https://rustwasm.github.io/) is used to generate the wasm binary file, the JS wrapper for initialization, and a typescript file with the API definitions.
+For this [wasm-pack](https://drager.github.io/wasm-pack/) is used to generate the wasm binary file, the JS wrapper for initialization, and a typescript file with the API definitions.
 
 ```
 wasm-pack build --out-dir wasm --target web

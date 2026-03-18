@@ -12,6 +12,7 @@ use pom::char_class::{alpha, alphanum, digit, multispace, space};
 use pom::parser::Parser;
 use pom::parser::*;
 
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::str::FromStr;
 
@@ -95,7 +96,12 @@ pub(super) fn parse_unit<'a>() -> Parser<'a, u8, Unit> {
     let offset = sym(b';') * parse_space() * parse_offset();
     (parse_names() - parse_space() + (dims + (scale + (offset).opt()).opt()).opt()).map(
         |(names, dims)| Unit {
-            ids: names.into_iter().map(String::from).collect(),
+            ids: Cow::Owned(
+                names
+                    .into_iter()
+                    .map(|s| Cow::Owned(s.to_string()))
+                    .collect(),
+            ),
             dimensions: dims
                 .as_ref()
                 .map(|(dims, ..)| {
@@ -121,7 +127,7 @@ pub(super) fn parse_unit<'a>() -> Parser<'a, u8, Unit> {
                         Some(u)
                     }
                 }),
-            quantity: QUANTITY.with(|tlv| tlv.borrow().clone()),
+            quantity: QUANTITY.with(|tlv| tlv.borrow().clone()).map(Cow::from),
             scale: dims
                 .as_ref()
                 .map_or(1.0, |(.., scale)| scale.map_or(1.0, |(scale, ..)| scale)),
@@ -166,8 +172,8 @@ mod test {
             .parse("meters_per_second_squared, m/s²; m1*sec-2".as_bytes())
             .expect("Unit");
 
-        assert!(unit.ids.contains(&"meters_per_second_squared".to_string()));
-        assert!(unit.ids.contains(&"m/s²".to_string()));
+        assert!(unit.ids.contains(&"meters_per_second_squared".into()));
+        assert!(unit.ids.contains(&"m/s²".into()));
 
         assert_eq!(unit.scale, 1.0);
         assert_eq!(unit.offset, 0.0);
@@ -179,8 +185,8 @@ mod test {
     fn test_unit_parser_dimensionless_unit_scale() {
         let unit = parse_unit().parse(b"percent, %; ; 0.01").expect("Unit");
 
-        assert!(unit.ids.contains(&"percent".to_string()));
-        assert!(unit.ids.contains(&"%".to_string()));
+        assert!(unit.ids.contains(&"percent".into()));
+        assert!(unit.ids.contains(&"%".into()));
 
         assert_eq!(unit.scale, 0.01);
         assert_eq!(unit.offset, 0.0);
@@ -190,8 +196,8 @@ mod test {
             .parse(b"degrees_phase, degPh; ; 0.017453292519943")
             .expect("Unit");
 
-        assert!(unit.ids.contains(&"degrees_phase".to_string()));
-        assert!(unit.ids.contains(&"degPh".to_string()));
+        assert!(unit.ids.contains(&"degrees_phase".into()));
+        assert!(unit.ids.contains(&"degPh".into()));
         assert_eq!(unit.scale, 0.017453292519943);
     }
 
@@ -204,8 +210,8 @@ mod test {
             )
             .expect("Unit");
 
-        assert!(unit.ids.contains(&"fictive_unit".to_string()));
-        assert!(unit.ids.contains(&"fictive/ft²".to_string()));
+        assert!(unit.ids.contains(&"fictive_unit".into()));
+        assert!(unit.ids.contains(&"fictive/ft²".into()));
 
         assert_eq!(unit.scale, 1.135433731957E7);
         assert_eq!(unit.offset, -2.1);
@@ -244,8 +250,8 @@ mod test {
         assert_eq!(
             units[1].as_ref().unwrap(),
             &Unit {
-                ids: vec!["millivolt".to_string(), "mV".to_string()],
-                quantity: Some("electric potential".to_string()),
+                ids: vec!["millivolt".into(), "mV".into()].into(),
+                quantity: Some("electric potential".into()),
                 dimensions: Some(UnitDimensions {
                     kg: 1,
                     m: 2,
@@ -261,8 +267,8 @@ mod test {
         assert_eq!(
             units[3].as_ref().unwrap(),
             &Unit {
-                ids: vec!["megavolt".to_string(), "MV".to_string()],
-                quantity: Some("electric potential".to_string()),
+                ids: vec!["megavolt".into(), "MV".into()].into(),
+                quantity: Some("electric potential".into()),
                 dimensions: Some(UnitDimensions {
                     kg: 1,
                     m: 2,

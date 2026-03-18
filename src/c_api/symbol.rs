@@ -31,9 +31,9 @@ use crate::haystack::val::Value;
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_symbol_value_len(val: *const Value) -> usize {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Symbol(symbol) => return symbol.value.len(),
             _ => new_error("Not a Symbol Value"),
@@ -64,9 +64,9 @@ pub unsafe extern "C" fn haystack_value_get_symbol_value_len(val: *const Value) 
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_symbol_value(val: *const Value) -> *const c_char {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Symbol(symbol) => match CString::new(symbol.value.as_bytes()) {
                 Ok(str) => return str.into_raw(),

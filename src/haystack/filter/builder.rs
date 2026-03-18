@@ -39,9 +39,9 @@
 //! assert_eq!(filter.to_string(), "(equip or point) and siteRef == @mySite");
 //! ```
 
+use super::Filter;
 use super::nodes::{And, Cmp, CmpOp, Has, IsA, Missing, Or, Parens, Relation, Term, WildcardEq};
 use super::path::Path;
-use super::Filter;
 use crate::haystack::encoding::zinc::decode::id::Id;
 use crate::haystack::val::{Ref, Symbol, Value};
 use std::marker::PhantomData;

@@ -2,9 +2,9 @@
 
 //! Haystack Filtered Dict
 
+use super::super::Filter;
 use super::super::eval::Eval;
 use super::super::eval::EvalContext;
-use super::super::Filter;
 use super::Filtered;
 use crate::defs::namespace::DEFAULT_NS;
 use crate::val::Dict;

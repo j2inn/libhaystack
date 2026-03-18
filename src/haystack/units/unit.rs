@@ -4,14 +4,15 @@
 
 use super::match_units;
 use super::unit_dimension::UnitDimensions;
+use std::borrow::Cow;
 use std::fmt::Display;
 use std::hash::Hash;
 use std::ops::{Div, Mul};
 
 #[derive(Debug, PartialOrd, Default)]
 pub struct Unit {
-    pub quantity: Option<String>,
-    pub ids: Vec<String>,
+    pub quantity: Option<Cow<'static, str>>,
+    pub ids: Cow<'static, [Cow<'static, str>]>,
     pub dimensions: Option<UnitDimensions>,
     pub scale: f64,
     pub offset: f64,
@@ -20,12 +21,12 @@ pub struct Unit {
 impl Unit {
     ///  The unit name.
     pub fn name(&self) -> &str {
-        self.ids.first().map_or("", |v| v.as_str())
+        self.ids.first().map_or("", |v| v.as_ref())
     }
 
     /// The unit symbol.
     pub fn symbol(&self) -> &str {
-        self.ids.last().map_or("", |v| v.as_str())
+        self.ids.last().map_or("", |v| v.as_ref())
     }
 
     ///
@@ -52,7 +53,7 @@ impl Unit {
     /// True if the unit is for bytes.
     ///
     pub fn is_byte_unit(&self) -> bool {
-        self.quantity == Some("bytes".to_string())
+        self.quantity == Some("bytes".into())
             || self.name() == "byte"
             || self.name() == "kilobyte"
             || self.name() == "megabyte"

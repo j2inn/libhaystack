@@ -25,8 +25,8 @@ mod tests {
     use crate::encoding::brio::decode::from_brio;
     use crate::encoding::brio::encode::ToBrio;
     use crate::haystack::val::{
-        Column, Coord, Date, DateTime, Dict, Grid, List, Number, Ref, Symbol, Time, Uri, Value,
-        XStr, GRID_FORMAT_VERSION,
+        Column, Coord, Date, DateTime, Dict, GRID_FORMAT_VERSION, Grid, List, Number, Ref, Symbol,
+        Time, Uri, Value, XStr,
     };
     use crate::units::get_unit_or_default;
 

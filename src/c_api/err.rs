@@ -71,8 +71,8 @@ fn take_last_error() -> Option<Box<dyn Error>> {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
-pub unsafe extern "C" fn last_error_message() -> *const c_char {
+#[unsafe(no_mangle)]
+pub extern "C" fn last_error_message() -> *const c_char {
     match take_last_error() {
         Some(err) => CString::new(err.to_string().as_bytes())
             .expect("Invalid Str")

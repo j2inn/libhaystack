@@ -2,7 +2,7 @@
 
 //! Haystack Number
 
-use crate::{haystack::val::Value, units::Unit, units::DEFAULT_UNIT};
+use crate::{haystack::val::Value, units::DEFAULT_UNIT, units::Unit};
 use std::{
     cmp::Ordering,
     convert::{From, TryFrom},

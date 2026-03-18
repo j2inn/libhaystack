@@ -6,7 +6,7 @@
 
 use std::io::Write;
 
-use super::consts::{lookup_const, FANTOM_EPOCH_UNIX_SECS};
+use super::consts::{FANTOM_EPOCH_UNIX_SECS, lookup_const};
 use crate::haystack::val::{
     Bool, Coord, Date, DateTime, Dict, Grid, List, Marker, Na, Number, Ref, Remove, Str, Symbol,
     Time, Uri, Value, XStr,
@@ -197,11 +197,7 @@ fn ref_id_to_i8(id: &str) -> Option<i64> {
     }
     // Fantom's i8 encoding only works for non-negative i64 values;
     // if the packed value overflows (sign bit set), fall back to STR form.
-    if val < 0 {
-        None
-    } else {
-        Some(val)
-    }
+    if val < 0 { None } else { Some(val) }
 }
 
 // ---------------------------------------------------------------------------
@@ -469,7 +465,7 @@ mod tests {
     use super::*;
     use crate::dict;
     use crate::haystack::val::*;
-    use crate::units::{get_unit_or_default, Unit};
+    use crate::units::{Unit, get_unit_or_default};
 
     fn enc(v: &Value) -> Vec<u8> {
         v.to_brio_vec().expect("encode")
@@ -806,7 +802,7 @@ mod tests {
     fn make_custom_unit(symbol: &'static str) -> &'static Unit {
         Box::leak(Box::new(Unit {
             quantity: None,
-            ids: vec![symbol.to_string()],
+            ids: vec![symbol.into()].into(),
             dimensions: None,
             scale: 1.0,
             offset: 0.0,

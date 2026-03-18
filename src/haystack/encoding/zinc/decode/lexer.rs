@@ -5,7 +5,7 @@
 
 use std::io::{Error, Read};
 
-use super::id::{parse_id, parse_literal, Id};
+use super::id::{Id, parse_id, parse_literal};
 use super::scalar::coord::parse_coord_body;
 use super::scalar::date_time::{is_partial_date, parse_date, parse_datetime, parse_time};
 use super::scalar::number::{parse_neg_inf, parse_number};
@@ -176,7 +176,7 @@ impl<'a, R: Read> Lexer<Scanner<'a, R>> {
                     return self.scanner.make_generic_err(&format!(
                         "Unexpected lexer character '{}'",
                         self.scanner.cur as char
-                    ))
+                    ));
                 }
             };
             return Ok(&self.cur);

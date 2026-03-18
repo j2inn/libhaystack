@@ -3,8 +3,8 @@
 //! Haystack Grid
 
 use crate::dict;
-use crate::haystack::val::dict::*;
 use crate::haystack::val::Value;
+use crate::haystack::val::dict::*;
 use std::collections::HashSet;
 use std::iter::Iterator;
 use std::ops::Index;

@@ -8,8 +8,8 @@ use crate::filter::{Filter, Filtered, ListFiltered};
 use crate::val::{Grid, Value};
 use std::{ffi::CStr, os::raw::c_char};
 
-use super::err::{new_error, update_last_error};
 use super::ResultType;
+use super::err::{new_error, update_last_error};
 
 /// Parses a [Filter](crate::filter::Filter) from  a C string.
 /// # Arguments
@@ -30,13 +30,13 @@ use super::ResultType;
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_filter_parse(val: *const c_char) -> Option<Box<Filter>> {
     if val.is_null() {
         new_error("Invalid null argument(s)");
         return None;
     }
-    match CStr::from_ptr(val).to_str() {
+    match unsafe { CStr::from_ptr(val).to_str() } {
         Ok(c_str) => match Filter::try_from(c_str) {
             Ok(filter) => Some(Box::new(filter)),
             Err(err) => {
@@ -83,7 +83,7 @@ pub unsafe extern "C" fn haystack_filter_parse(val: *const c_char) -> Option<Box
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_filter_match_dict(
     filter: *const Filter,
     dict: *const Value,
@@ -93,9 +93,9 @@ pub unsafe extern "C" fn haystack_filter_match_dict(
         return ResultType::ERR;
     }
 
-    match filter.as_ref() {
+    match unsafe { filter.as_ref() } {
         Some(filter) => {
-            if let Some(Value::Dict(dict)) = dict.as_ref() {
+            if let Some(Value::Dict(dict)) = unsafe { dict.as_ref() } {
                 return if dict.filter(filter) {
                     ResultType::TRUE
                 } else {
@@ -170,7 +170,7 @@ pub unsafe extern "C" fn haystack_filter_match_dict(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_filter_first_match_in_grid(
     filter: *const Filter,
     grid: *const Value,
@@ -181,12 +181,12 @@ pub unsafe extern "C" fn haystack_filter_first_match_in_grid(
         return ResultType::ERR;
     }
 
-    match filter.as_ref() {
+    match unsafe { filter.as_ref() } {
         Some(filter) => {
-            if let Some(Value::Grid(grid)) = grid.as_ref() {
+            if let Some(Value::Grid(grid)) = unsafe { grid.as_ref() } {
                 return match grid.filter(filter) {
                     Some(dict) => {
-                        if let Some(value) = result.as_mut() {
+                        if let Some(value) = unsafe { result.as_mut() } {
                             *value = Value::Dict(dict.to_owned());
                             ResultType::TRUE
                         } else {
@@ -254,7 +254,7 @@ pub unsafe extern "C" fn haystack_filter_first_match_in_grid(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_filter_match_all_grid(
     filter: *const Filter,
     grid: *const Value,
@@ -265,9 +265,9 @@ pub unsafe extern "C" fn haystack_filter_match_all_grid(
         return ResultType::ERR;
     }
 
-    match filter.as_ref() {
+    match unsafe { filter.as_ref() } {
         Some(filter) => {
-            if let Some(Value::Grid(grid)) = grid.as_ref() {
+            if let Some(Value::Grid(grid)) = unsafe { grid.as_ref() } {
                 let rows = grid.filter_all(filter);
                 let res = if let Some(meta) = &grid.meta {
                     Grid::make_from_dicts_with_meta(
@@ -277,7 +277,7 @@ pub unsafe extern "C" fn haystack_filter_match_all_grid(
                 } else {
                     Grid::make_from_dicts(rows.into_iter().cloned().collect())
                 };
-                if let Some(value) = result.as_mut() {
+                if let Some(value) = unsafe { result.as_mut() } {
                     let ret = if !res.is_empty() {
                         ResultType::TRUE
                     } else {

@@ -397,10 +397,10 @@ where
     }
 
     if let Some(val) = dict.get("disKey") {
-        if let Value::Str(val_str) = val {
-            if let Some(val_str) = get_localized(&val_str.value) {
-                return val_str;
-            }
+        if let Value::Str(val_str) = val
+            && let Some(val_str) = get_localized(&val_str.value)
+        {
+            return val_str;
         }
         return decode_str_from_value(val);
     }
@@ -443,7 +443,7 @@ fn decode_str_from_value(val: &'_ Value) -> Cow<'_, str> {
 mod test {
     use std::borrow::Cow;
 
-    use crate::val::{dict_to_dis, Dict, HaystackDict, Value};
+    use crate::val::{Dict, HaystackDict, Value, dict_to_dis};
 
     fn get_localized<'a>(key: &str) -> Option<Cow<'a, str>> {
         match key {

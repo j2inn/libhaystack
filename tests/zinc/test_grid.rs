@@ -158,22 +158,26 @@ fn test_zinc_grid_meta_decode() {
 
 #[test]
 fn test_zinc_grid_bug_decode() {
-    let string = concat!(r#"ver:"3.0""#,
-    "\n",
-    "id,actions,air,alarmPoint,analytics,apparent,avgDamper,avgDeltaAirflow,avgDeltaTemp,avgRoomTemp,chilled,cmd,condensed,cool,cooling,cur,curStatus,curTracksWrite,curVal,current,currentAverage,currentTotal,damper,delta,differential,dis,disMacro,discharge,effective,elecCost,enable,energy,energyCost,entering,enum,equipRef,exhaust,fan,filter,floorRef,flow,freq,heat,heating,high,his,hisCollectInterval,hisEnd,hisFunc,hisSize,hisStart,hisStatus,hot,humidity,kind,leaving,limit,low,maxDamper,maxDeltaAirflow,maxDeltaTemp,maxRoomTemp,maxVal,measuredAt,minDamper,minDeltaTemp,minRoomTemp,minVal,mixed,navName,nextTime,nextVal,noDemoMode,occ,occupied,outside,pf,phase,point,power,powerFactorTotal,powerTotal,precision,pressure,pump,reactive,reheat,reset,return,rollUp,runStarts,runTime,schedulable,schedule,scheduleRef,sensor,siteRef,sp,stage,status,sunrise,supply,temp,totalAirflow,totalAirflowSp,totalEquip,totalOccupied,tz,unit,unocc,valve,volt,voltAverage,water,weatherCond,weatherPoint,weatherRef,weatherSyncId,writable,write8,writeDef,writeLevel,writeStatus,writeVal,zone,mod",
-    "\n",
-    r#"@p:demo:r:1eeb11ef-fa6b895d "JB Tower Vav-01 UnOccCool","ver:\"2.0\"\ndis,expr,hvac_finCat\n\"Emergency Set\",\"pointEmergencyOverride(\\\$self, \\\$val)\",9\n\"Emergency Auto\",\"pointEmergencyAuto(\\\$self)\",9\n\"Manual Set\",\"pointOverride(\\\$self, \\\$val, \\\$duration)\",6\n\"Manual Auto\",\"pointAuto(\\\$self)\",6\n\"Set Default\",\"pointSetDef(\\\$self, \\\$val)\",3\n\"Set Null\",\"pointSetDef(\\\$self, null)\",3\n\n",M,,,,,,,,,,,,M,M,"ok",M,64°F,,,,,,,,"\$equipRef \$navName",,,,,,,,,@p:demo:r:1eeb11ef-c0d7f1fa "JB Tower Vav-01",,,,@p:demo:r:1eeb11ef-1ccc23d5 "Floor 1",,,,,,M,,,"hisDamper",,,,,,"Number",,,,,,,,95,,,,,33,,"UnOccCool",,,,,,,,,M,,,,1,,,,,,,,,,,,,,@p:demo:r:1eeaf021-825d1e56 "JB Tower",M,,,,,M,,,,,"Los_Angeles","°F",M,,,,,,,,,M,,,17,"unbound",,M,2018-08-04T00:59:02.62Z"#,
-    "\n");
+    let string = concat!(
+        r#"ver:"3.0""#,
+        "\n",
+        "id,actions,air,alarmPoint,analytics,apparent,avgDamper,avgDeltaAirflow,avgDeltaTemp,avgRoomTemp,chilled,cmd,condensed,cool,cooling,cur,curStatus,curTracksWrite,curVal,current,currentAverage,currentTotal,damper,delta,differential,dis,disMacro,discharge,effective,elecCost,enable,energy,energyCost,entering,enum,equipRef,exhaust,fan,filter,floorRef,flow,freq,heat,heating,high,his,hisCollectInterval,hisEnd,hisFunc,hisSize,hisStart,hisStatus,hot,humidity,kind,leaving,limit,low,maxDamper,maxDeltaAirflow,maxDeltaTemp,maxRoomTemp,maxVal,measuredAt,minDamper,minDeltaTemp,minRoomTemp,minVal,mixed,navName,nextTime,nextVal,noDemoMode,occ,occupied,outside,pf,phase,point,power,powerFactorTotal,powerTotal,precision,pressure,pump,reactive,reheat,reset,return,rollUp,runStarts,runTime,schedulable,schedule,scheduleRef,sensor,siteRef,sp,stage,status,sunrise,supply,temp,totalAirflow,totalAirflowSp,totalEquip,totalOccupied,tz,unit,unocc,valve,volt,voltAverage,water,weatherCond,weatherPoint,weatherRef,weatherSyncId,writable,write8,writeDef,writeLevel,writeStatus,writeVal,zone,mod",
+        "\n",
+        r#"@p:demo:r:1eeb11ef-fa6b895d "JB Tower Vav-01 UnOccCool","ver:\"2.0\"\ndis,expr,hvac_finCat\n\"Emergency Set\",\"pointEmergencyOverride(\\\$self, \\\$val)\",9\n\"Emergency Auto\",\"pointEmergencyAuto(\\\$self)\",9\n\"Manual Set\",\"pointOverride(\\\$self, \\\$val, \\\$duration)\",6\n\"Manual Auto\",\"pointAuto(\\\$self)\",6\n\"Set Default\",\"pointSetDef(\\\$self, \\\$val)\",3\n\"Set Null\",\"pointSetDef(\\\$self, null)\",3\n\n",M,,,,,,,,,,,,M,M,"ok",M,64°F,,,,,,,,"\$equipRef \$navName",,,,,,,,,@p:demo:r:1eeb11ef-c0d7f1fa "JB Tower Vav-01",,,,@p:demo:r:1eeb11ef-1ccc23d5 "Floor 1",,,,,,M,,,"hisDamper",,,,,,"Number",,,,,,,,95,,,,,33,,"UnOccCool",,,,,,,,,M,,,,1,,,,,,,,,,,,,,@p:demo:r:1eeaf021-825d1e56 "JB Tower",M,,,,,M,,,,,"Los_Angeles","°F",M,,,,,,,,,M,,,17,"unbound",,M,2018-08-04T00:59:02.62Z"#,
+        "\n"
+    );
     let value = from_str(string).expect("Grid");
 
     assert!(!Grid::try_from(&value).expect("Grid").is_empty());
 
-    let string = concat!(r#"ver:"3.0""#,
+    let string = concat!(
+        r#"ver:"3.0""#,
         "\n",
         "id,actions,air,alarmPoint,analytics,apparent,avgDamper,avgDeltaAirflow,avgDeltaTemp,avgRoomTemp,chilled,cmd,condensed,cool,cooling,cur,curStatus,curTracksWrite,curVal,current,currentAverage,currentTotal,damper,delta,differential,dis,disMacro,discharge,effective,elecCost,enable,energy,energyCost,entering,enum,equipRef,exhaust,fan,filter,floorRef,flow,freq,heat,heating,high,his,hisCollectInterval,hisEnd,hisFunc,hisSize,hisStart,hisStatus,hot,humidity,kind,leaving,limit,low,maxDamper,maxDeltaAirflow,maxDeltaTemp,maxRoomTemp,maxVal,measuredAt,minDamper,minDeltaTemp,minRoomTemp,minVal,mixed,navName,nextTime,nextVal,noDemoMode,occ,occupied,outside,pf,phase,point,power,powerFactorTotal,powerTotal,precision,pressure,pump,reactive,reheat,reset,return,rollUp,runStarts,runTime,schedulable,schedule,scheduleRef,sensor,siteRef,sp,stage,status,sunrise,supply,temp,totalAirflow,totalAirflowSp,totalEquip,totalOccupied,tz,unit,unocc,valve,volt,voltAverage,water,weatherCond,weatherPoint,weatherRef,weatherSyncId,writable,write8,writeDef,writeLevel,writeStatus,writeVal,zone,mod",
         "\n",
         r#",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"#,
-        "\n");
+        "\n"
+    );
     let value = from_str(string).expect("Grid");
     assert!(!Grid::try_from(&value).expect("Grid").is_empty());
 }

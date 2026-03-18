@@ -11,7 +11,7 @@ use crate::haystack::val::{
     Time, Uri, Value, XStr,
 };
 
-use super::consts::{get_const, FANTOM_EPOCH_UNIX_SECS};
+use super::consts::{FANTOM_EPOCH_UNIX_SECS, get_const};
 use super::encode::{
     CTRL_COORD, CTRL_DATE, CTRL_DATETIME_I4, CTRL_DATETIME_I8, CTRL_DICT, CTRL_DICT_EMPTY,
     CTRL_FALSE, CTRL_GRID, CTRL_LIST, CTRL_LIST_EMPTY, CTRL_MARKER, CTRL_NA, CTRL_NULL,
@@ -510,11 +510,7 @@ fn make_number(v: f64, unit: &str) -> Number {
 
 /// Return `Some(s)` if `s` is non-empty, otherwise `None`.
 fn non_empty(s: &str) -> Option<&str> {
-    if s.is_empty() {
-        None
-    } else {
-        Some(s)
-    }
+    if s.is_empty() { None } else { Some(s) }
 }
 
 // ---------------------------------------------------------------------------

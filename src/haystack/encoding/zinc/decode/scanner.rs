@@ -236,11 +236,7 @@ impl<'a, R: Read> Scanner<'a, R> {
     /// If current input is at EOS, silently ignore it and does nothing.
     pub fn advance(&mut self) -> Result<(), Error> {
         if let Err(err) = self.read() {
-            if !self.is_eof {
-                Err(err)
-            } else {
-                Ok(())
-            }
+            if !self.is_eof { Err(err) } else { Ok(()) }
         } else {
             Ok(())
         }

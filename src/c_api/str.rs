@@ -31,9 +31,9 @@ use crate::haystack::val::Value;
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_str_len(val: *const Value) -> usize {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Str(str) => return str.value.len(),
             _ => new_error("Not a Str Value"),
@@ -65,9 +65,9 @@ pub unsafe extern "C" fn haystack_value_get_str_len(val: *const Value) -> usize 
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_str_value(val: *const Value) -> *const c_char {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Str(str) => match CString::new(str.value.as_bytes()) {
                 Ok(str) => return str.into_raw(),
@@ -85,9 +85,9 @@ pub unsafe extern "C" fn haystack_value_get_str_value(val: *const Value) -> *con
 /// val C String pointer.
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_string_destroy(val: *mut c_char) {
     // Here the ownership of the pointer is taken by CString
     // which gets destructed at end of scope, so it will free the memory from the pointer also.
-    let _ = CString::from_raw(val);
+    let _ = unsafe { CString::from_raw(val) };
 }

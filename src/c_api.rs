@@ -41,7 +41,7 @@ pub enum ResultType {
 #[macro_export]
 macro_rules! safe_bool_call {
     ($self: ident, $func: ident) => {
-        match $self.as_ref() {
+        match unsafe { $self.as_ref() } {
             Some(value) => value.$func(),
             None => {
                 new_error("Invalid Value reference");

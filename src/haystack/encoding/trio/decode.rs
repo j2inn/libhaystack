@@ -166,11 +166,7 @@ impl<R: BufRead> TrioReader<R> {
             }
         }
 
-        if has_tags {
-            Ok(Some(dict))
-        } else {
-            Ok(None)
-        }
+        if has_tags { Ok(Some(dict)) } else { Ok(None) }
     }
 
     /// Reads all dicts from the input and returns them as a `Vec`.

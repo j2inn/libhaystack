@@ -7,9 +7,9 @@ use super::nodes::*;
 use super::path::Path;
 use crate::haystack::encoding::zinc::decode::scanner::Scanner;
 use crate::val::{Symbol, Value};
-use lazy_static::lazy_static;
 
 use std::io::{Error, Read};
+use std::sync::LazyLock;
 
 ///
 /// Parser for Haystack Filter
@@ -19,10 +19,9 @@ pub struct Parser<Lexer> {
 }
 
 // Internal constant tokens to be used when comparing against current tokens
-lazy_static! {
-    static ref OR_TOKEN: LexerToken = LexerToken::make_path("or".into());
-    static ref AND_TOKEN: LexerToken = LexerToken::make_path("and".into());
-}
+
+static OR_TOKEN: LazyLock<LexerToken> = LazyLock::new(|| LexerToken::make_path("or".into()));
+static AND_TOKEN: LazyLock<LexerToken> = LazyLock::new(|| LexerToken::make_path("and".into()));
 
 impl<'a, R: Read> Parser<Lexer<Scanner<'a, R>>> {
     pub(crate) fn make(input: &'a mut R) -> Result<Self, Error> {
