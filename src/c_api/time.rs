@@ -29,9 +29,9 @@ use crate::haystack::val::Value;
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_time_hour(val: *const Value) -> u32 {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Time(time) => return time.hour(),
             _ => new_error("Not a Time Value"),
@@ -61,9 +61,9 @@ pub unsafe extern "C" fn haystack_value_get_time_hour(val: *const Value) -> u32 
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_time_minutes(val: *const Value) -> u32 {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Time(time) => return time.minute(),
             _ => new_error("Not a Time Value"),
@@ -93,9 +93,9 @@ pub unsafe extern "C" fn haystack_value_get_time_minutes(val: *const Value) -> u
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_time_seconds(val: *const Value) -> u32 {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Time(time) => return time.second(),
             _ => new_error("Not a Time Value"),
@@ -125,9 +125,9 @@ pub unsafe extern "C" fn haystack_value_get_time_seconds(val: *const Value) -> u
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_time_millis(val: *const Value) -> u32 {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Time(time) => return time.nanosecond() / 1_000_000,
             _ => new_error("Not a Time Value"),

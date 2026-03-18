@@ -1,9 +1,10 @@
 // Copyright (C) 2020 - 2022, J2 Innovations
 
 //! Tests the Haystack Filter with defs
+use std::sync::LazyLock;
+
 #[cfg(test)]
 use crate::defs::utils::parse_def;
-use lazy_static::lazy_static;
 use libhaystack::defs::namespace::Namespace;
 use libhaystack::dict;
 use libhaystack::filter::eval::{Eval, EvalContext};
@@ -11,9 +12,7 @@ use libhaystack::filter::path::Path;
 use libhaystack::filter::{Filter, PathResolver};
 use libhaystack::haystack::val::*;
 
-lazy_static! {
-    pub(super) static ref NS: Namespace = Namespace::make(parse_def());
-}
+pub(super) static NS: LazyLock<Namespace> = LazyLock::new(|| Namespace::make(parse_def()));
 
 fn eval_in_context(filter: &Filter, dict: &Dict) -> bool {
     let cx = EvalContext::make(dict, &NS, dict);

@@ -6,7 +6,7 @@ pub mod unit;
 pub mod unit_dimension;
 #[cfg(feature = "units-db")]
 pub mod units_generated;
-use lazy_static::lazy_static;
+use std::sync::LazyLock;
 
 pub use unit::Unit;
 pub use unit_dimension::UnitDimensions;
@@ -56,7 +56,5 @@ fn approx_eq(a: f64, b: f64) -> bool {
     f64::abs(a - b) <= min_precision
 }
 
-lazy_static! {
-    /// The dimensionless default unit
-    pub static ref DEFAULT_UNIT: Unit = Unit::default();
-}
+/// The dimensionless default unit
+pub static DEFAULT_UNIT: LazyLock<Unit> = LazyLock::new(Unit::default);

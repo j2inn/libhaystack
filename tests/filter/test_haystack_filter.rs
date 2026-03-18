@@ -138,15 +138,19 @@ fn test_filter_parse_path() {
 #[test]
 fn test_filter_parse_path_nested() {
     let filter = &Filter::try_from("dict->ref->val == 100").unwrap();
-    assert!(dict! {"dict" => Value::make_dict(
-        dict! {"ref" => Value::make_dict(dict!{"val" => Value::make_int(100)})}
-    )}
-    .filter(filter));
+    assert!(
+        dict! {"dict" => Value::make_dict(
+            dict! {"ref" => Value::make_dict(dict!{"val" => Value::make_int(100)})}
+        )}
+        .filter(filter)
+    );
 
-    assert!(!dict! {"dict" => Value::make_dict(
-        dict! {"ref" => Value::Marker}
-    )}
-    .filter(filter));
+    assert!(
+        !dict! {"dict" => Value::make_dict(
+            dict! {"ref" => Value::Marker}
+        )}
+        .filter(filter)
+    );
 }
 
 #[test]

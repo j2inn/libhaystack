@@ -24,7 +24,7 @@ use std::os::raw::c_char;
 /// assert!(haystack_value_is_null(val))
 /// # }
 /// ```
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn haystack_value_init() -> Box<Value> {
     Box::<Value>::default()
 }
@@ -45,9 +45,11 @@ pub extern "C" fn haystack_value_init() -> Box<Value> {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_destroy(val: *mut Value) {
-    _ = Box::from_raw(val);
+    if !val.is_null() {
+        drop(unsafe { Box::from_raw(val) });
+    }
 }
 
 /// True if a null (empty) [Value](crate::val::Value)
@@ -65,13 +67,13 @@ pub unsafe extern "C" fn haystack_value_destroy(val: *mut Value) {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_null(val: *const Value) -> bool {
     safe_bool_call!(val, is_null)
 }
 
 /// Construct a [Marker](crate::val::Marker) [Value](crate::val::Value)
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn haystack_value_make_marker() -> Box<Value> {
     Box::new(Value::make_marker())
 }
@@ -94,13 +96,13 @@ pub extern "C" fn haystack_value_make_marker() -> Box<Value> {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_marker(val: *const Value) -> bool {
     safe_bool_call!(val, is_marker)
 }
 
 /// Construct a [NA](crate::val::Na) [Value](crate::val::Value)
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn haystack_value_make_na() -> Box<Value> {
     Box::new(Value::make_na())
 }
@@ -124,13 +126,13 @@ pub extern "C" fn haystack_value_make_na() -> Box<Value> {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_na(val: *const Value) -> bool {
     safe_bool_call!(val, is_na)
 }
 
 /// Construct a [Remove](crate::val::Remove) [Value](crate::val::Value)
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn haystack_value_make_remove() -> Box<Value> {
     Box::new(Value::make_remove())
 }
@@ -154,13 +156,13 @@ pub extern "C" fn haystack_value_make_remove() -> Box<Value> {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_remove(val: *const Value) -> bool {
     safe_bool_call!(val, is_remove)
 }
 
 /// Construct a [Bool](crate::val::Bool) [Value](crate::val::Value)
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn haystack_value_make_bool(val: bool) -> Box<Value> {
     Box::new(Value::make_bool(val))
 }
@@ -184,13 +186,13 @@ pub extern "C" fn haystack_value_make_bool(val: bool) -> Box<Value> {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_bool(val: *const Value) -> bool {
     safe_bool_call!(val, is_bool)
 }
 
 /// Construct a [Number](crate::val::Number) [Value](crate::val::Value)
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn haystack_value_make_number(val: f64) -> Box<Value> {
     Box::new(Value::make_number(val))
 }
@@ -214,7 +216,7 @@ pub extern "C" fn haystack_value_make_number(val: f64) -> Box<Value> {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_number(val: *const Value) -> bool {
     safe_bool_call!(val, is_number)
 }
@@ -240,7 +242,7 @@ pub unsafe extern "C" fn haystack_value_is_number(val: *const Value) -> bool {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_make_number_with_unit(
     val: f64,
     unit: *const c_char,
@@ -249,7 +251,7 @@ pub unsafe extern "C" fn haystack_value_make_number_with_unit(
         new_error("Invalid null unit");
         return None;
     }
-    match CStr::from_ptr(unit).to_str() {
+    match unsafe { CStr::from_ptr(unit).to_str() } {
         Ok(unit) => {
             if let Some(unit) = get_unit(unit) {
                 Some(Box::new(Value::make_number_unit(val, unit)))
@@ -266,7 +268,7 @@ pub unsafe extern "C" fn haystack_value_make_number_with_unit(
 }
 
 /// Construct a [Coord](crate::val::Coord) [Value](crate::val::Value)
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn haystack_value_make_coord(lat: f64, long: f64) -> Box<Value> {
     Box::new(Value::make_coord_from(lat, long))
 }
@@ -288,7 +290,7 @@ pub extern "C" fn haystack_value_make_coord(lat: f64, long: f64) -> Box<Value> {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_coord(val: *const Value) -> bool {
     safe_bool_call!(val, is_coord)
 }
@@ -296,13 +298,13 @@ pub unsafe extern "C" fn haystack_value_is_coord(val: *const Value) -> bool {
 /// Construct a [Str](crate::val::Str) [Value](crate::val::Value)
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_make_str(val: *const c_char) -> Option<Box<Value>> {
     if val.is_null() {
         new_error("Invalid null argument(s)");
         return None;
     }
-    match CStr::from_ptr(val).to_str() {
+    match unsafe { CStr::from_ptr(val).to_str() } {
         Ok(c_str) => Some(Box::new(Value::make_str(c_str))),
         Err(err) => {
             new_error(&format!("Invalid C string. {err}"));
@@ -329,7 +331,7 @@ pub unsafe extern "C" fn haystack_value_make_str(val: *const c_char) -> Option<B
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_str(val: *const Value) -> bool {
     safe_bool_call!(val, is_str)
 }
@@ -337,13 +339,13 @@ pub unsafe extern "C" fn haystack_value_is_str(val: *const Value) -> bool {
 /// Construct a [Ref](crate::val::Ref) [Value](crate::val::Value)
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_make_ref(val: *const c_char) -> Option<Box<Value>> {
     if val.is_null() {
         new_error("Invalid null argument(s)");
         return None;
     }
-    match CStr::from_ptr(val).to_str() {
+    match unsafe { CStr::from_ptr(val).to_str() } {
         Ok(c_str) => Some(Box::new(Value::make_ref(c_str))),
         Err(err) => {
             new_error(&format!("Invalid C string. {err}"));
@@ -355,7 +357,7 @@ pub unsafe extern "C" fn haystack_value_make_ref(val: *const c_char) -> Option<B
 /// Construct a [Ref](crate::val::Ref) [Value](crate::val::Value) with a display name
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_make_ref_with_dis(
     val: *const c_char,
     dis: *const c_char,
@@ -364,8 +366,8 @@ pub unsafe extern "C" fn haystack_value_make_ref_with_dis(
         new_error("Invalid null argument(s)");
         return None;
     }
-    match CStr::from_ptr(val).to_str() {
-        Ok(id) => match CStr::from_ptr(dis).to_str() {
+    match unsafe { CStr::from_ptr(val).to_str() } {
+        Ok(id) => match unsafe { CStr::from_ptr(dis).to_str() } {
             Ok(dis) => Some(Box::new(Value::make_ref_with_dis(id, dis))),
             Err(err) => {
                 new_error(&format!("Invalid dis string. {err}"));
@@ -397,7 +399,7 @@ pub unsafe extern "C" fn haystack_value_make_ref_with_dis(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_ref(val: *const Value) -> bool {
     safe_bool_call!(val, is_ref)
 }
@@ -405,13 +407,13 @@ pub unsafe extern "C" fn haystack_value_is_ref(val: *const Value) -> bool {
 /// Construct a [Uri](crate::val::Uri) [Value](crate::val::Value)
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_make_uri(val: *const c_char) -> Option<Box<Value>> {
     if val.is_null() {
         new_error("Invalid null argument(s)");
         return None;
     }
-    match CStr::from_ptr(val).to_str() {
+    match unsafe { CStr::from_ptr(val).to_str() } {
         Ok(c_str) => Some(Box::new(Value::make_uri(c_str))),
         Err(err) => {
             new_error(&format!("Invalid C string. {err}"));
@@ -438,7 +440,7 @@ pub unsafe extern "C" fn haystack_value_make_uri(val: *const c_char) -> Option<B
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_uri(val: *const Value) -> bool {
     safe_bool_call!(val, is_uri)
 }
@@ -446,13 +448,13 @@ pub unsafe extern "C" fn haystack_value_is_uri(val: *const Value) -> bool {
 /// Construct a [Symbol](crate::val::Symbol) [Value](crate::val::Value)
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_make_symbol(val: *const c_char) -> Option<Box<Value>> {
     if val.is_null() {
         new_error("Invalid null argument(s)");
         return None;
     }
-    match CStr::from_ptr(val).to_str() {
+    match unsafe { CStr::from_ptr(val).to_str() } {
         Ok(c_str) => Some(Box::new(Value::make_symbol(c_str))),
         Err(err) => {
             new_error(&format!("Invalid C string. {err}"));
@@ -479,7 +481,7 @@ pub unsafe extern "C" fn haystack_value_make_symbol(val: *const c_char) -> Optio
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_symbol(val: *const Value) -> bool {
     safe_bool_call!(val, is_symbol)
 }
@@ -487,7 +489,6 @@ pub unsafe extern "C" fn haystack_value_is_symbol(val: *const Value) -> bool {
 /// Construct a [XStr](crate::val::XStr) [Value](crate::val::Value)
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
 pub unsafe extern "C" fn haystack_value_make_xstr(
     name: *const c_char,
     data: *const c_char,
@@ -498,7 +499,7 @@ pub unsafe extern "C" fn haystack_value_make_xstr(
     }
     let args: Result<Vec<&str>, std::str::Utf8Error> = [name, data]
         .iter()
-        .map(|e| CStr::from_ptr(*e).to_str())
+        .map(|e| unsafe { CStr::from_ptr(*e).to_str() })
         .collect();
 
     match args {
@@ -529,13 +530,15 @@ pub unsafe extern "C" fn haystack_value_make_xstr(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_xstr(val: *const Value) -> bool {
     safe_bool_call!(val, is_xstr)
 }
 
 /// Construct a [Time](crate::val::Time) [Value](crate::val::Value)
-#[no_mangle]
+/// # Safety
+/// Panics on invalid input data
+#[unsafe(no_mangle)]
 pub extern "C" fn haystack_value_make_time(hour: u32, min: u32, sec: u32) -> Option<Box<Value>> {
     match Time::from_hms(hour, min, sec) {
         Ok(time) => Some(Box::new(Value::Time(time))),
@@ -547,7 +550,7 @@ pub extern "C" fn haystack_value_make_time(hour: u32, min: u32, sec: u32) -> Opt
 }
 
 /// Construct a [Time](crate::val::Time) [Value](crate::val::Value)
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn haystack_value_make_time_millis(
     hour: u32,
     min: u32,
@@ -580,13 +583,13 @@ pub extern "C" fn haystack_value_make_time_millis(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_time(val: *const Value) -> bool {
     safe_bool_call!(val, is_time)
 }
 
 /// Construct a [Date](crate::val::Date) [Value](crate::val::Value)
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn haystack_value_make_date(year: i32, month: u32, day: u32) -> Option<Box<Value>> {
     match Date::from_ymd(year, month, day) {
         Ok(date) => Some(Box::new(Value::Date(date))),
@@ -614,7 +617,7 @@ pub extern "C" fn haystack_value_make_date(year: i32, month: u32, day: u32) -> O
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_date(val: *const Value) -> bool {
     safe_bool_call!(val, is_date)
 }
@@ -622,8 +625,8 @@ pub unsafe extern "C" fn haystack_value_is_date(val: *const Value) -> bool {
 /// Construct a UTC [DateTime](crate::val::DateTime) [Value](crate::val::Value)
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
-pub unsafe extern "C" fn haystack_value_make_utc_datetime(
+#[unsafe(no_mangle)]
+pub extern "C" fn haystack_value_make_utc_datetime(
     date: *mut Value,
     time: *mut Value,
 ) -> Option<Box<Value>> {
@@ -633,7 +636,7 @@ pub unsafe extern "C" fn haystack_value_make_utc_datetime(
     }
     let args: Vec<&Value> = [date, time]
         .iter()
-        .filter_map(|e| e.as_ref())
+        .filter_map(|e| unsafe { e.as_ref() })
         .enumerate()
         .filter(|(idx, val)| *idx == 0 && val.is_date() || *idx == 1 && val.is_time())
         .map(|e| e.1)
@@ -658,8 +661,8 @@ pub unsafe extern "C" fn haystack_value_make_utc_datetime(
 /// Construct a Timezone [DateTime](crate::val::DateTime) [Value](crate::val::Value)
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
 #[cfg(feature = "timezone")]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_make_tz_datetime(
     date: *mut Value,
     time: *mut Value,
@@ -681,7 +684,7 @@ pub unsafe extern "C" fn haystack_value_make_tz_datetime(
     } else {
         Err("")
     } {
-        match CStr::from_ptr(tz).to_str() {
+        match unsafe { CStr::from_ptr(tz).to_str() } {
             Ok(tz) => match make_date_time_with_tz(&datetime.with_timezone(&Utc.fix()), tz) {
                 Ok(datetime) => Some(Box::new(Value::DateTime(datetime.into()))),
                 Err(err) => {
@@ -722,7 +725,7 @@ pub unsafe extern "C" fn haystack_value_make_tz_datetime(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_datetime(val: *const Value) -> bool {
     safe_bool_call!(val, is_datetime)
 }
@@ -730,8 +733,8 @@ pub unsafe extern "C" fn haystack_value_is_datetime(val: *const Value) -> bool {
 /// Construct a empty [List](crate::val::List) [Value](crate::val::Value)
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
-pub unsafe extern "C" fn haystack_value_make_list() -> Box<Value> {
+#[unsafe(no_mangle)]
+pub extern "C" fn haystack_value_make_list() -> Box<Value> {
     Box::new(Value::make_list(List::new()))
 }
 
@@ -752,16 +755,14 @@ pub unsafe extern "C" fn haystack_value_make_list() -> Box<Value> {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_list(val: *const Value) -> bool {
     safe_bool_call!(val, is_list)
 }
 
 /// Construct an empty [Dict](crate::val::Dict) [Value](crate::val::Value)
-/// # Safety
-/// Panics on invalid input data
-#[no_mangle]
-pub unsafe extern "C" fn haystack_value_make_dict() -> Box<Value> {
+#[unsafe(no_mangle)]
+pub extern "C" fn haystack_value_make_dict() -> Box<Value> {
     Box::new(Value::make_dict(Dict::new()))
 }
 
@@ -782,7 +783,7 @@ pub unsafe extern "C" fn haystack_value_make_dict() -> Box<Value> {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_dict(val: *const Value) -> bool {
     safe_bool_call!(val, is_dict)
 }
@@ -790,8 +791,8 @@ pub unsafe extern "C" fn haystack_value_is_dict(val: *const Value) -> bool {
 /// Construct an empty [Grid](crate::val::Grid) [Value](crate::val::Value)
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
-pub unsafe extern "C" fn haystack_value_make_grid() -> Box<Value> {
+#[unsafe(no_mangle)]
+pub extern "C" fn haystack_value_make_grid() -> Box<Value> {
     Box::new(Value::make_grid(Grid::make_empty()))
 }
 
@@ -812,7 +813,7 @@ pub unsafe extern "C" fn haystack_value_make_grid() -> Box<Value> {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_is_grid(val: *const Value) -> bool {
     safe_bool_call!(val, is_grid)
 }

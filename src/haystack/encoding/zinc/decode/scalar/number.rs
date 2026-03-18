@@ -5,7 +5,7 @@
 use super::super::scanner::Scanner;
 use crate::{
     haystack::val::Number,
-    units::{get_unit, Unit},
+    units::{Unit, get_unit},
 };
 use std::io::{Error, Read};
 

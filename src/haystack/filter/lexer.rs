@@ -3,9 +3,9 @@
 //! Haystack filter lexing
 
 use super::path::Path;
-use crate::haystack::encoding::zinc::decode::id::{parse_id, Id};
+use crate::haystack::encoding::zinc::decode::id::{Id, parse_id};
 use crate::haystack::encoding::zinc::decode::lexer::{
-    parse_number_date_time, TokenValue as ZincTokenValue,
+    TokenValue as ZincTokenValue, parse_number_date_time,
 };
 use crate::haystack::encoding::zinc::decode::scalar::reference::parse_ref;
 use crate::haystack::encoding::zinc::decode::scalar::str::parse_str;
@@ -128,9 +128,9 @@ impl<'a, R: Read> Lexer<Scanner<'a, R>> {
                                 _ => LexerToken::make_value(value),
                             },
                             _ => {
-                                return self
-                                    .scanner
-                                    .make_generic_err(&format!("Unexpected token type: {token:?}"))
+                                return self.scanner.make_generic_err(&format!(
+                                    "Unexpected token type: {token:?}"
+                                ));
                             }
                         }
                     } else {
@@ -211,7 +211,7 @@ impl<'a, R: Read> Lexer<Scanner<'a, R>> {
                 _ => {
                     return self
                         .scanner
-                        .make_generic_err(&format!("Invalid symbol: '{}'", self.scanner.cur))
+                        .make_generic_err(&format!("Invalid symbol: '{}'", self.scanner.cur));
                 }
             }
             return Ok(&self.cur);

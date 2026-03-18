@@ -3,7 +3,7 @@ name = "libhaystack"
 version = "3.0.0"
 description = "Rust implementation of the Haystack 4 data types, defs, filter, units, and encodings"
 authors = ["J2 Innovations", "Radu Racariu <radur@j2inn.com>"]
-edition = "2021"
+edition = "2024"
 license = "BSD-3-Clause"
 repository = "https://github.com/j2inn/libhaystack/"
 homepage = "https://github.com/j2inn/libhaystack/"
@@ -34,7 +34,7 @@ members = ["unit-gen"]
 
 [features]
 # Default enabled features
-default = ["encoders", "filter", "timezone", "units", "c-api"]
+default = ["encoders", "filter", "timezone", "units", "units-db", "c-api"]
 
 # C API Features
 c-api = ["c-api-filter", "c-api-json", "c-api-zinc", "c-api-brio", "c-api-trio"]
@@ -48,7 +48,7 @@ c-api-trio = ["trio"]
 value = ["units", "timezone", "encoders"]
 filter = ["value", "defs", "zinc-decoding"]
 defs = ["value"]
-units = ["units-db"]
+units = []
 units-db = []
 timezone = ["timezone-db"]
 timezone-db = []
@@ -69,18 +69,17 @@ trio-decoding = ["zinc-decoding"]
 [dependencies]
 serde = "1.0"
 serde_json = "1.0"
-uuid = { version = "1.1", features = ["v4"] }
-chrono = "0.4.41"
-chrono-tz = "0.10.3"
-lazy_static = "1.4"
-regex = "1.10.3"
-dashmap = "6.1.0"
+uuid = { version = "1.2", features = ["v4"] }
+chrono = "0.4"
+chrono-tz = "0.10"
+regex = "1.12"
+dashmap = "6.1"
 
 [dev-dependencies]
-criterion = "0.5.1"
-
+criterion = "0.8"
+	
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
-uuid = { version = "1.1", features = ["v4", "js"] }
+uuid = { version = "1.2", features = ["v4", "js"] }
 web-sys = { version = "0.3", features = ["console"] }
-console_error_panic_hook = "0.1.7"
+console_error_panic_hook = "0.1"

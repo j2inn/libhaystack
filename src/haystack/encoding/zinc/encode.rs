@@ -3,8 +3,8 @@
 //! Implement Zinc encoding
 
 use crate::haystack::val::{
-    Bool, Column, Coord, Date, DateTime, Dict, Grid, List, Marker, Na, Number, Ref, Remove, Str,
-    Symbol, Time, Uri, Value, XStr, GRID_FORMAT_VERSION,
+    Bool, Column, Coord, Date, DateTime, Dict, GRID_FORMAT_VERSION, Grid, List, Marker, Na, Number,
+    Ref, Remove, Str, Symbol, Time, Uri, Value, XStr,
 };
 use chrono::SecondsFormat;
 use std::fmt::Display;

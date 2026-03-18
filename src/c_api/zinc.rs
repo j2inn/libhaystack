@@ -20,9 +20,9 @@ use std::os::raw::c_char;
 /// can be called to get the error message.
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_to_zinc_string(val: *const Value) -> *const c_char {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(val) => match to_zinc_string(val) {
             Ok(str) => match CString::new(str.as_str()) {
                 Ok(str) => str.into_raw(),
@@ -52,7 +52,7 @@ pub unsafe extern "C" fn haystack_value_to_zinc_string(val: *const Value) -> *co
 /// can be called to get the error message.
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_from_zinc_string(
     input: *const c_char,
 ) -> Option<Box<Value>> {
@@ -60,7 +60,7 @@ pub unsafe extern "C" fn haystack_value_from_zinc_string(
         new_error("Invalid null argument(s)");
         return None;
     }
-    match CStr::from_ptr(input).to_str() {
+    match unsafe { CStr::from_ptr(input).to_str() } {
         Ok(c_str) => match from_str(c_str) {
             Ok(val) => Some(Box::new(val)),
             Err(err) => {

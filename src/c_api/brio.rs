@@ -26,18 +26,18 @@ use std::io::Cursor;
 ///
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_to_brio(val: *const Value, out_len: *mut usize) -> *mut u8 {
     if out_len.is_null() {
         new_error("out_len must not be null");
         return std::ptr::null_mut();
     }
 
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(val) => match val.to_brio_vec() {
             Ok(bytes) => {
                 let boxed: Box<[u8]> = bytes.into_boxed_slice();
-                *out_len = boxed.len();
+                unsafe { *out_len = boxed.len() };
                 Box::into_raw(boxed) as *mut u8
             }
             Err(err) => {
@@ -65,7 +65,7 @@ pub unsafe extern "C" fn haystack_value_to_brio(val: *const Value, out_len: *mut
 ///
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_from_brio(
     data: *const u8,
     len: usize,
@@ -75,7 +75,7 @@ pub unsafe extern "C" fn haystack_value_from_brio(
         return None;
     }
 
-    let bytes = std::slice::from_raw_parts(data, len);
+    let bytes = unsafe { std::slice::from_raw_parts(data, len) };
     let mut cursor = Cursor::new(bytes);
 
     match Value::from_brio(&mut cursor) {
@@ -98,9 +98,9 @@ pub unsafe extern "C" fn haystack_value_from_brio(
 /// # Safety
 /// `ptr` must have been allocated by [`haystack_value_to_brio`] with the
 /// matching `len`.  Double-free or mismatched length is undefined behaviour.
-#[no_mangle]
-pub unsafe extern "C" fn haystack_brio_bytes_free(ptr: *mut u8, len: usize) {
+#[unsafe(no_mangle)]
+pub extern "C" fn haystack_brio_bytes_free(ptr: *mut u8, len: usize) {
     if !ptr.is_null() {
-        drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(ptr, len)));
+        drop(unsafe { Box::from_raw(std::ptr::slice_from_raw_parts_mut(ptr, len)) });
     }
 }

@@ -27,9 +27,9 @@ use std::os::raw::c_char;
 ///
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_to_trio_string(val: *const Value) -> *const c_char {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(Value::Dict(dict)) => {
             let s = TrioWriter::dict_to_trio(dict, None);
             match CString::new(s.as_str()) {
@@ -71,7 +71,7 @@ pub unsafe extern "C" fn haystack_value_to_trio_string(val: *const Value) -> *co
 ///
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_from_trio_string(
     input: *const c_char,
 ) -> Option<Box<Value>> {
@@ -80,7 +80,7 @@ pub unsafe extern "C" fn haystack_value_from_trio_string(
         return None;
     }
 
-    match CStr::from_ptr(input).to_str() {
+    match unsafe { CStr::from_ptr(input).to_str() } {
         Ok(c_str) => match TrioReader::dicts_from_str(c_str) {
             Ok(mut dicts) if !dicts.is_empty() => Some(Box::new(Value::from(dicts.remove(0)))),
             Ok(_) => {

@@ -7,8 +7,8 @@
 use std::{ffi::CStr, os::raw::c_char};
 
 use super::{
-    err::{new_error, update_last_error},
     ResultType,
+    err::{new_error, update_last_error},
 };
 
 use crate::{haystack::val::Value, val::List};
@@ -34,9 +34,9 @@ use crate::{haystack::val::Value, val::List};
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_dict_len(val: *const Value) -> usize {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Dict(dict) => return dict.len(),
             _ => new_error("Not a Dict Value"),
@@ -79,12 +79,12 @@ pub unsafe extern "C" fn haystack_value_get_dict_len(val: *const Value) -> usize
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_dict_keys(
     val: *const Value,
     result: *mut Value,
 ) -> ResultType {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Dict(dict) => {
                 let keys: Value = dict
@@ -92,7 +92,7 @@ pub unsafe extern "C" fn haystack_value_get_dict_keys(
                     .map(|v| Value::make_str(v))
                     .collect::<List>()
                     .into();
-                if let Some(value) = result.as_mut() {
+                if let Some(value) = unsafe { result.as_mut() } {
                     *value = keys;
                     return ResultType::TRUE;
                 } else {
@@ -133,7 +133,7 @@ pub unsafe extern "C" fn haystack_value_get_dict_keys(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_insert_dict_entry(
     val: *mut Value,
     key: *const c_char,
@@ -144,10 +144,10 @@ pub unsafe extern "C" fn haystack_value_insert_dict_entry(
         return ResultType::ERR;
     }
 
-    match CStr::from_ptr(key).to_str() {
-        Ok(key) => match val.as_mut() {
+    match unsafe { CStr::from_ptr(key).to_str() } {
+        Ok(key) => match unsafe { val.as_mut() } {
             Some(value) => match value {
-                Value::Dict(dict) => match entry.as_ref() {
+                Value::Dict(dict) => match unsafe { entry.as_ref() } {
                     Some(entry) => {
                         dict.insert(key.to_string(), entry.clone());
                         return ResultType::TRUE;
@@ -193,7 +193,7 @@ pub unsafe extern "C" fn haystack_value_insert_dict_entry(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_dict_entry(
     val: *mut Value,
     key: *const c_char,
@@ -204,11 +204,11 @@ pub unsafe extern "C" fn haystack_value_get_dict_entry(
         return ResultType::ERR;
     }
 
-    match CStr::from_ptr(key).to_str() {
-        Ok(key) => match val.as_ref() {
+    match unsafe { CStr::from_ptr(key).to_str() } {
+        Ok(key) => match unsafe { val.as_ref() } {
             Some(Value::Dict(dict)) => match dict.get(key) {
                 Some(val) => {
-                    if let Some(value) = result.as_mut() {
+                    if let Some(value) = unsafe { result.as_mut() } {
                         *value = val;
                         return ResultType::TRUE;
                     } else {
@@ -252,7 +252,7 @@ pub unsafe extern "C" fn haystack_value_get_dict_entry(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_remove_dict_entry(
     val: *mut Value,
     key: *const c_char,
@@ -261,8 +261,8 @@ pub unsafe extern "C" fn haystack_value_remove_dict_entry(
         new_error("Invalid null argument(s)");
         return ResultType::ERR;
     }
-    match CStr::from_ptr(key).to_str() {
-        Ok(key) => match val.as_mut() {
+    match unsafe { CStr::from_ptr(key).to_str() } {
+        Ok(key) => match unsafe { val.as_mut() } {
             Some(Value::Dict(dict)) => {
                 dict.remove(key);
                 ResultType::TRUE

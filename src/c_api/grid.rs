@@ -4,7 +4,7 @@
 //! C API for working with the [Grid](crate::val::Grid) type.
 //!
 
-use super::{err::new_error, ResultType};
+use super::{ResultType, err::new_error};
 use crate::{haystack::val::Value, val::Dict};
 
 /// Get number of rows of a [Grid](crate::val::Grid) [Value](crate::val::Value)
@@ -27,9 +27,9 @@ use crate::{haystack::val::Value, val::Dict};
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_grid_len(val: *const Value) -> usize {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Grid(grid) => return grid.len(),
             _ => new_error("Not a Grid Value"),
@@ -75,11 +75,11 @@ pub unsafe extern "C" fn haystack_value_get_grid_len(val: *const Value) -> usize
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_make_grid_from_rows(
     rows: *const Value,
 ) -> Option<Box<Value>> {
-    match rows.as_ref() {
+    match unsafe { rows.as_ref() } {
         Some(rows) => match rows {
             Value::List(list) => {
                 let rows = list
@@ -144,15 +144,15 @@ pub unsafe extern "C" fn haystack_value_make_grid_from_rows(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_make_grid_from_rows_with_meta(
     rows: *const Value,
     meta: *const Value,
 ) -> Option<Box<Value>> {
-    match haystack_value_make_grid_from_rows(rows) {
+    match unsafe { haystack_value_make_grid_from_rows(rows) } {
         Some(mut val) => match val.as_mut() {
             Value::Grid(grid) => {
-                if let Some(Value::Dict(meta)) = meta.as_ref() {
+                if let Some(Value::Dict(meta)) = unsafe { meta.as_ref() } {
                     grid.meta = Some(meta.clone());
                     Some(Box::from(Value::from(grid.clone())))
                 } else {
@@ -207,17 +207,17 @@ pub unsafe extern "C" fn haystack_value_make_grid_from_rows_with_meta(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_grid_row_at(
     val: *mut Value,
     index: usize,
     result: *mut Value,
 ) -> ResultType {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Grid(grid) => match grid.rows.get(index) {
                 Some(entry) => {
-                    if let Some(value) = result.as_mut() {
+                    if let Some(value) = unsafe { result.as_mut() } {
                         *value = Value::Dict(entry.clone());
                         return ResultType::TRUE;
                     } else {

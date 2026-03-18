@@ -22,7 +22,7 @@ fn test_ref_make() {
     let id = Ref::from("id");
     assert_eq!(id.value, "id".to_string());
 
-    let id = Ref::gen();
+    let id = Ref::generate();
     assert!(id.value.len() > 13);
 }
 

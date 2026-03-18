@@ -4,7 +4,7 @@
 //! C API for working with the [List](crate::val::List) type.
 //!
 
-use super::{err::new_error, ResultType};
+use super::{ResultType, err::new_error};
 
 use crate::haystack::val::Value;
 
@@ -28,9 +28,9 @@ use crate::haystack::val::Value;
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_list_len(val: *mut Value) -> usize {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::List(list) => return list.len(),
             _ => new_error("Not a List Value"),
@@ -65,14 +65,14 @@ pub unsafe extern "C" fn haystack_value_get_list_len(val: *mut Value) -> usize {
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_push_list_entry(
     val: *mut Value,
     entry: *const Value,
 ) -> ResultType {
-    match val.as_mut() {
+    match unsafe { val.as_mut() } {
         Some(value) => match value {
-            Value::List(list) => match entry.as_ref() {
+            Value::List(list) => match unsafe { entry.as_ref() } {
                 Some(entry) => {
                     list.push(entry.clone());
                     return ResultType::TRUE;
@@ -113,17 +113,17 @@ pub unsafe extern "C" fn haystack_value_push_list_entry(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_list_entry_at(
     val: *const Value,
     index: usize,
     result: *mut *const Value,
 ) -> ResultType {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::List(list) => match list.get(index) {
                 Some(entry) => {
-                    if let Some(value) = result.as_mut() {
+                    if let Some(value) = unsafe { result.as_mut() } {
                         *value = entry;
                         return ResultType::TRUE;
                     } else {
@@ -172,17 +172,17 @@ pub unsafe extern "C" fn haystack_value_get_list_entry_at(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_set_list_entry_at(
     val: *mut Value,
     index: usize,
     entry: *mut Value,
 ) -> ResultType {
-    match val.as_mut() {
+    match unsafe { val.as_mut() } {
         Some(value) => match value {
             Value::List(list) => {
                 if index < list.len() {
-                    match entry.as_ref() {
+                    match unsafe { entry.as_ref() } {
                         Some(entry) => {
                             list.insert(index, entry.clone());
                             return ResultType::TRUE;
@@ -228,12 +228,12 @@ pub unsafe extern "C" fn haystack_value_set_list_entry_at(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_remove_list_entry_at(
     val: *mut Value,
     index: usize,
 ) -> ResultType {
-    match val.as_mut() {
+    match unsafe { val.as_mut() } {
         Some(value) => match value {
             Value::List(list) => {
                 if index < list.len() {

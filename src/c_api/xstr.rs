@@ -32,9 +32,9 @@ use crate::haystack::val::Value;
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_xstr_type(val: *const Value) -> *const c_char {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::XStr(xstr) => match CString::new(xstr.r#type.as_bytes()) {
                 Ok(str) => return str.into_raw(),
@@ -69,9 +69,9 @@ pub unsafe extern "C" fn haystack_value_get_xstr_type(val: *const Value) -> *con
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_xstr_value(val: *const Value) -> *const c_char {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::XStr(xstr) => match CString::new(xstr.value.as_bytes()) {
                 Ok(str) => return str.into_raw(),

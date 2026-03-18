@@ -31,9 +31,9 @@ use crate::haystack::val::Value;
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_ref_value_len(val: *const Value) -> usize {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Ref(uri) => return uri.value.len(),
             _ => new_error("Not a Uri Value"),
@@ -64,9 +64,9 @@ pub unsafe extern "C" fn haystack_value_get_ref_value_len(val: *const Value) -> 
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_ref_value(val: *const Value) -> *const c_char {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Ref(uri) => match CString::new(uri.value.as_bytes()) {
                 Ok(str) => return str.into_raw(),
@@ -103,9 +103,9 @@ pub unsafe extern "C" fn haystack_value_get_ref_value(val: *const Value) -> *con
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_ref_dis(val: *const Value) -> *const c_char {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Ref(uri) => match &uri.dis {
                 Some(dis) => match CString::new(dis.as_bytes()) {

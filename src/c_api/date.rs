@@ -29,9 +29,9 @@ use crate::haystack::val::Value;
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_date_year(val: *const Value) -> u32 {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Date(date) => return date.year() as u32,
             _ => new_error("Not a Date Value"),
@@ -61,9 +61,9 @@ pub unsafe extern "C" fn haystack_value_get_date_year(val: *const Value) -> u32 
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_date_month(val: *const Value) -> u32 {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Date(date) => return date.month(),
             _ => new_error("Not a Date Value"),
@@ -93,9 +93,9 @@ pub unsafe extern "C" fn haystack_value_get_date_month(val: *const Value) -> u32
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_date_day(val: *const Value) -> u32 {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Date(date) => return date.day(),
             _ => new_error("Not a Date Value"),

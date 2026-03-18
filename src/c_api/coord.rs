@@ -27,9 +27,9 @@ use crate::haystack::val::Value;
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_coord_lat(val: *const Value) -> f64 {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Coord(coord) => return coord.lat,
             _ => new_error("Not a Coord Value"),
@@ -59,9 +59,9 @@ pub unsafe extern "C" fn haystack_value_get_coord_lat(val: *const Value) -> f64 
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_coord_long(val: *const Value) -> f64 {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::Coord(coord) => return coord.long,
             _ => new_error("Not a Coord Value"),

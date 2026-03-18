@@ -4,7 +4,7 @@
 
 use crate::haystack::val::Value;
 use crate::timezone::{
-    is_utc, make_date_time, make_date_time_with_tz, timezone_short_name, utc_now, DateTimeType,
+    DateTimeType, is_utc, make_date_time, make_date_time_with_tz, timezone_short_name, utc_now,
 };
 use chrono::{DateTime as DateTimeImpl, FixedOffset, Utc};
 

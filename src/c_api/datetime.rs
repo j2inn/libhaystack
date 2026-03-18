@@ -4,8 +4,8 @@
 //! C API for working with the [DateTime](crate::val::DateTime) type.
 //!
 
-use super::err::{new_error, update_last_error};
 use super::ResultType;
+use super::err::{new_error, update_last_error};
 use crate::haystack::val::{Date, Time, Value};
 use std::ffi::CString;
 use std::os::raw::c_char;
@@ -40,7 +40,7 @@ use std::os::raw::c_char;
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_datetime_date(
     val: *const Value,
     utc: bool,
@@ -50,7 +50,7 @@ pub unsafe extern "C" fn haystack_value_get_datetime_date(
         new_error("Invalid null argument(s)");
         return ResultType::ERR;
     }
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::DateTime(datetime) => {
                 let date = if utc {
@@ -58,7 +58,7 @@ pub unsafe extern "C" fn haystack_value_get_datetime_date(
                 } else {
                     datetime.naive_local().date()
                 };
-                if let Some(value) = result.as_mut() {
+                if let Some(value) = unsafe { result.as_mut() } {
                     *value = Date::from(date).into();
                     return ResultType::TRUE;
                 } else {
@@ -102,13 +102,13 @@ pub unsafe extern "C" fn haystack_value_get_datetime_date(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_datetime_time(
     val: *const Value,
     utc: bool,
     result: *mut Value,
 ) -> ResultType {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::DateTime(datetime) => {
                 let time = if utc {
@@ -116,7 +116,7 @@ pub unsafe extern "C" fn haystack_value_get_datetime_time(
                 } else {
                     datetime.naive_local().time()
                 };
-                if let Some(value) = result.as_mut() {
+                if let Some(value) = unsafe { result.as_mut() } {
                     *value = Time::from(time).into();
                     return ResultType::TRUE;
                 } else {
@@ -156,9 +156,9 @@ pub unsafe extern "C" fn haystack_value_get_datetime_time(
 /// ```
 /// # Safety
 /// Panics on invalid input data
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn haystack_value_get_datetime_timezone(val: *const Value) -> *const c_char {
-    match val.as_ref() {
+    match unsafe { val.as_ref() } {
         Some(value) => match value {
             Value::DateTime(datetime) => {
                 match CString::new(datetime.timezone_short_name().as_bytes()) {

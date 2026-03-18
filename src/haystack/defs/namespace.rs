@@ -2,8 +2,10 @@
 
 //! Haystack Def namespace
 
-use lazy_static::lazy_static;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::{
+    collections::{BTreeMap, HashMap, HashSet},
+    sync::LazyLock,
+};
 
 use super::misc::parse_multi_line_string_to_dicts;
 use super::reflection::Reflection;
@@ -14,12 +16,10 @@ pub type Defs = BTreeMap<Symbol, Dict>;
 /// Type of all defs associated with a symbol
 pub type SymbolDefs = BTreeMap<Symbol, Vec<Dict>>;
 
-lazy_static! {
-    pub(super) static ref EMPTY_SYMBOL: Symbol = Symbol::from("");
-    pub(super) static ref EMPTY_DICT: Dict = Dict::default();
-    pub(super) static ref EMPTY_VEC_DICT: Vec<Dict> = Vec::default();
-    pub static ref DEFAULT_NS: Namespace = Namespace::default();
-}
+pub(super) static EMPTY_SYMBOL: LazyLock<Symbol> = LazyLock::new(|| Symbol::from(""));
+pub(super) static EMPTY_DICT: LazyLock<Dict> = LazyLock::new(Dict::default);
+pub(super) static EMPTY_VEC_DICT: LazyLock<Vec<Dict>> = LazyLock::new(Vec::new);
+pub static DEFAULT_NS: LazyLock<Namespace> = LazyLock::new(Namespace::default);
 
 /// Def trait for a Haystack [Dict](crate::val::Dict)
 pub trait DefDict: HaystackDict {
@@ -313,10 +313,10 @@ impl Namespace {
     fn compute_feature_names(&mut self) {
         let mut features = HashSet::<&str>::new();
         for sym in self.defs.keys() {
-            if Namespace::is_feature(sym) {
-                if let Some((first, _second)) = sym.value.split_once(':') {
-                    features.insert(first);
-                }
+            if Namespace::is_feature(sym)
+                && let Some((first, _second)) = sym.value.split_once(':')
+            {
+                features.insert(first);
             }
         }
         self.feature_names
@@ -402,12 +402,12 @@ impl Namespace {
             }
 
             // Find the reciprocal def.
-            if let Some(reciprocal_of) = association_def.get_symbol("reciprocalOf") {
-                if self.get(reciprocal_of).is_some() {
-                    // If searching for a computed association (i.e. `tags`) then more work is required.
-                    // Search for all tagOns and match against the parent's inheritance.
-                    return self.find_reciprocal_associations(parent, reciprocal_of);
-                }
+            if let Some(reciprocal_of) = association_def.get_symbol("reciprocalOf")
+                && self.get(reciprocal_of).is_some()
+            {
+                // If searching for a computed association (i.e. `tags`) then more work is required.
+                // Search for all tagOns and match against the parent's inheritance.
+                return self.find_reciprocal_associations(parent, reciprocal_of);
             }
 
             Vec::default()
@@ -670,36 +670,36 @@ impl Namespace {
     /// A list of children.
     ///
     fn protos_from_def(&self, parent: &Dict, name: &str) -> Vec<Dict> {
-        if let Some(def) = self.get_by_name(name) {
-            if let Some(children) = def.get("children") {
-                // Parse the children into a list of dicts.
-                let protos: Vec<Dict> = match children {
-                    Value::Str(str) => parse_multi_line_string_to_dicts(str),
-                    Value::List(list) => list
-                        .iter()
-                        .filter_map(|val| match val {
-                            Value::Dict(dict) => Some(dict.clone()),
-                            _ => None,
-                        })
-                        .collect(),
-                    _ => return Vec::default(),
-                };
-
-                // Find any flattened values.
-                let flattened = self.find_flattened_children(def, parent);
-
-                // Merge the flattened children.
-                let protos: Vec<Dict> = protos
-                    .into_iter()
-                    .map(|mut dict| {
-                        for (key, val) in flattened.iter() {
-                            dict.insert(key.clone(), val.clone());
-                        }
-                        dict
+        if let Some(def) = self.get_by_name(name)
+            && let Some(children) = def.get("children")
+        {
+            // Parse the children into a list of dicts.
+            let protos: Vec<Dict> = match children {
+                Value::Str(str) => parse_multi_line_string_to_dicts(str),
+                Value::List(list) => list
+                    .iter()
+                    .filter_map(|val| match val {
+                        Value::Dict(dict) => Some(dict.clone()),
+                        _ => None,
                     })
-                    .collect();
-                return protos;
-            }
+                    .collect(),
+                _ => return Vec::default(),
+            };
+
+            // Find any flattened values.
+            let flattened = self.find_flattened_children(def, parent);
+
+            // Merge the flattened children.
+            let protos: Vec<Dict> = protos
+                .into_iter()
+                .map(|mut dict| {
+                    for (key, val) in flattened.iter() {
+                        dict.insert(key.clone(), val.clone());
+                    }
+                    dict
+                })
+                .collect();
+            return protos;
         }
 
         Vec::default()
@@ -722,12 +722,11 @@ impl Namespace {
             })
             .fold(Dict::new(), |mut dict, symbol| {
                 for key in parent.keys() {
-                    if self.fits(&Symbol::from(key.as_str()), symbol) {
-                        if let Some(value) = parent.get(key) {
-                            if !value.is_null() {
-                                dict.insert(key.to_string(), value.clone());
-                            }
-                        }
+                    if self.fits(&Symbol::from(key.as_str()), symbol)
+                        && let Some(value) = parent.get(key)
+                        && !value.is_null()
+                    {
+                        dict.insert(key.to_string(), value.clone());
                     }
                 }
                 dict
@@ -812,15 +811,17 @@ impl Namespace {
 
                 // Handle a reciprocal relationship. A reciprocal relationship can only
                 // be inverted when a ref is specified.
-                if rel_val.is_none() && ref_tag.as_ref() == id.as_ref() && subject_val.is_ref() {
-                    if let Some(reciprocal_of) = reciprocal_of {
-                        rel_val = subject_def.and_then(|def| def.get(&reciprocal_of.value));
+                if rel_val.is_none()
+                    && ref_tag.as_ref() == id.as_ref()
+                    && subject_val.is_ref()
+                    && let Some(reciprocal_of) = reciprocal_of
+                {
+                    rel_val = subject_def.and_then(|def| def.get(&reciprocal_of.value));
 
-                        if rel_val.is_some() {
-                            if let Value::Ref(ref val) = subject_val {
-                                ref_tag = Some(val.clone())
-                            }
-                        }
+                    if rel_val.is_some()
+                        && let Value::Ref(ref val) = subject_val
+                    {
+                        ref_tag = Some(val.clone())
                     }
                 }
 
@@ -842,22 +843,21 @@ impl Namespace {
                         if matches!(subject_val, Value::Ref(ref val) if Some(val) == ref_tag.as_ref())
                         {
                             has_match = true;
-                        } else if is_transitive {
-                            if let Value::Ref(subject_val) = subject_val {
-                                if !queried_refs.contains(&subject_val) {
-                                    queried_refs.insert(subject_val.clone());
+                        } else if is_transitive
+                            && let Value::Ref(subject_val) = subject_val
+                            && !queried_refs.contains(&subject_val)
+                        {
+                            queried_refs.insert(subject_val.clone());
 
-                                    // If the value doesn't match but the relationship is transitive
-                                    // then follow the refs until we find a match or not.
-                                    // https://project-haystack.dev/doc/docHaystack/Relationships#transitive
-                                    if let Some(new_subject) = resolve(&subject_val) {
-                                        if !new_subject.is_empty() {
-                                            subjects.push(cur_subject);
-                                            subjects.push(new_subject);
-                                            continue 'search;
-                                        }
-                                    }
-                                }
+                            // If the value doesn't match but the relationship is transitive
+                            // then follow the refs until we find a match or not.
+                            // https://project-haystack.dev/doc/docHaystack/Relationships#transitive
+                            if let Some(new_subject) = resolve(&subject_val)
+                                && !new_subject.is_empty()
+                            {
+                                subjects.push(cur_subject);
+                                subjects.push(new_subject);
+                                continue 'search;
                             }
                         }
                     }
