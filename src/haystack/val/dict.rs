@@ -311,25 +311,49 @@ impl Display for Dict {
     }
 }
 
+/// Helper macro for converting dict keys.
+/// Accepts either bare identifiers (`id`) or string/expression keys (`"id"`).
+///
+/// This is exported so that `dict!` can reference it as `$crate::dict_key!`
+/// when expanded at call sites outside this module.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! dict_key(
+    { $key:ident } => { stringify!($key).to_string() };
+    { $key:expr }  => { String::from($key) };
+);
+
 /// A macro for creating a [Dict](crate::val::Dict) from literals
+///
+/// Keys can be bare identifiers or string literals.
+/// Values can be any type that implements `Into<Value>` (e.g. `bool`, `f64`,
+/// `i32`, `&str`, haystack types, or explicit `Value::...` expressions).
 ///
 /// # Example
 /// ```
 ///  use libhaystack::*;
 ///  use libhaystack::val::*;
+///
+///     // String keys with explicit Value expressions (original syntax)
 ///     let dict = dict!{
 ///         "site" => Value::make_marker(),
 ///         "dis" => Value::make_str("Some site")
+///     };
+///
+///     // Identifier keys with native/std types
+///     let dict2 = dict!{
+///         site => Marker,
+///         dis => "Some site"
 ///     };
 /// ```
 ///
 #[macro_export]
 macro_rules! dict(
-    { $($key:expr => $value:expr),* $(,)? } => {
+    { $($key:tt => $value:expr),* $(,)? } => {
         {
             let mut map = ::std::collections::BTreeMap::new();
             $(
-                map.insert(String::from($key), $value);
+                map.insert($crate::dict_key!($key), Value::from($value));
             )+
             Dict::from(map)
         }
@@ -532,5 +556,31 @@ mod test {
             dict_to_dis(&dict, &|_| None, Some("default".into())),
             "default"
         );
+    }
+
+    #[test]
+    fn dict_ident_keys_and_native_values() {
+        use crate::val::Marker;
+
+        // Identifier keys, native/std value types
+        let dict = dict! {
+            site => Marker,
+            dis  => "Some site",
+            curVal => 42.0f64,
+            occupied => true,
+        };
+
+        assert!(matches!(dict.get("site"), Some(Value::Marker)));
+        assert_eq!(dict.get_str("dis"), Some(&"Some site".into()));
+        assert!(matches!(dict.get("curVal"), Some(Value::Number(_))));
+        assert!(matches!(dict.get("occupied"), Some(Value::Bool(_))));
+
+        // Original string-key / explicit-Value syntax still works
+        let dict2 = dict! {
+            "site" => Value::make_marker(),
+            "dis"  => Value::make_str("bar"),
+        };
+        assert!(dict2.has_marker("site"));
+        assert_eq!(dict2.get_str("dis"), Some(&"bar".into()));
     }
 }

@@ -349,7 +349,7 @@ mod test {
             meta.ok(),
             Some(dict! {"foo"=> Value::make_true(),
             "bar" => Value::Marker,
-            "test" => vec![Value::make_number(12.0),Value::make_number(34.0)].into()})
+            "test" => vec![Value::make_number(12.0), Value::make_number(34.0)]})
         )
     }
 

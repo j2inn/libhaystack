@@ -27,6 +27,32 @@ fn test_ref_make() {
 }
 
 #[test]
+fn test_ref_make_with_dis() {
+    let id = Ref::make("id", Some("dis"));
+    assert_eq!(id.value, "id".to_string());
+    assert_eq!(id.dis, Some("dis".to_string()));
+}
+
+#[test]
+fn test_ref_make_with_dis_none() {
+    let id = Ref::make("id", None);
+    assert_eq!(id.value, "id".to_string());
+    assert_eq!(id.dis, None);
+}
+
+#[test]
+fn test_ref_from_string() {
+    let id = Ref::from("id".to_string());
+    assert_eq!(id.value, "id".to_string());
+}
+
+#[test]
+fn test_ref_as_str() {
+    let id = Ref::from("id");
+    assert_eq!(id.as_str(), "id");
+}
+
+#[test]
 fn test_ref_cmp() {
     assert!(Ref::from("abc") < Ref::from("xyz"));
 }

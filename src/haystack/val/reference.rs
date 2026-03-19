@@ -45,6 +45,11 @@ impl Ref {
             dis: None,
         }
     }
+
+    /// Get a `&str` slice of the underlying `String` payload
+    pub fn as_str(&self) -> &str {
+        self.value.as_str()
+    }
 }
 
 /// Implement equality operator for Ref
@@ -75,13 +80,20 @@ impl fmt::Display for Ref {
     }
 }
 
-// Make a Haystack `Ref` from a string value
+/// Make a Haystack `Ref` from a string value
 impl From<&str> for Ref {
     fn from(value: &str) -> Self {
         Ref {
             value: String::from(value),
             dis: None,
         }
+    }
+}
+
+/// Make a Haystack `Ref` from a `String`
+impl From<String> for Ref {
+    fn from(value: String) -> Self {
+        Ref { value, dis: None }
     }
 }
 

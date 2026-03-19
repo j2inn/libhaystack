@@ -11,6 +11,5 @@ name = "unit-gen"
 path = "src/main.rs"
 
 [dependencies]
-lazy_static = "1.4.0"
 pom  = {version = "3.2.0" }
 libhaystack = {path = "../", default-features = false, features = ["units"] }
