@@ -19,7 +19,7 @@ fn test_dict_make() {
 
 #[test]
 fn test_dict_make_value() {
-    let dict: Dict = dict!["a" => "a".into(), "b" => 100.into(), "c" => true.into()];
+    let dict: Dict = dict!["a" => "a", "b" => 100, "c" => true];
 
     let value: Value = dict.into();
 
@@ -28,30 +28,30 @@ fn test_dict_make_value() {
 
     assert_eq!(
         Dict::try_from(&value),
-        Ok(dict!["a" => "a".into(), "b" => 100.into(), "c" => true.into()])
+        Ok(dict!["a" => "a", "b" => 100, "c" => true])
     );
 }
 
 #[test]
 fn test_dict_accessors() {
     let dict: Dict = dict![
-    "a" => "a".into(),
-    "b" => 100.into(),
-    "c" => true.into(),
-    "d" => Remove.into(),
-    "e" => List::from_iter([Value::make_str("str")]).into(),
-    "f" => dict!{"na" => Na.into()}.into(),
-    "g" => Ref::from("ref").into(),
+    "a" => "a",
+    "b" => 100,
+    "c" => true,
+    "d" => Remove,
+    "e" => List::from_iter([Value::make_str("str")]),
+    "f" => dict!{"na" => Na},
+    "g" => Ref::from("ref"),
     "h" => Value::make_symbol("symbol"),
     "i" => Value::make_uri("uri"),
     "j" => Value::make_xstr_from("xstr", "val"),
     "k" => Value::Na,
     "l" => Value::Marker,
-    "m" => Time::from_str("20:00:00").expect("Time").into(),
-    "n" => Date::from_str("2021-06-19").expect("Date").into(),
-    "o" => DateTime::from_str("2021-06-19T19:48:23-00:00").expect("DateTime").into(),
-    "p" => Coord::make(34.0522, 118.2437).into(),
-    "q" => Grid::make_empty().into()
+    "m" => Time::from_str("20:00:00").expect("Time"),
+    "n" => Date::from_str("2021-06-19").expect("Date"),
+    "o" => DateTime::from_str("2021-06-19T19:48:23-00:00").expect("DateTime"),
+    "p" => Coord::make(34.0522, 118.2437),
+    "q" => Grid::make_empty()
     ];
 
     assert_eq!(dict.len(), 17);
@@ -63,7 +63,7 @@ fn test_dict_accessors() {
     assert_eq!(dict.get_num("b"), Some(&Number::from(100)));
     assert_eq!(dict.get_bool("c"), Some(&Bool::from(true)));
     assert_eq!(dict.get_list("e"), Some(&vec!["str".into()]));
-    assert_eq!(dict.get_dict("f"), Some(&dict! {"na" => Na.into()}));
+    assert_eq!(dict.get_dict("f"), Some(&dict! {"na" => Na}));
     assert_eq!(dict.get_ref("g"), Some(&Ref::from("ref")));
     assert_eq!(dict.get_symbol("h"), Some(&Symbol::from("symbol")));
     assert_eq!(dict.get_uri("i"), Some(&Uri::from("uri")));
@@ -93,7 +93,7 @@ fn test_dict_accessors() {
 
 #[test]
 fn test_dict_make_filtered() {
-    let dict: Dict = dict!["a" => "a".into(), "b" => 100.into(), "c" => true.into()];
+    let dict: Dict = dict!["a" => "a", "b" => 100, "c" => true];
 
     assert!(dict.filter(&Filter::try_from("a and b == 100").unwrap()));
 }

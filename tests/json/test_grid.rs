@@ -131,7 +131,7 @@ fn test_json_grid_with_ver() {
 
     assert_eq!(
         value,
-        Grid::make_from_dicts_with_meta(recs.clone(), dict! {"foo" => 100.into()}).into()
+        Grid::make_from_dicts_with_meta(recs.clone(), dict! {"foo" => 100}).into()
     );
 
     let string = concat!(

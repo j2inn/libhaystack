@@ -39,38 +39,38 @@ fn test_filter_defs_containment() {
         dict! {
             "id" => Value::make_ref("site"),
             "site" => Value::Marker,
-            "dis" => "site".into(),
+            "dis" => "site",
         },
         dict! {
             "id" => Value::make_ref("equip1"),
             "equip" => Value::Marker,
-            "navName" => "equip1".into(),
+            "navName" => "equip1",
             "siteRef" => Value::make_ref("site"),
         },
         dict! {
             "id" => Value::make_ref("equip2"),
             "equip" => Value::Marker,
-            "navName" => "equip2".into(),
+            "navName" => "equip2",
             "siteRef" => Value::make_ref("site"),
         },
         dict! {
             "id" => Value::make_ref("point1"),
             "point" => Value::Marker,
-            "navName" => "point1".into(),
+            "navName" => "point1",
             "equipRef" => Value::make_ref("equip1"),
             "siteRef" => Value::make_ref("site"),
         },
         dict! {
             "id" => Value::make_ref("point2"),
             "point" => Value::Marker,
-            "navName" => "point2".into(),
+            "navName" => "point2",
             "equipRef" => Value::make_ref("equip1"),
             "siteRef" => Value::make_ref("site"),
         },
         dict! {
             "id" => Value::make_ref("point3"),
             "point" => Value::Marker,
-            "navName" => "point3".into(),
+            "navName" => "point3",
             "equipRef" => Value::make_ref("equip2"),
             "siteRef" => Value::make_ref("site"),
         },
@@ -108,24 +108,24 @@ fn test_filter_path() {
         dict! {
             "id" => Value::make_ref("site"),
             "site" => Value::Marker,
-            "dis" => "site".into(),
+            "dis" => "site",
         },
         dict! {
             "id" => Value::make_ref("equip1"),
             "equip" => Value::Marker,
-            "navName" => "equip1".into(),
+            "navName" => "equip1",
             "siteRef" => Value::make_ref("site"),
         },
         dict! {
             "id" => Value::make_ref("equip2"),
             "equip" => Value::Marker,
-            "navName" => "equip2".into(),
+            "navName" => "equip2",
             "siteRef" => Value::make_ref("site"),
         },
         dict! {
             "id" => Value::make_ref("point1"),
             "point" => Value::Marker,
-            "navName" => "point1".into(),
+            "navName" => "point1",
             "equipRef" => Value::make_ref("equip1"),
             "siteRef" => Value::make_ref("site"),
         },
@@ -146,7 +146,7 @@ fn test_filter_path_siteref_site() {
         dict! {
             "id" => Value::make_ref("site"),
             "site" => Value::Marker,
-            "dis" => "site".into(),
+            "dis" => "site",
         },
         dict! {
             "id" => Value::make_ref("equip"),
@@ -167,7 +167,7 @@ fn test_filter_path_siteref_site_and_equip() {
         dict! {
             "id" => Value::make_ref("site"),
             "site" => Value::Marker,
-            "dis" => "site".into(),
+            "dis" => "site",
         },
         dict! {
             "id" => Value::make_ref("equip"),
@@ -189,7 +189,7 @@ fn test_filter_path_equipref_siteref_dis_and_point() {
         dict! {
             "id" => Value::make_ref("site"),
             "site" => Value::Marker,
-            "dis" => "site".into(),
+            "dis" => "site",
         },
         dict! {
             "id" => Value::make_ref("equip"),
@@ -216,7 +216,7 @@ fn test_filter_path_siteref_site_and_equip_with_parens() {
         dict! {
             "id" => Value::make_ref("site"),
             "site" => Value::Marker,
-            "dis" => "site".into(),
+            "dis" => "site",
         },
         dict! {
             "id" => Value::make_ref("equip"),
@@ -237,25 +237,25 @@ fn test_filter_ref_list_path() {
         dict! {
             "id" => Value::make_ref("site"),
             "site" => Value::Marker,
-            "dis" => "site".into(),
+            "dis" => "site",
         },
         dict! {
             "id" => Value::make_ref("equip1"),
             "equip" => Value::Marker,
-            "navName" => "equip1".into(),
+            "navName" => "equip1",
             "siteRef" => Value::make_ref("site"),
         },
         dict! {
             "id" => Value::make_ref("equip2"),
             "equip" => Value::Marker,
-            "navName" => "equip2".into(),
+            "navName" => "equip2",
             "siteRef" => Value::make_ref("site"),
             "refList2" => Value::make_list(vec![Value::make_ref("equip1")])
         },
         dict! {
             "id" => Value::make_ref("point1"),
             "point" => Value::Marker,
-            "navName" => "point1".into(),
+            "navName" => "point1",
             "equipRef" => Value::make_ref("equip1"),
             "siteRef" => Value::make_ref("site"),
             "refList" => Value::make_list(vec![Value::make_ref("equip1"), Value::make_ref("equip2")])

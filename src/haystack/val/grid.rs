@@ -138,7 +138,7 @@ impl Grid {
     /// Create an Err `Grid`
     pub fn make_err(dis: &str) -> Self {
         Grid {
-            meta: Some(dict! {"err" => Value::Marker, "dis" => dis.into()}),
+            meta: Some(dict! {"err" => Value::Marker, "dis" => dis}),
             columns: vec![Column {
                 name: String::from("empty"),
                 meta: None,
