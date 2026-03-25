@@ -30,6 +30,13 @@ impl Uri {
     }
 }
 
+// Make a Haystack `Uri` from a String value
+impl From<String> for Uri {
+    fn from(value: String) -> Self {
+        Uri { value }
+    }
+}
+
 // Make a Haystack `Uri` from a string value
 impl From<&str> for Uri {
     fn from(value: &str) -> Self {

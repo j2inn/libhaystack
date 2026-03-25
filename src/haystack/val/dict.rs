@@ -312,7 +312,7 @@ impl Display for Dict {
 }
 
 /// Helper macro for converting dict keys.
-/// Accepts either bare identifiers (`id`) or string/expression keys (`"id"`).
+/// Accepts either bare identifiers (`id`) or string/expression keys (`"id"`, `(KEY_ID)`).
 ///
 /// This is exported so that `dict!` can reference it as `$crate::dict_key!`
 /// when expanded at call sites outside this module.
@@ -325,7 +325,11 @@ macro_rules! dict_key(
 
 /// A macro for creating a [Dict](crate::val::Dict) from literals
 ///
-/// Keys can be bare identifiers or string literals.
+/// Keys can be bare identifiers or string/expression literals.
+///
+/// Bare identifiers are stringified, so `site => ...` becomes the key `"site"`.
+/// If you want to use a const or other expression as the key, wrap it in
+/// parentheses, such as `(KEY_SITE) => ...`.
 /// Values can be any type that implements `Into<Value>` (e.g. `bool`, `f64`,
 /// `i32`, `&str`, haystack types, or explicit `Value::...` expressions).
 ///
@@ -344,6 +348,12 @@ macro_rules! dict_key(
 ///     let dict2 = dict!{
 ///         site => Marker,
 ///         dis => "Some site"
+///     };
+///
+///     // Const/expression keys must be parenthesized
+///     const KEY_SITE: &str = "site";
+///     let dict3 = dict!{
+///         (KEY_SITE) => Marker,
 ///     };
 /// ```
 ///
@@ -582,5 +592,16 @@ mod test {
         };
         assert!(dict2.has_marker("site"));
         assert_eq!(dict2.get_str("dis"), Some(&"bar".into()));
+    }
+
+    #[test]
+    fn dict_parenthesized_const_key() {
+        use crate::val::Marker;
+
+        const KEY_SITE: &str = "site";
+        let dict = dict! { (KEY_SITE) => Marker };
+
+        assert!(dict.has_marker("site"));
+        assert!(dict.has(KEY_SITE));
     }
 }
