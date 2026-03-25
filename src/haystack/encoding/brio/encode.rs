@@ -35,6 +35,10 @@ pub const CTRL_DATETIME_I4: u8 = 0x0f;
 pub const CTRL_DATETIME_I8: u8 = 0x10;
 pub const CTRL_COORD: u8 = 0x11;
 pub const CTRL_XSTR: u8 = 0x12;
+/// Binary buffer control byte.  Emitted by Haxall's `BrioWriter.writeBuf`; libhaystack
+/// does not encode this type (the `Value` model has no Bin variant) but the decoder must
+/// consume it gracefully to avoid stream corruption when reading Haxall-produced data.
+pub const CTRL_BUF: u8 = 0x13;
 pub const CTRL_DICT_EMPTY: u8 = 0x14;
 pub const CTRL_DICT: u8 = 0x15;
 pub const CTRL_LIST_EMPTY: u8 = 0x16;
@@ -389,12 +393,21 @@ impl ToBrio for XStr {
 
 impl ToBrio for Dict {
     fn to_brio<W: Write>(&self, writer: &mut W) -> Result<()> {
-        if self.is_empty() {
+        // Haxall BrioWriter.fan skips null-valued tags: they must not appear in
+        // the count or in the encoded tag/value pairs.
+        let non_null_count = self
+            .iter()
+            .filter(|(_, v)| !matches!(v, Value::Null))
+            .count();
+        if non_null_count == 0 {
             writer.write_all(&[CTRL_DICT_EMPTY])?;
         } else {
             writer.write_all(&[CTRL_DICT, b'{'])?;
-            encode_varint(writer, self.len() as i64)?;
+            encode_varint(writer, non_null_count as i64)?;
             for (key, val) in self.iter() {
+                if matches!(val, Value::Null) {
+                    continue;
+                }
                 encode_str(writer, key)?;
                 val.to_brio(writer)?;
             }

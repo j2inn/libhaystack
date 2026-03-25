@@ -13,10 +13,10 @@ use crate::haystack::val::{
 
 use super::consts::{FANTOM_EPOCH_UNIX_SECS, get_const};
 use super::encode::{
-    CTRL_COORD, CTRL_DATE, CTRL_DATETIME_I4, CTRL_DATETIME_I8, CTRL_DICT, CTRL_DICT_EMPTY,
-    CTRL_FALSE, CTRL_GRID, CTRL_LIST, CTRL_LIST_EMPTY, CTRL_MARKER, CTRL_NA, CTRL_NULL,
-    CTRL_NUMBER_F8, CTRL_NUMBER_I2, CTRL_NUMBER_I4, CTRL_REF_I8, CTRL_REF_STR, CTRL_REMOVE,
-    CTRL_STR, CTRL_SYMBOL, CTRL_TIME, CTRL_TRUE, CTRL_URI, CTRL_XSTR,
+    CTRL_BUF, CTRL_COORD, CTRL_DATE, CTRL_DATETIME_I4, CTRL_DATETIME_I8, CTRL_DICT,
+    CTRL_DICT_EMPTY, CTRL_FALSE, CTRL_GRID, CTRL_LIST, CTRL_LIST_EMPTY, CTRL_MARKER, CTRL_NA,
+    CTRL_NULL, CTRL_NUMBER_F8, CTRL_NUMBER_I2, CTRL_NUMBER_I4, CTRL_REF_I8, CTRL_REF_STR,
+    CTRL_REMOVE, CTRL_STR, CTRL_SYMBOL, CTRL_TIME, CTRL_TRUE, CTRL_URI, CTRL_XSTR,
 };
 
 // ---------------------------------------------------------------------------
@@ -242,6 +242,24 @@ fn datetime_from_nanos(fantom_nanos: i64, tz: &str) -> Result<DateTime> {
 // ---------------------------------------------------------------------------
 // Private payload decoders (ctrl byte already consumed by caller)
 // ---------------------------------------------------------------------------
+
+/// Decode a Haxall binary buffer (`CTRL_BUF`/0x13) payload: `varint(size)` + raw bytes.
+///
+/// libhaystack has no `Bin` value kind, so the buffer is surfaced as
+/// `XStr("Bin", "<lowercase hex>")`, preserving all bytes without data loss and
+/// remaining compatible with Haystack's XStr encoding convention for binary data.
+fn decode_buf_as_xstr<R: Read>(reader: &mut R) -> Result<XStr> {
+    let size = decode_varint(reader)?;
+    if size < 0 {
+        return Err(Error::Message("Negative Buf size".into()));
+    }
+    let mut bytes = vec![0u8; size as usize];
+    reader
+        .read_exact(&mut bytes)
+        .map_err(|e| Error::Message(e.to_string()))?;
+    let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
+    Ok(XStr::make("Bin", &hex))
+}
 
 /// Decode a non-empty Dict payload: `'{' varint(count) (key value)* '}'`
 fn decode_dict_payload<R: Read>(reader: &mut R) -> Result<Dict> {
@@ -474,6 +492,7 @@ impl FromBrio for Value {
                 &decode_str(reader)?,
             ))),
             CTRL_SYMBOL => Ok(Value::from(Symbol::make(&decode_str(reader)?))),
+            CTRL_BUF => decode_buf_as_xstr(reader).map(Value::from),
             CTRL_DICT_EMPTY => Ok(Value::from(Dict::default())),
             CTRL_DICT => decode_dict_payload(reader).map(Value::from),
             CTRL_LIST_EMPTY => Ok(Value::from(List::default())),
@@ -501,8 +520,23 @@ pub fn from_brio<R: Read>(reader: &mut R) -> Result<Value> {
 
 fn make_number(v: f64, unit: &str) -> Number {
     if unit.is_empty() {
+        return Number::make(v);
+    }
+    // Haxall `BrioReader.consumeUnit` calls `Number.loadUnit(str, checked:false)` which
+    // returns `null` for unrecognised unit strings (the number becomes unitless).  Match
+    // that semantic when units-db is available.  Without units-db, fall back to the
+    // DEFAULT_UNIT sentinel so unit information is at least structurally preserved.
+    #[cfg(feature = "units-db")]
+    {
+        use crate::units::get_unit;
+        if let Some(u) = get_unit(unit) {
+            return Number::make_with_unit(v, u);
+        }
+        // Unit string present but not in database → unitless (matches Haxall null).
         Number::make(v)
-    } else {
+    }
+    #[cfg(not(feature = "units-db"))]
+    {
         use crate::units::get_unit_or_default;
         Number::make_with_unit(v, get_unit_or_default(unit))
     }

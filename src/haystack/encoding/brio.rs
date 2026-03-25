@@ -37,3 +37,6 @@ pub mod decode;
 
 #[cfg(all(test, feature = "brio-encoding", feature = "brio-decoding"))]
 mod haxall_fixtures;
+
+#[cfg(all(test, feature = "brio-encoding", feature = "brio-decoding"))]
+mod json_fixture_tests;

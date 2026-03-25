@@ -17,6 +17,14 @@ use std::sync::OnceLock;
 /// Seconds between the Unix epoch (1970-01-01) and the Fantom epoch (2000-01-01).
 pub const FANTOM_EPOCH_UNIX_SECS: i64 = 946_684_800;
 
+/// Maximum constant code the encoder may emit, matching Haxall's `BrioConsts.maxSafeCode = 945`.
+///
+/// Haxall caps its writer at this value so that older peers (which may not recognise
+/// constants added in post-3.0.17 versions) are not sent an opaque varint they cannot
+/// look up.  Codes 946–1002 (3.0.25 and 3.0.27 additions) are recognised during *decoding*
+/// but intentionally not emitted during *encoding*.
+pub const MAX_SAFE_CONST_CODE: i64 = 945;
+
 /// Canonical string constants, indexed from 0.  Index 0 is the empty string.
 /// Haxall encodes `""` as `varint(0)` — confirmed by `BrioTest.fan`:
 ///   `verifyConsts(cp, "", 0)`
@@ -1055,9 +1063,17 @@ fn consts_map() -> &'static HashMap<&'static str, i64> {
 
 /// Look up `s` in the constant table.
 ///
-/// Returns `Some(index)` (1-based) if found, `None` otherwise.
+/// Returns `Some(index)` if found **and** the index is within [`MAX_SAFE_CONST_CODE`],
+/// otherwise `None` (triggering inline encoding).  This mirrors Haxall's
+/// `BrioConsts.encode(val, maxStrCode)` cap so that libhaystack does not emit opaque
+/// constant codes that older Haxall peers cannot resolve.
 pub fn lookup_const(s: &str) -> Option<i64> {
-    consts_map().get(s).copied()
+    let idx = consts_map().get(s).copied()?;
+    if idx <= MAX_SAFE_CONST_CODE {
+        Some(idx)
+    } else {
+        None
+    }
 }
 
 /// Retrieve the constant string at `idx` (0-based; 0 = `""`).
@@ -1160,13 +1176,28 @@ mod tests {
 
     #[test]
     fn test_lookup_roundtrip() {
-        // Every entry including index 0 ("") should round-trip.
+        // Entries 0..=MAX_SAFE_CONST_CODE should round-trip via lookup_const.
+        // Entries above MAX_SAFE_CONST_CODE are decode-only (get_const still works,
+        // but lookup_const returns None so they are encoded as inline strings).
         for (i, &s) in CONSTS.iter().enumerate() {
-            let idx =
-                lookup_const(s).unwrap_or_else(|| panic!("Missing const at index {i}: {s:?}"));
-            assert_eq!(idx, i as i64);
-            let got = get_const(idx).unwrap();
-            assert_eq!(got, s);
+            if i as i64 <= MAX_SAFE_CONST_CODE {
+                let idx =
+                    lookup_const(s).unwrap_or_else(|| panic!("Missing const at index {i}: {s:?}"));
+                assert_eq!(idx, i as i64);
+                let got = get_const(idx).unwrap();
+                assert_eq!(got, s);
+            } else {
+                // Above the safe cap: should NOT be returned by lookup_const.
+                assert!(
+                    lookup_const(s).is_none(),
+                    "Expected None for index {i} ({s:?}) above MAX_SAFE_CONST_CODE"
+                );
+                // get_const should still decode them (for streams from Haxall).
+                assert!(
+                    get_const(i as i64).is_some(),
+                    "get_const({i}) should still work"
+                );
+            }
         }
     }
 }
