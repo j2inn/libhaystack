@@ -22,3 +22,9 @@ fn test_uri_from() {
     let uri = Uri::from("/foo/baz/bar.txt");
     assert_eq!(uri.value, "/foo/baz/bar.txt".to_string());
 }
+
+#[test]
+fn test_uri_from_string() {
+    let uri = Uri::from("/foo/baz/bar.txt".to_string());
+    assert_eq!(uri.value, "/foo/baz/bar.txt".to_string());
+}
