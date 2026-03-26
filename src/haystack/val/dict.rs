@@ -267,11 +267,11 @@ impl Dict {
     ///
     /// If the dict is already `Small`-backed this is a no-op.
     pub fn shrink_to_fit(&mut self) {
-        if let DictRepr::Tree(map) = &self.value {
-            if map.len() <= self.small_max_entries {
-                let entries = map.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
-                self.value = DictRepr::Small(entries);
-            }
+        if let DictRepr::Tree(map) = &self.value
+            && map.len() <= self.small_max_entries
+        {
+            let entries = map.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+            self.value = DictRepr::Small(entries);
         }
     }
 
@@ -488,10 +488,10 @@ impl FromIterator<(String, Value)> for Dict {
 
         // Reserve capacity up-front when the hint is available and fits in Small,
         // avoiding repeated Vec reallocations for the common fixed-size-collection case.
-        if lower > 0 {
-            if let DictRepr::Small(entries) = &mut dict.value {
-                entries.reserve(lower.min(dict.small_max_entries));
-            }
+        if lower > 0
+            && let DictRepr::Small(entries) = &mut dict.value
+        {
+            entries.reserve(lower.min(dict.small_max_entries));
         }
 
         for (k, v) in iter.by_ref() {

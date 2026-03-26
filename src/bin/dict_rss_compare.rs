@@ -127,10 +127,10 @@ fn parse_child_delta_kb(output: &str) -> Option<u64> {
             continue;
         }
         for part in line.split_whitespace() {
-            if let Some(value) = part.strip_prefix("delta_kb=") {
-                if let Ok(parsed) = value.parse::<u64>() {
-                    return Some(parsed);
-                }
+            if let Some(value) = part.strip_prefix("delta_kb=")
+                && let Ok(parsed) = value.parse::<u64>()
+            {
+                return Some(parsed);
             }
         }
     }
@@ -188,7 +188,7 @@ fn make_entries(seed: usize) -> Vec<(String, Value)> {
         Value::from("l"),
     ]);
     let inner_dict = dict! {
-        "innerBool" => seed % 2 == 0,
+        "innerBool" => seed.is_multiple_of(2),
         "innerNum" => (seed % 1000) as i32,
         "innerStr" => format!("inner-{seed}")
     };
@@ -208,7 +208,7 @@ fn make_entries(seed: usize) -> Vec<(String, Value)> {
         ("k01".into(), Value::make_marker()),
         ("k02".into(), Value::make_remove()),
         ("k03".into(), Value::make_na()),
-        ("k04".into(), Value::from(seed % 2 == 0)),
+        ("k04".into(), Value::from(seed.is_multiple_of(2))),
         ("k05".into(), Value::from(seed as i32)),
         ("k06".into(), Value::from((seed as f64) * 1.5)),
         ("k07".into(), Value::from(format!("str-{seed}"))),
