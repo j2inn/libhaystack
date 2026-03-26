@@ -33,7 +33,7 @@ mod tests {
     use crate::dict;
     use crate::encoding::brio::decode::from_brio;
     use crate::encoding::brio::encode::ToBrio;
-    use crate::haystack::val::{Bool, DateTime, Dict, List, Marker, Number, Ref, Value, XStr};
+    use crate::haystack::val::{Bool, DateTime, Dict, List, Marker, Number, Ref, Value};
     use crate::units::get_unit_or_default;
 
     // -----------------------------------------------------------------------
