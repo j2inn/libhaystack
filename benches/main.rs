@@ -71,6 +71,3 @@ criterion_group!(
     criterion_trio_parse
 );
 criterion_main!(benches);
-
-#[cfg(any())]
-fn main() {}
