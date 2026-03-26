@@ -6,10 +6,20 @@ pub mod unit;
 pub mod unit_dimension;
 #[cfg(feature = "units-db")]
 pub mod units_generated;
-use std::sync::LazyLock;
+
+use std::borrow::Cow;
 
 pub use unit::Unit;
 pub use unit_dimension::UnitDimensions;
+
+/// The dimensionless default unit
+pub static DEFAULT_UNIT: Unit = Unit {
+    quantity: None,
+    ids: Cow::Borrowed(&[]),
+    dimensions: None,
+    scale: 0.0,
+    offset: 0.0,
+};
 
 /// Get unit by name, if it is defined in the units database
 #[allow(unused_variables)]
@@ -24,7 +34,7 @@ pub fn get_unit(unit: &str) -> Option<&'static Unit> {
 
 /// Tries to get the unit by name, if none is found, return a default unit
 pub fn get_unit_or_default(unit: &str) -> &'static Unit {
-    get_unit(unit).unwrap_or(&*DEFAULT_UNIT)
+    get_unit(unit).unwrap_or(&DEFAULT_UNIT)
 }
 
 /// Match units for the dimension
@@ -55,6 +65,3 @@ fn approx_eq(a: f64, b: f64) -> bool {
     let min_precision = f64::min(f64::abs(a / 1e3), f64::abs(b / 1e3));
     f64::abs(a - b) <= min_precision
 }
-
-/// The dimensionless default unit
-pub static DEFAULT_UNIT: LazyLock<Unit> = LazyLock::new(Unit::default);

@@ -49,7 +49,7 @@ impl Number {
     pub fn make_with_unit(value: f64, unit: &'static Unit) -> Number {
         Number {
             value,
-            unit: if unit != &*DEFAULT_UNIT {
+            unit: if unit != &DEFAULT_UNIT {
                 Some(unit)
             } else {
                 None
@@ -176,7 +176,7 @@ impl Add<Number> for Number {
 
         Ok(Number::make_with_unit(
             self.value + other.value,
-            unit.unwrap_or(&*DEFAULT_UNIT),
+            unit.unwrap_or(&DEFAULT_UNIT),
         ))
     }
 }
@@ -202,7 +202,7 @@ impl Sub<Number> for Number {
 
         Ok(Number::make_with_unit(
             self.value - other.value,
-            unit.unwrap_or(&*DEFAULT_UNIT),
+            unit.unwrap_or(&DEFAULT_UNIT),
         ))
     }
 }
@@ -217,7 +217,7 @@ impl Mul<Number> for Number {
         } else if other.unit.is_none() {
             self.unit
         } else {
-            match self.unit.unwrap_or(&*DEFAULT_UNIT) * other.unit.unwrap_or(&*DEFAULT_UNIT) {
+            match self.unit.unwrap_or(&DEFAULT_UNIT) * other.unit.unwrap_or(&DEFAULT_UNIT) {
                 Ok(u) => Some(u),
                 Err(err) => return Err(err),
             }
@@ -225,7 +225,7 @@ impl Mul<Number> for Number {
 
         Ok(Number::make_with_unit(
             self.value * other.value,
-            unit.unwrap_or(&*DEFAULT_UNIT),
+            unit.unwrap_or(&DEFAULT_UNIT),
         ))
     }
 }
@@ -240,7 +240,7 @@ impl Div<Number> for Number {
         } else if other.unit.is_none() {
             self.unit
         } else {
-            match self.unit.unwrap_or(&*DEFAULT_UNIT) / other.unit.unwrap_or(&*DEFAULT_UNIT) {
+            match self.unit.unwrap_or(&DEFAULT_UNIT) / other.unit.unwrap_or(&DEFAULT_UNIT) {
                 Ok(u) => Some(u),
                 Err(err) => return Err(err),
             }
@@ -248,7 +248,7 @@ impl Div<Number> for Number {
 
         Ok(Number::make_with_unit(
             self.value / other.value,
-            unit.unwrap_or(&*DEFAULT_UNIT),
+            unit.unwrap_or(&DEFAULT_UNIT),
         ))
     }
 }
