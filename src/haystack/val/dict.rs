@@ -296,6 +296,12 @@ impl Dict {
     pub fn values(&self) -> DictValues<'_> {
         DictValues { inner: self.iter() }
     }
+
+    pub fn values_mut(&mut self) -> DictValuesMut<'_> {
+        DictValuesMut {
+            inner: self.iter_mut(),
+        }
+    }
 }
 
 impl Default for Dict {
@@ -470,6 +476,24 @@ impl<'a> Iterator for DictValues<'a> {
 }
 
 impl ExactSizeIterator for DictValues<'_> {}
+
+pub struct DictValuesMut<'a> {
+    inner: DictIterMut<'a>,
+}
+
+impl<'a> Iterator for DictValuesMut<'a> {
+    type Item = &'a mut Value;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|(_, v)| v)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+impl ExactSizeIterator for DictValuesMut<'_> {}
 
 /// Implement FromIterator for `Dict`
 ///
