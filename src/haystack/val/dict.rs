@@ -673,6 +673,16 @@ impl From<DictType> for Dict {
     }
 }
 
+/// Converts from `Dict` to a `DictType`
+impl From<Dict> for DictType {
+    fn from(dict: Dict) -> Self {
+        match dict.value {
+            DictRepr::Small(entries) => entries.into_iter().collect(),
+            DictRepr::Tree(map) => map,
+        }
+    }
+}
+
 /// Converts from `DictType` to a `Dict` `Value`
 impl From<DictType> for Value {
     fn from(from: DictType) -> Self {

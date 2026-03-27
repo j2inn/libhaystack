@@ -7,6 +7,7 @@ use libhaystack::dict;
 use libhaystack::filter::Filter;
 use libhaystack::filter::Filtered;
 use libhaystack::val::*;
+use std::collections::BTreeMap;
 use std::iter::FromIterator;
 use std::str::FromStr;
 
@@ -224,4 +225,87 @@ fn test_dict_retain_mutates_values() {
     assert_eq!(dict.get_num("a").map(|n| n.value as i64), Some(10));
     assert_eq!(dict.get_num("b").map(|n| n.value as i64), Some(20));
     assert_eq!(dict.get_num("c").map(|n| n.value as i64), Some(30));
+}
+
+// --- Dict <-> BTreeMap conversions ---
+
+#[test]
+fn test_dict_from_btreemap_small() {
+    // Fewer entries than the threshold → must use the small-vec repr internally,
+    // but the resulting Dict must have the same keys and values.
+    let mut map = BTreeMap::new();
+    map.insert("a".to_string(), Value::make_str("hello"));
+    map.insert("b".to_string(), 42.into());
+    map.insert("c".to_string(), Value::Marker);
+
+    let dict = Dict::from(map.clone());
+
+    assert_eq!(dict.len(), 3);
+    assert_eq!(dict.get_str("a"), Some(&Str::from("hello")));
+    assert_eq!(dict.get_num("b"), Some(&Number::from(42)));
+    assert!(dict.has_marker("c"));
+}
+
+#[test]
+fn test_dict_into_btreemap_small() {
+    // Dict backed by small-vec → BTreeMap must contain the same entries.
+    let dict = dict! {"x" => "val", "y" => 7, "z" => true};
+
+    let map: BTreeMap<String, Value> = dict.into();
+
+    assert_eq!(map.len(), 3);
+    assert_eq!(map["x"], Value::make_str("val"));
+    assert_eq!(map["y"], Value::from(7));
+    assert_eq!(map["z"], Value::from(true));
+}
+
+#[test]
+fn test_dict_into_btreemap_tree() {
+    // Force tree repr (threshold = 0), then convert → BTreeMap.
+    let mut dict = Dict::with_small_max_entries(0);
+    dict.insert("a".into(), Value::make_str("a"));
+    dict.insert("b".into(), 2.into());
+
+    let map: BTreeMap<String, Value> = dict.into();
+
+    assert_eq!(map.len(), 2);
+    assert_eq!(map["a"], Value::make_str("a"));
+    assert_eq!(map["b"], Value::from(2));
+}
+
+#[test]
+fn test_dict_from_btreemap_roundtrip() {
+    // Dict → BTreeMap → Dict must be equal to the original.
+    let original = dict! {"p" => "one", "q" => 2, "r" => true};
+
+    let map: BTreeMap<String, Value> = original.clone().into();
+    let roundtripped = Dict::from(map);
+
+    assert_eq!(original, roundtripped);
+}
+
+#[test]
+fn test_dict_from_btreemap_preserves_order() {
+    // Keys must be iterated in sorted order after the round-trip (BTreeMap is sorted).
+    let mut map = BTreeMap::new();
+    map.insert("z".to_string(), Value::Marker);
+    map.insert("a".to_string(), Value::Marker);
+    map.insert("m".to_string(), Value::Marker);
+
+    let dict = Dict::from(map);
+    let keys: Vec<&str> = dict.keys().map(|k| k.as_str()).collect();
+
+    assert_eq!(keys, vec!["a", "m", "z"]);
+}
+
+#[test]
+fn test_dict_from_btreemap_empty() {
+    let dict = Dict::from(BTreeMap::<String, Value>::new());
+    assert!(dict.is_empty());
+}
+
+#[test]
+fn test_dict_into_btreemap_empty() {
+    let map: BTreeMap<String, Value> = Dict::new().into();
+    assert!(map.is_empty());
 }
