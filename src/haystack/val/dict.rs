@@ -1,4 +1,4 @@
-// Copyright (C) 2020 - 2022, J2 Innovations
+// Copyright (C) 2020 - 2026, J2 Innovations
 
 //! Haystack Dict
 
@@ -14,8 +14,6 @@ use std::ops::Index;
 
 // Alias for the underlying Dict type
 pub(crate) type DictType = BTreeMap<String, Value>;
-
-const SMALL_DICT_MAX_ENTRIES: usize = 32;
 
 #[derive(Clone, Debug)]
 enum DictRepr {
@@ -130,12 +128,17 @@ pub trait HaystackDict {
 }
 
 impl Dict {
+    /// Hint for the maximum number of entries for the small-vector back-store.
+    pub const SMALL_DICT_MAX_ENTRIES_HINT: usize = 32;
+
     /// Construct a new `Dict` with a threshold of 32 entries for the small-vector back-store.
     pub fn new() -> Dict {
-        Self::with_small_max_entries(SMALL_DICT_MAX_ENTRIES)
+        Self::with_small_max_entries(Self::SMALL_DICT_MAX_ENTRIES_HINT)
     }
 
     /// Construct a new `Dict` with a custom small-store threshold.
+    /// If `small_max_entries` is 0, the small-vector back-store is disabled
+    /// and the dict will use the `BTreeMap` representation.
     pub fn with_small_max_entries(small_max_entries: usize) -> Dict {
         let value = if small_max_entries == 0 {
             DictRepr::Tree(DictType::new())
@@ -324,6 +327,55 @@ impl Dict {
         DictValuesMut {
             inner: self.iter_mut(),
         }
+    }
+
+    /// Returns `None` when the size hint signals the entry count will exceed
+    /// the small-vec threshold (callers should build a `Tree` directly), or
+    /// `Some(dict)` with a `Small`-backed dict pre-allocated to the hinted
+    /// capacity.
+    fn prepare_from_hint(lower: usize, upper: Option<usize>) -> Option<Dict> {
+        if lower > Self::SMALL_DICT_MAX_ENTRIES_HINT
+            || upper.is_some_and(|upper| upper > Self::SMALL_DICT_MAX_ENTRIES_HINT)
+        {
+            return None;
+        }
+        let mut dict = Dict::new();
+        if lower > 0
+            && let DictRepr::Small(entries) = &mut dict.value
+        {
+            entries.reserve(lower.min(dict.small_max_entries));
+        }
+        Some(dict)
+    }
+
+    /// Constructs a `Dict` from a fallible iterator of `(String, Value)` pairs.
+    ///
+    /// Applies the same size-hint optimisation as [`FromIterator`]: when the
+    /// iterator reports more than `small_max_entries` items the backing store
+    /// starts as a `Tree` directly, skipping the small-vec stage.
+    ///
+    /// The first `Err` item short-circuits collection and is returned
+    /// immediately, leaving any remaining items unconsumed.
+    pub fn try_from_iter<E, I>(iter: I) -> Result<Self, E>
+    where
+        I: IntoIterator<Item = Result<(String, Value), E>>,
+    {
+        let iter = iter.into_iter();
+        let (lower, upper) = iter.size_hint();
+
+        let Some(mut dict) = Dict::prepare_from_hint(lower, upper) else {
+            let map = iter.collect::<Result<DictType, E>>()?;
+            return Ok(Dict {
+                value: DictRepr::Tree(map),
+                small_max_entries: Dict::SMALL_DICT_MAX_ENTRIES_HINT,
+            });
+        };
+
+        for result in iter {
+            let (k, v) = result?;
+            dict.insert(k, v);
+        }
+        Ok(dict)
     }
 }
 
@@ -518,6 +570,37 @@ impl<'a> Iterator for DictValuesMut<'a> {
 
 impl ExactSizeIterator for DictValuesMut<'_> {}
 
+/// A newtype wrapper around any `IntoIterator` whose items are
+/// `Result<(String, Value), E>`, used as the source type for
+/// [`TryFrom<FalliblePairs<I>> for Dict`].
+///
+/// # Example
+/// ```
+/// use libhaystack::val::{Dict, Value, FalliblePairs};
+///
+/// let pairs: Vec<Result<(String, Value), String>> = vec![
+///     Ok(("a".into(), Value::make_str("hello"))),
+///     Ok(("b".into(), 42.into())),
+/// ];
+/// let dict = Dict::try_from(FalliblePairs(pairs)).unwrap();
+/// assert_eq!(dict.len(), 2);
+/// ```
+pub struct FalliblePairs<I>(pub I);
+
+/// Converts a [`FalliblePairs`]-wrapped iterator into a [`Dict`].
+///
+/// The first `Err` item short-circuits the conversion.
+impl<E, I> TryFrom<FalliblePairs<I>> for Dict
+where
+    I: IntoIterator<Item = Result<(String, Value), E>>,
+{
+    type Error = E;
+
+    fn try_from(src: FalliblePairs<I>) -> Result<Self, E> {
+        Dict::try_from_iter(src.0)
+    }
+}
+
 /// Implement FromIterator for `Dict`
 ///
 /// Allows constructing a `Dict` from a `(String, Value)` tuple iterator
@@ -525,21 +608,13 @@ impl FromIterator<(String, Value)> for Dict {
     fn from_iter<T: IntoIterator<Item = (String, Value)>>(iter: T) -> Self {
         let mut iter = iter.into_iter();
         let (lower, upper) = iter.size_hint();
-        let mut dict = Dict::new();
-        if lower > dict.small_max_entries
-            || upper.is_some_and(|upper| upper > dict.small_max_entries)
-        {
-            dict.value = DictRepr::Tree(iter.collect());
-            return dict;
-        }
 
-        // Reserve capacity up-front when the hint is available and fits in Small,
-        // avoiding repeated Vec reallocations for the common fixed-size-collection case.
-        if lower > 0
-            && let DictRepr::Small(entries) = &mut dict.value
-        {
-            entries.reserve(lower.min(dict.small_max_entries));
-        }
+        let Some(mut dict) = Dict::prepare_from_hint(lower, upper) else {
+            return Dict {
+                value: DictRepr::Tree(iter.collect()),
+                small_max_entries: Dict::SMALL_DICT_MAX_ENTRIES_HINT,
+            };
+        };
 
         for (k, v) in iter.by_ref() {
             dict.insert(k, v);
@@ -658,7 +733,7 @@ impl HaystackDict for Dict {
 /// Converts from `DictType` to a `Dict`
 impl From<DictType> for Dict {
     fn from(from: DictType) -> Self {
-        let small_max_entries = SMALL_DICT_MAX_ENTRIES;
+        let small_max_entries = Dict::SMALL_DICT_MAX_ENTRIES_HINT;
         if from.len() <= small_max_entries {
             Dict {
                 value: DictRepr::Small(from.into_iter().collect()),
