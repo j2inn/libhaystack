@@ -1,4 +1,4 @@
-// Copyright (C) 2020 - 2022, J2 Innovations
+// Copyright (C) 2020 - 2026, J2 Innovations
 
 //! Test Dict
 
@@ -308,4 +308,93 @@ fn test_dict_from_btreemap_empty() {
 fn test_dict_into_btreemap_empty() {
     let map: BTreeMap<String, Value> = Dict::new().into();
     assert!(map.is_empty());
+}
+
+// --- try_from_iter / FalliblePairs ---
+
+type StrErr = &'static str;
+
+fn ok_pair(k: &'static str, v: impl Into<Value>) -> Result<(String, Value), StrErr> {
+    Ok((k.into(), v.into()))
+}
+
+#[test]
+fn test_dict_try_from_iter_all_ok_small() {
+    // All items succeed; result stays in the small-vec repr (3 << 32).
+    let dict = Dict::try_from_iter::<StrErr, _>([
+        ok_pair("a", "hello"),
+        ok_pair("b", 42),
+        ok_pair("c", true),
+    ])
+    .unwrap();
+
+    assert_eq!(dict.len(), 3);
+    assert_eq!(dict.get_str("a"), Some(&Str::from("hello")));
+    assert_eq!(dict.get_num("b"), Some(&Number::from(42)));
+    assert_eq!(dict.get_bool("c"), Some(&Bool::from(true)));
+}
+
+#[test]
+fn test_dict_try_from_iter_short_circuits_on_err() {
+    // The second item is an error; collection must stop and return it.
+    let items: Vec<Result<(String, Value), StrErr>> = vec![
+        ok_pair("a", 1),
+        Err("parse error"),
+        ok_pair("c", 3), // must never be inserted
+    ];
+    let result = Dict::try_from_iter(items);
+    assert_eq!(result, Err("parse error"));
+}
+
+#[test]
+fn test_dict_try_from_iter_empty() {
+    let dict = Dict::try_from_iter::<StrErr, _>(std::iter::empty()).unwrap();
+    assert!(dict.is_empty());
+}
+
+#[test]
+fn test_dict_try_from_iter_tree_via_size_hint() {
+    // Wrap in a Vec so the size_hint lower-bound exceeds the threshold (32).
+    let pairs: Vec<Result<(String, Value), StrErr>> = (0..64_usize)
+        .map(|i| Ok((format!("k{i:02}"), Value::from(i as i32))))
+        .collect();
+
+    let dict = Dict::try_from_iter(pairs).unwrap();
+    assert_eq!(dict.len(), 64);
+    // Verify a few entries are accessible.
+    assert_eq!(dict.get_num("k00"), Some(&Number::from(0)));
+    assert_eq!(dict.get_num("k63"), Some(&Number::from(63)));
+}
+
+#[test]
+fn test_dict_try_from_iter_tree_size_hint_err() {
+    // Same large-iter path but an error occurs mid-way.
+    let pairs: Vec<Result<(String, Value), StrErr>> = (0..64_usize)
+        .map(|i| {
+            if i == 32 {
+                Err("mid-stream error")
+            } else {
+                Ok((format!("k{i:02}"), Value::from(i as i32)))
+            }
+        })
+        .collect();
+
+    let result = Dict::try_from_iter(pairs);
+    assert_eq!(result, Err("mid-stream error"));
+}
+
+#[test]
+fn test_dict_fallible_pairs_tryfrom_ok() {
+    // TryFrom<FalliblePairs<_>> surface.
+    let pairs = vec![ok_pair("x", "val"), ok_pair("y", 7)];
+    let dict = Dict::try_from(FalliblePairs(pairs)).unwrap();
+    assert_eq!(dict.len(), 2);
+    assert_eq!(dict.get_str("x"), Some(&Str::from("val")));
+}
+
+#[test]
+fn test_dict_fallible_pairs_tryfrom_err() {
+    let items: Vec<Result<(String, Value), StrErr>> = vec![ok_pair("a", 1), Err("bad")];
+    let result = Dict::try_from(FalliblePairs(items));
+    assert_eq!(result, Err("bad"));
 }
