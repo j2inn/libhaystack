@@ -275,6 +275,29 @@ impl Dict {
         }
     }
 
+    /// Retains only the entries for which the predicate returns `true`.
+    ///
+    /// Mirrors [`BTreeMap::retain`](std::collections::BTreeMap::retain).
+    /// When called on a `Tree`-backed dict and the surviving entry count drops
+    /// to or below the small-store threshold, the storage is automatically
+    /// downgraded back to the sorted-vector representation.
+    pub fn retain<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&str, &mut Value) -> bool,
+    {
+        match &mut self.value {
+            DictRepr::Small(entries) => {
+                entries.retain_mut(|(k, v)| f(k.as_str(), v));
+            }
+            DictRepr::Tree(map) => {
+                map.retain(|k, v| f(k.as_str(), v));
+            }
+        }
+        // Downgrade Tree -> Small when the surviving count drops to the threshold.
+        // No-op when already Small.
+        self.shrink_to_fit();
+    }
+
     pub fn iter(&self) -> DictIter<'_> {
         match &self.value {
             DictRepr::Small(entries) => DictIter::Small(entries.iter()),

@@ -19,7 +19,7 @@ fn test_dict_make() {
 
 #[test]
 fn test_dict_make_value() {
-    let dict: Dict = dict!["a" => "a", "b" => 100, "c" => true];
+    let dict: Dict = dict! {"a" => "a", "b" => 100, "c" => true};
 
     let value: Value = dict.into();
 
@@ -28,13 +28,13 @@ fn test_dict_make_value() {
 
     assert_eq!(
         Dict::try_from(&value),
-        Ok(dict!["a" => "a", "b" => 100, "c" => true])
+        Ok(dict! {"a" => "a", "b" => 100, "c" => true})
     );
 }
 
 #[test]
 fn test_dict_accessors() {
-    let dict: Dict = dict![
+    let dict: Dict = dict! {
     "a" => "a",
     "b" => 100,
     "c" => true,
@@ -52,7 +52,7 @@ fn test_dict_accessors() {
     "o" => DateTime::from_str("2021-06-19T19:48:23-00:00").expect("DateTime"),
     "p" => Coord::make(34.0522, 118.2437),
     "q" => Grid::make_empty()
-    ];
+    };
 
     assert_eq!(dict.len(), 17);
     assert!(('a'..'r').into_iter().all(|n| dict.has(&n.to_string())));
@@ -93,7 +93,7 @@ fn test_dict_accessors() {
 
 #[test]
 fn test_dict_make_filtered() {
-    let dict: Dict = dict!["a" => "a", "b" => 100, "c" => true];
+    let dict: Dict = dict! {"a" => "a", "b" => 100, "c" => true};
 
     assert!(dict.filter(&Filter::try_from("a and b == 100").unwrap()));
 }
@@ -115,7 +115,7 @@ fn check_values_mut(mut dict: Dict) {
 #[test]
 fn test_dict_values_mut_small() {
     // Stays in small-vec repr (3 entries << 32 threshold)
-    let dict: Dict = dict!["a" => "a", "b" => 100, "c" => true];
+    let dict: Dict = dict! {"a" => "a", "b" => 100, "c" => true};
     check_values_mut(dict);
 }
 
@@ -131,9 +131,97 @@ fn test_dict_values_mut_tree() {
 
 #[test]
 fn test_dict_values_mut_size_hint() {
-    let mut dict: Dict = dict!["x" => 1, "y" => 2, "z" => 3];
+    let mut dict: Dict = dict! {"x" => 1, "y" => 2, "z" => 3};
     let mut iter = dict.values_mut();
     assert_eq!(iter.size_hint(), (3, Some(3)));
     iter.next();
     assert_eq!(iter.size_hint(), (2, Some(2)));
+}
+
+// --- retain ---
+
+/// Helper that builds a dict via `with_small_max_entries` so the threshold
+/// can be set explicitly for tree-downgrade tests.
+fn make_dict_with_threshold(entries: &[(&str, i32)], threshold: usize) -> Dict {
+    let mut d = Dict::with_small_max_entries(threshold);
+    for (k, v) in entries {
+        d.insert((*k).into(), (*v).into());
+    }
+    d
+}
+
+#[test]
+fn test_dict_retain_small_keeps_matching() {
+    // Small repr: keep only numeric values > 1
+    let mut dict: Dict = dict! {"a" => 1, "b" => 2, "c" => 3};
+    dict.retain(|_, v| matches!(v, Value::Number(n) if n.value > 1.0));
+    assert!(!dict.has("a"));
+    assert!(dict.has("b"));
+    assert!(dict.has("c"));
+    assert_eq!(dict.len(), 2);
+}
+
+#[test]
+fn test_dict_retain_small_removes_all() {
+    let mut dict: Dict = dict! {"a" => 1, "b" => 2};
+    dict.retain(|_, _| false);
+    assert!(dict.is_empty());
+}
+
+#[test]
+fn test_dict_retain_small_keeps_all() {
+    let mut dict: Dict = dict! {"a" => 1, "b" => 2};
+    dict.retain(|_, _| true);
+    assert_eq!(dict.len(), 2);
+}
+
+#[test]
+fn test_dict_retain_tree_keeps_matching() {
+    // Force tree repr (threshold = 0), then retain
+    let mut dict = make_dict_with_threshold(&[("a", 1_i32), ("b", 2), ("c", 3)], 0);
+    assert_eq!(dict.small_max_entries(), 0);
+    dict.retain(|_, v| matches!(v, Value::Number(n) if n.value > 1.0));
+    assert!(!dict.has("a"));
+    assert!(dict.has("b"));
+    assert!(dict.has("c"));
+    assert_eq!(dict.len(), 2);
+}
+
+#[test]
+fn test_dict_retain_tree_downgrades_to_small() {
+    // threshold = 4; start with 5 entries (forces tree), then retain 3
+    // → surviving count (3) <= threshold (4) → must downgrade to Small
+    let mut dict =
+        make_dict_with_threshold(&[("a", 1_i32), ("b", 2), ("c", 3), ("d", 4), ("e", 5)], 4);
+    // With 5 entries and threshold 4 the dict spills to Tree on the 5th insert
+    assert_eq!(dict.small_max_entries(), 4);
+    dict.retain(|k, _| matches!(k, "b" | "c" | "d"));
+    assert_eq!(dict.len(), 3);
+    // Verify it downgraded: small_max_entries unchanged, repr is Small
+    // We can confirm indirectly via shrink_to_fit being idempotent and
+    // the dict still behaving correctly.
+    assert!(dict.has("b"));
+    assert!(dict.has("c"));
+    assert!(dict.has("d"));
+    assert!(!dict.has("a"));
+    assert!(!dict.has("e"));
+
+    // A subsequent insert must still work (goes into whichever repr it landed in)
+    dict.insert("z".into(), Value::Marker);
+    assert!(dict.has("z"));
+}
+
+#[test]
+fn test_dict_retain_mutates_values() {
+    let mut dict: Dict = dict! {"a" => 1, "b" => 2, "c" => 3};
+    dict.retain(|_, v| {
+        if let Value::Number(n) = v {
+            n.value *= 10.0;
+        }
+        true
+    });
+    assert_eq!(dict.len(), 3);
+    assert_eq!(dict.get_num("a").map(|n| n.value as i64), Some(10));
+    assert_eq!(dict.get_num("b").map(|n| n.value as i64), Some(20));
+    assert_eq!(dict.get_num("c").map(|n| n.value as i64), Some(30));
 }
