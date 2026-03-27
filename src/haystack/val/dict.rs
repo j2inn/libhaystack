@@ -275,6 +275,29 @@ impl Dict {
         }
     }
 
+    /// Retains only the entries for which the predicate returns `true`.
+    ///
+    /// Mirrors [`BTreeMap::retain`](std::collections::BTreeMap::retain).
+    /// When called on a `Tree`-backed dict and the surviving entry count drops
+    /// to or below the small-store threshold, the storage is automatically
+    /// downgraded back to the sorted-vector representation.
+    pub fn retain<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&str, &mut Value) -> bool,
+    {
+        match &mut self.value {
+            DictRepr::Small(entries) => {
+                entries.retain_mut(|(k, v)| f(k.as_str(), v));
+            }
+            DictRepr::Tree(map) => {
+                map.retain(|k, v| f(k.as_str(), v));
+            }
+        }
+        // Downgrade Tree -> Small when the surviving count drops to the threshold.
+        // No-op when already Small.
+        self.shrink_to_fit();
+    }
+
     pub fn iter(&self) -> DictIter<'_> {
         match &self.value {
             DictRepr::Small(entries) => DictIter::Small(entries.iter()),
@@ -295,6 +318,12 @@ impl Dict {
 
     pub fn values(&self) -> DictValues<'_> {
         DictValues { inner: self.iter() }
+    }
+
+    pub fn values_mut(&mut self) -> DictValuesMut<'_> {
+        DictValuesMut {
+            inner: self.iter_mut(),
+        }
     }
 }
 
@@ -471,6 +500,24 @@ impl<'a> Iterator for DictValues<'a> {
 
 impl ExactSizeIterator for DictValues<'_> {}
 
+pub struct DictValuesMut<'a> {
+    inner: DictIterMut<'a>,
+}
+
+impl<'a> Iterator for DictValuesMut<'a> {
+    type Item = &'a mut Value;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|(_, v)| v)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+impl ExactSizeIterator for DictValuesMut<'_> {}
+
 /// Implement FromIterator for `Dict`
 ///
 /// Allows constructing a `Dict` from a `(String, Value)` tuple iterator
@@ -622,6 +669,16 @@ impl From<DictType> for Dict {
                 value: DictRepr::Tree(from),
                 small_max_entries,
             }
+        }
+    }
+}
+
+/// Converts from `Dict` to a `DictType`
+impl From<Dict> for DictType {
+    fn from(dict: Dict) -> Self {
+        match dict.value {
+            DictRepr::Small(entries) => entries.into_iter().collect(),
+            DictRepr::Tree(map) => map,
         }
     }
 }
