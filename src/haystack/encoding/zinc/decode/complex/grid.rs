@@ -262,6 +262,18 @@ impl<'a, 'b: 'a, R: Read> RowParser<'a, 'b, R> {
                 break;
             }
 
+            // Treat an empty/exhausted lexer token as an implicit row terminator
+            // so that a trailing newline is not required on the last row.
+            // We specifically check `.value.is_none()` (the token is exhausted)
+            // rather than `is_eof()` (the byte stream is exhausted) because a
+            // number parsed right at EOF leaves `scanner.is_eof = true` while
+            // the number token is still in `lexer.cur` and must be consumed
+            // before the row can end.
+            if self.parser.lexer.cur.value.is_none() {
+                row_terminated = true;
+                break;
+            }
+
             let val = self.parser.parse_value()?;
             dict.insert(cols[col_num].name.clone(), val);
 
@@ -525,5 +537,66 @@ mod test {
             Grid::try_from(&grid.rows[0]["val"]).expect("Grid").len(),
             14
         )
+    }
+
+    /// Regression test: parsing a Zinc grid whose string cells contain `\$` escape sequences
+    /// (used in Haystack filter expressions). This previously caused an infinite loop.
+    #[test]
+    fn test_zinc_parse_grid_with_dollar_escape_in_string() {
+        let zinc = concat!(
+            "ver:\"3.0\"\n",
+            "binding,bundle,display,kind,name,readTag,writable,writeLevel\n",
+            "\"equipRef==\\$id and navName==\\\"CO_Alarm\\\"\",",
+            ",\"CO_Alarm\",\"Bool\",\"co_Alarm\",\"curVal\",\"\u{2713}\",14\n",
+            "\"equipRef==\\$id and sensor\",",
+            ",\"CO_Level\",\"Number\",\"co_Level\",\"curVal\",\"\u{2713}\",14\n",
+        );
+
+        let mut input = Cursor::new(zinc.as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Parser");
+
+        let grid = parse_grid(&mut parser);
+        assert!(
+            grid.is_ok(),
+            "Should parse grid with \\$ escapes: {err:?}",
+            err = grid.map_err(|e| e.to_string())
+        );
+
+        let grid = grid.unwrap();
+        assert_eq!(grid.rows.len(), 2);
+        assert_eq!(
+            grid.rows[0]["binding"],
+            Value::make_str("equipRef==$id and navName==\"CO_Alarm\"")
+        );
+        assert_eq!(grid.rows[0]["writeLevel"], Value::make_number(14.0));
+        assert_eq!(grid.rows[1]["kind"], Value::make_str("Number"));
+    }
+
+    /// Regression test: a Zinc grid whose last row ends without a trailing newline should
+    /// complete successfully (forgiving behaviour) rather than looping forever.
+    #[test]
+    fn test_zinc_parse_grid_unterminated_last_row_returns_error() {
+        // No trailing '\n' after the last row value.
+        let zinc = concat!(
+            "ver:\"3.0\"\n",
+            "a,b\n",
+            "\"foo\",42", // deliberately omit the trailing '\n'
+        );
+
+        let mut input = Cursor::new(zinc.as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Parser");
+
+        // With the EOF-as-row-terminator fix the parser succeeds rather than
+        // hanging forever.  A missing trailing newline on the last row is
+        // treated as an implicit row termination.
+        let result = parse_grid(&mut parser);
+        assert!(
+            result.is_ok(),
+            "Expected success for EOF-terminated last row, got: {:?}",
+            result.err()
+        );
+        let grid = result.unwrap();
+        assert_eq!(grid.rows.len(), 1);
+        assert_eq!(grid.rows[0]["b"], Value::make_number(42.0));
     }
 }
