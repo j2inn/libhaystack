@@ -167,17 +167,18 @@ fn parse_grid_columns<'a, 'b: 'a, R: Read>(
         } else {
             match parse_grid_column_meta(parser) {
                 Ok(dict) => {
-                    if !dict.is_empty() {
-                        list.push(Column {
-                            name: name.to_string(),
-                            meta: Some(dict),
-                        });
+                    list.push(Column {
+                        name: name.to_string(),
+                        meta: if dict.is_empty() { None } else { Some(dict) },
+                    });
 
-                        if !parser.lexer.is_eof() {
-                            parser.lexer.expect_char(b',', "Grid columns")?;
-                        } else {
-                            break;
-                        }
+                    if parser.lexer.is_char(b'\n') {
+                        done = true;
+                        break;
+                    } else if !parser.lexer.is_eof() {
+                        parser.lexer.expect_char(b',', "Grid columns")?;
+                    } else {
+                        break;
                     }
                 }
                 Err(err) => {
@@ -272,6 +273,13 @@ impl<'a, 'b: 'a, R: Read> RowParser<'a, 'b, R> {
             if self.parser.lexer.cur.value.is_none() {
                 row_terminated = true;
                 break;
+            }
+
+            if col_num >= cols.len() {
+                return self.parser.lexer.make_generic_err(&format!(
+                    "Zinc Grid parser: Row has more values than columns (expected {}).",
+                    cols.len()
+                ));
             }
 
             let val = self.parser.parse_value()?;
@@ -598,5 +606,48 @@ mod test {
         let grid = result.unwrap();
         assert_eq!(grid.rows.len(), 1);
         assert_eq!(grid.rows[0]["b"], Value::make_number(42.0));
+    }
+
+    /// Regression test: a row with more values than declared columns should return
+    /// a descriptive error rather than panicking with an index-out-of-bounds.
+    #[test]
+    fn test_zinc_parse_grid_row_too_many_values_returns_error() {
+        let zinc = concat!(
+            "ver:\"3.0\"\n",
+            "a,b\n",
+            "1,2,3\n", // 3 values but only 2 columns declared
+        );
+
+        let mut input = Cursor::new(zinc.as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Parser");
+
+        let result = parse_grid(&mut parser);
+        assert!(
+            result.is_err(),
+            "Expected error for row with more values than columns"
+        );
+    }
+
+    /// Regression test: a column row whose last column carries metadata and is
+    /// terminated by `\n` (no trailing comma) should parse successfully.
+    #[test]
+    fn test_zinc_parse_grid_columns_last_col_with_meta() {
+        let mut input = Cursor::new("\nsite,point dis:\"label\"\n".as_bytes());
+        let mut parser = Parser::make(&mut input).expect("Parser");
+
+        let cols = parse_grid_columns(&mut parser);
+        assert_eq!(
+            cols.ok(),
+            Some(vec![
+                Column {
+                    name: String::from("site"),
+                    meta: None,
+                },
+                Column {
+                    name: String::from("point"),
+                    meta: Some(dict! {"dis" => Value::make_str("label")}),
+                },
+            ])
+        );
     }
 }

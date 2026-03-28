@@ -43,8 +43,8 @@ pub(super) fn parse_str_escape<R: Read>(scanner: &mut Scanner<R>) -> Result<Stri
     scanner.read()?;
 
     match scanner.cur {
-        b'b' => Ok("\x0b".into()),
-        b'f' => Ok("\x0f".into()),
+        b'b' => Ok("\x08".into()),
+        b'f' => Ok("\x0c".into()),
         b'n' => Ok("\n".into()),
         b'r' => Ok("\r".into()),
         b't' => Ok("\t".into()),
@@ -135,5 +135,15 @@ mod test {
             let str = parse_str(&mut scanner);
             assert!(str.is_err())
         }
+    }
+
+    #[test]
+    fn test_zinc_parse_str_backspace_and_formfeed_escapes() {
+        // \b must decode to backspace (U+0008), \f to form feed (U+000C)
+        let mut input = Cursor::new("\"\\b\\f\"".as_bytes());
+        let mut scanner = super::Scanner::make(&mut input).expect("Scanner");
+
+        let str = parse_str(&mut scanner);
+        assert_eq!(str.ok(), Some(Str::make("\x08\x0c")));
     }
 }
