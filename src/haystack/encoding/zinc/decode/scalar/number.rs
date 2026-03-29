@@ -104,7 +104,7 @@ pub(crate) fn parse_neg_inf<R: Read>(scanner: &mut Scanner<R>) -> Result<Number,
 }
 
 fn is_unit_char<R: Read>(scanner: &mut Scanner<R>) -> bool {
-    scanner.is_alpha() || scanner.is_any_of("$/%_") || scanner.cur > 128
+    scanner.is_alpha() || scanner.is_any_of("$/%_") || scanner.cur >= 128
 }
 
 #[cfg(test)]
