@@ -2,8 +2,7 @@
 
 use crate::{
     defs::namespace::{DefDict, Namespace},
-    filter::{Filter, FilterBuilder},
-    val::{Dict, HaystackDict, Ref, Symbol, Value},
+    val::{Dict, HaystackDict, Symbol},
 };
 
 /// Options controlling containment ref lookups and population.
@@ -165,27 +164,12 @@ fn find_containment_ref_for_type(namespace: &Namespace, entity_type_name: &str) 
         .cloned()
 }
 
-/// Builds a Haystack equality filter for an id tag.
-pub fn make_id_filter(r: &Ref) -> Filter {
-    FilterBuilder::new()
-        .eq("id", Value::make_ref(r.value.as_str()))
-        .build()
-}
-
-/// Converts a Haystack value to a Ref if it is one.
-pub fn value_as_ref(v: &Value) -> Option<&Ref> {
-    match v {
-        Value::Ref(r) => Some(r),
-        _ => None,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::defs::namespace::Namespace;
     use crate::dict;
-    use crate::val::{Dict, Ref, Value};
+    use crate::val::{Dict, Value};
 
     fn test_namespace() -> Namespace {
         use crate::encoding::zinc::decode::from_str as zinc_decode;
@@ -263,28 +247,6 @@ mod tests {
                 );
             }
         }
-    }
-
-    #[test]
-    fn make_id_filter_returns_correct_filter() {
-        let r = Ref::make("abc123", None);
-        let f = make_id_filter(&r);
-        assert_eq!(f.to_string(), "id == @abc123");
-    }
-
-    #[test]
-    fn value_as_ref_returns_some_for_ref_value() {
-        let r = Ref::make("abc", None);
-        let v = Value::Ref(r.clone());
-        let result = value_as_ref(&v);
-        assert!(result.is_some());
-        assert_eq!(result.unwrap().value, "abc");
-    }
-
-    #[test]
-    fn value_as_ref_returns_none_for_non_ref() {
-        let v = Value::make_str("hello");
-        assert!(value_as_ref(&v).is_none());
     }
 
     #[test]
