@@ -3,6 +3,7 @@
 //! Haystack defs, implementation of the [taxonomy](https://project-haystack.org/doc/docHaystack/Docs#taxonomies)
 //! and [ontology](https://project-haystack.org/doc/docHaystack/Ontology) features.
 
+pub mod containment_refs;
 mod misc;
 pub mod namespace;
 pub mod reflection;
