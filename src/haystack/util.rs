@@ -12,6 +12,8 @@
 //!
 //! For more information see <https://project-haystack.org/doc/docHaystack/Kinds>
 
+use std::borrow::Cow;
+
 /// Returns `true` if `name` is already a valid Haystack tag name.
 ///
 /// A valid tag name starts with a lowercase ASCII letter followed by zero or
@@ -58,10 +60,11 @@ pub fn is_valid_tag_name(name: &str) -> bool {
 /// assert_eq!(to_tag_name("AIR TEMP"), "airTEMP");
 /// assert_eq!(to_tag_name("1test"), "v1test");
 /// assert_eq!(to_tag_name(""), "empty");
+/// assert_eq!(to_tag_name("alreadyValid"), "alreadyValid");
 /// ```
-pub fn to_tag_name(name: &str) -> String {
+pub fn to_tag_name(name: &str) -> Cow<'_, str> {
     if is_valid_tag_name(name) {
-        return name.to_string();
+        return Cow::Borrowed(name);
     }
 
     // Step 1: Replace `.`, `-`, `/` with `_`, `v` (at pos 0), or drop (at last pos).
@@ -107,10 +110,7 @@ pub fn to_tag_name(name: &str) -> String {
         .enumerate()
         .map(|(i, part)| {
             let mut chars = part.chars();
-            let start = match chars.next() {
-                Some(c) => c,
-                None => return String::new(),
-            };
+            let start = chars.next().expect("part is non-empty after filter");
 
             if i == 0 {
                 // Lowercase the leading run of uppercase letters on the first word.
@@ -134,7 +134,7 @@ pub fn to_tag_name(name: &str) -> String {
                 if start.is_ascii_alphabetic() && start.is_ascii_lowercase() {
                     let mut new_part = String::with_capacity(part.len());
                     new_part.push(start.to_ascii_uppercase());
-                    new_part.push_str(&part[start.len_utf8()..]);
+                    new_part.push_str(&part[1..]);
                     new_part
                 } else {
                     part.to_string()
@@ -144,8 +144,8 @@ pub fn to_tag_name(name: &str) -> String {
         .collect();
 
     if result.is_empty() {
-        "empty".to_string()
+        Cow::Borrowed("empty")
     } else {
-        result
+        Cow::Owned(result)
     }
 }

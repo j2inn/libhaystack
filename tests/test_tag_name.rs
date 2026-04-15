@@ -7,6 +7,7 @@
 
 #[cfg(test)]
 use libhaystack::util::{is_valid_tag_name, to_tag_name};
+use std::borrow::Cow;
 
 // ---------------------------------------------------------------------------
 // to_tag_name
@@ -150,4 +151,23 @@ fn test_is_valid_tag_name_digit_first_char_returns_false() {
 #[test]
 fn test_is_valid_tag_name_illegal_chars_returns_false() {
     assert!(!is_valid_tag_name("aTa£$%g"));
+}
+
+// ---------------------------------------------------------------------------
+// Cow allocation guarantees
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_to_tag_name_already_valid_returns_borrowed() {
+    assert!(matches!(to_tag_name("alreadyValid"), Cow::Borrowed(_)));
+}
+
+#[test]
+fn test_to_tag_name_empty_fallback_returns_borrowed() {
+    assert!(matches!(to_tag_name(""), Cow::Borrowed(_)));
+}
+
+#[test]
+fn test_to_tag_name_transformation_returns_owned() {
+    assert!(matches!(to_tag_name("needs transformation"), Cow::Owned(_)));
 }
