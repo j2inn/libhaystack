@@ -10,5 +10,6 @@ extern crate libhaystack;
 mod defs;
 mod filter;
 mod json;
+mod test_tag_name;
 mod values;
 mod zinc;

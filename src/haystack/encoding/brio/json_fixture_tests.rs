@@ -188,7 +188,7 @@ mod tests {
         // "2025-02-21T14:49:17.261337Z" — 261337 µs → 261337000 ns (non-zero nanos → I8)
         let dt = DateTime::parse_from_rfc3339_with_timezone("2025-02-21T14:49:17.261337Z", "UTC")
             .expect("parse dt");
-        let v = Value::from(dt.clone());
+        let v = Value::from(dt);
         let decoded = round_trip(&v);
         let decoded_dt = DateTime::try_from(&decoded).expect("expected DateTime");
         assert_eq!(
@@ -205,7 +205,7 @@ mod tests {
         // "2025-02-21T12:54:50.052481Z" — second fixture datetime
         let dt2 = DateTime::parse_from_rfc3339_with_timezone("2025-02-21T12:54:50.052481Z", "UTC")
             .expect("parse dt2");
-        let v2 = Value::from(dt2.clone());
+        let v2 = Value::from(dt2);
         let decoded2 = round_trip(&v2);
         let decoded_dt2 = DateTime::try_from(&decoded2).expect("expected DateTime");
         assert_eq!(
@@ -355,8 +355,8 @@ mod tests {
         use crate::haystack::val::XStr;
 
         // Build a minimal CTRL_BUF stream: ctrl | varint(3) | 0x01 0x02 0x03
-        let raw: &[u8] = &[CTRL_BUF, 0x03, 0x01, 0x02, 0x03];
-        let decoded = from_brio(&mut raw.as_ref()).expect("decode CTRL_BUF");
+        let mut raw: &[u8] = &[CTRL_BUF, 0x03, 0x01, 0x02, 0x03];
+        let decoded = from_brio(&mut raw).expect("decode CTRL_BUF");
         let xs = XStr::try_from(&decoded).expect("XStr");
         assert_eq!(xs.r#type, "Bin");
         assert_eq!(xs.value, "010203");
@@ -368,8 +368,8 @@ mod tests {
         use crate::encoding::brio::encode::CTRL_BUF;
         use crate::haystack::val::XStr;
 
-        let raw: &[u8] = &[CTRL_BUF, 0x00];
-        let decoded = from_brio(&mut raw.as_ref()).expect("decode empty CTRL_BUF");
+        let mut raw: &[u8] = &[CTRL_BUF, 0x00];
+        let decoded = from_brio(&mut raw).expect("decode empty CTRL_BUF");
         let xs = XStr::try_from(&decoded).expect("XStr");
         assert_eq!(xs.r#type, "Bin");
         assert_eq!(xs.value, "");

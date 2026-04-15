@@ -1429,7 +1429,7 @@ mod test {
         for i in (0..8_usize).rev() {
             d.insert(format!("k{i:02}"), Value::from(i as i32));
         }
-        let keys: Vec<String> = d.keys().map(|k| k.clone()).collect();
+        let keys: Vec<String> = d.keys().cloned().collect();
         let mut expected = keys.clone();
         expected.sort();
         assert_eq!(keys, expected);
@@ -1438,7 +1438,7 @@ mod test {
     #[test]
     fn hybrid_tree_iteration_order_is_sorted() {
         let d = make_hybrid(16, 4); // threshold=4, so spills
-        let keys: Vec<String> = d.keys().map(|k| k.clone()).collect();
+        let keys: Vec<String> = d.keys().cloned().collect();
         let mut expected = keys.clone();
         expected.sort();
         assert_eq!(keys, expected);

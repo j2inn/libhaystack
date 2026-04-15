@@ -19,5 +19,6 @@ pub mod filter;
 pub mod timezone;
 #[cfg(feature = "units")]
 pub mod units;
+pub mod util;
 #[cfg(feature = "value")]
 pub mod val;
