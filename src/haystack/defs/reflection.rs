@@ -5,6 +5,7 @@
 use std::collections::BTreeMap;
 
 use super::namespace::Namespace;
+use crate::defs::namespace::EMPTY_DICT;
 use crate::haystack::defs::namespace::DefDict;
 use crate::haystack::val::{Dict, HaystackDict, Symbol};
 
@@ -17,7 +18,7 @@ pub struct Reflection<'a> {
     /// The def namespace used for the reflection
     pub ns: &'a Namespace,
     /// The entity type of the target dictionary
-    pub entity_type: Dict,
+    pub entity_type: &'a Dict,
 }
 
 impl<'a> Reflection<'a> {
@@ -26,7 +27,7 @@ impl<'a> Reflection<'a> {
             subject: subject.clone(),
             defs,
             ns,
-            entity_type: Dict::default(),
+            entity_type: &EMPTY_DICT,
         };
         reflect.compute_entity_type();
         reflect
@@ -52,7 +53,7 @@ impl<'a> Reflection<'a> {
                 for def in &self.defs {
                     let inheritance = self.ns.inheritance(def.def_symbol());
                     if inheritance.contains(&entity) {
-                        types_with_inheritance.insert(def, inheritance.clone());
+                        types_with_inheritance.insert(def, inheritance);
                     }
                 }
 
@@ -60,16 +61,15 @@ impl<'a> Reflection<'a> {
                     // Just get the first entity if only one has been found.
                     types_with_inheritance
                         .keys()
-                        .copied()
                         .next()
-                        .map_or(Dict::default(), |def| def.clone())
+                        .map_or(&EMPTY_DICT, |def| def)
                 } else {
                     // If multiple entity tags have been found then we need to find which tag is the most specific.
                     // This can happen if a record has a tag like `ahu` and `equip`. The `ahu` tag extends `equip`.
                     // Therefore, we need to check all the inheritance to find the first tag that isn't any of the
                     // other tag's inheritance. This tag should be the most specific entity.
 
-                    let all_defs = types_with_inheritance.keys().copied();
+                    let all_defs = types_with_inheritance.keys();
 
                     all_defs
                         .into_iter()
@@ -79,13 +79,13 @@ impl<'a> Reflection<'a> {
                             !types_with_inheritance
                                 .iter()
                                 .any(|(inner_def, inheritance)| {
-                                    inner_def != def && inheritance.contains(def)
+                                    inner_def != *def && inheritance.contains(def)
                                 })
                         })
-                        .map_or(Dict::default(), |def| def.clone())
+                        .map_or(&EMPTY_DICT, |def| def)
                 }
             }
-            None => Dict::default(),
+            None => &EMPTY_DICT,
         }
     }
 }

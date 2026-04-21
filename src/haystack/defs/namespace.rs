@@ -551,7 +551,7 @@ impl Namespace {
         reflected.into_iter().collect()
     }
 
-    pub fn def_of_dict(&self, subject: &Dict) -> Dict {
+    pub fn def_of_dict(&self, subject: &Dict) -> &Dict {
         self.reflect(subject).entity_type
     }
 
@@ -799,11 +799,7 @@ impl Namespace {
         let mut ref_tag = ref_target.as_ref().cloned();
         let mut subjects = vec![subject.clone()];
 
-        'search: loop {
-            let Some(mut cur_subject) = subjects.pop() else {
-                break;
-            };
-
+        'search: while let Some(mut cur_subject) = subjects.pop() {
             let id = cur_subject.get_ref("id").cloned();
             while let Some((subject_key, subject_val)) = cur_subject.pop_first() {
                 let subject_def = self.get_by_name(&subject_key);

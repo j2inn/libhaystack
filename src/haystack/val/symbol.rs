@@ -35,9 +35,14 @@ impl Symbol {
 // Make a Haystack `Symbol` from a string value
 impl From<&str> for Symbol {
     fn from(value: &str) -> Self {
-        Symbol {
-            value: String::from(value),
-        }
+        Symbol::from(value.to_owned())
+    }
+}
+
+// Make a Haystack `Symbol` from a String value
+impl From<String> for Symbol {
+    fn from(value: String) -> Self {
+        Symbol { value }
     }
 }
 
