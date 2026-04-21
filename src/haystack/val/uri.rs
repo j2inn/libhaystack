@@ -40,9 +40,7 @@ impl From<String> for Uri {
 // Make a Haystack `Uri` from a string value
 impl From<&str> for Uri {
     fn from(value: &str) -> Self {
-        Uri {
-            value: String::from(value),
-        }
+        Uri::from(value.to_owned())
     }
 }
 

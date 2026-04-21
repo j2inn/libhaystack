@@ -43,8 +43,8 @@ pub fn match_units(dim: UnitDimensions, scale: f64) -> Vec<&'static Unit> {
     #[cfg(feature = "units-db")]
     {
         units_generated::UNITS
-            .iter()
-            .filter_map(|(_, u)| {
+            .values()
+            .filter_map(|u| {
                 if u.dimensions.as_ref() == Some(&dim) && approx_eq(u.scale, scale) {
                     Some(*u)
                 } else {
