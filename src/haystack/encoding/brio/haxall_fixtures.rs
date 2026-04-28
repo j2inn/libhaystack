@@ -375,6 +375,37 @@ mod tests {
         );
     }
 
+    /// `dis = Some("")` and `dis = None` must encode identically (both produce
+    /// an empty dis string), and must decode back to `dis = None`.
+    ///
+    /// This is important for the Java/UniFFI FFI layer: Haxall's `Ref.disVal`
+    /// is backed by a mutable `AtomicRef` that the FIN5 platform can populate
+    /// lazily between the `allocationSize()` and `write()` calls. The fix is
+    /// to encode with `encodeRefDis = false` (strip all Ref display names),
+    /// which produces the same bytes as encoding with `dis = None`. This test
+    /// verifies that the round-trip is correct for that case.
+    #[test]
+    fn ref_empty_dis_same_as_no_dis() {
+        let no_dis = Value::from(Ref::make("1deb31b8-7508b187", None));
+        let empty_dis = Value::from(Ref::make("1deb31b8-7508b187", Some("")));
+
+        let bytes_no_dis = no_dis.to_brio_vec().expect("encode no-dis");
+        let bytes_empty_dis = empty_dis.to_brio_vec().expect("encode empty-dis");
+
+        assert_eq!(
+            bytes_no_dis, bytes_empty_dis,
+            "None and Some(\"\") should produce identical Brio bytes"
+        );
+
+        // Both decode back to dis = None (empty string normalises to None).
+        let decoded = from_brio(&mut bytes_empty_dis.as_slice()).expect("decode");
+        assert_eq!(
+            decoded,
+            Value::from(Ref::make("1deb31b8-7508b187", None)),
+            "empty dis string should decode as None"
+        );
+    }
+
     // -----------------------------------------------------------------------
     // Date
     // -----------------------------------------------------------------------
