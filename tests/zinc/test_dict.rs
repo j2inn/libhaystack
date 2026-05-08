@@ -22,7 +22,7 @@ fn test_zinc_dict_encode() {
     assert_eq!(zinc.unwrap(), r#"{dict:{foo:T},name:"Foo",site}"#);
 
     assert_eq!(
-        dict![
+        dict! {
         "a" => "a",
         "b" => 100,
         "c" => true,
@@ -40,7 +40,7 @@ fn test_zinc_dict_encode() {
         "o" => DateTime::from_str("2021-06-19T19:48:23-00:00").expect("DateTime"),
         "p" => Coord::make(34.0522, 118.2437),
         "q" => Grid::make_empty()
-        ]
+        }
         .to_zinc_string()
         .unwrap(),
         "{a:\"a\",b:100,c:T,d:R,e:[\"str\"],f:{na:NA},g:@ref,h:^symbol,i:`uri`,j:Xstr(\"val\"),k:NA,l,m:20:00:00,n:2021-06-19,o:2021-06-19T19:48:23Z,p:C(34.0522,118.2437),q:<<\nver:\"3.0\"\nempty\n>>}",

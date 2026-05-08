@@ -105,13 +105,13 @@ mod test {
 
     fn dict_cb<'a>(name: &str) -> Option<Cow<'a, Value>> {
         DICT.get_or_init(|| {
-            dict![
+            dict! {
                 "equipRef" => Value::make_ref("ref"),
                 "siteRef" => Value::make_ref_with_dis("ref2", "refDis"),
                 "string" => Value::make_str("str"),
                 "number" => Value::make_number(2.1),
                 "boolean" => Value::make_bool(true)
-            ]
+            }
         })
         .get(name)
         .map(Cow::Borrowed)

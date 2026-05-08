@@ -838,7 +838,8 @@ macro_rules! dict_key(
 ///
 #[macro_export]
 macro_rules! dict(
-    { $($key:tt => $value:expr),* $(,)? } => {
+    {} => { Dict::new() };
+    { $($key:tt => $value:expr),+ $(,)? } => {
         {
             let mut map = Dict::new();
             $(
@@ -967,81 +968,86 @@ mod test {
     }
 
     #[test]
+    fn empty_dict_macro() {
+        assert!(dict! {}.is_empty());
+    }
+
+    #[test]
     fn dict_to_dis_returns_dis() {
-        let dict = dict!["dis" => Value::make_str("display")];
+        let dict = dict! {"dis" => Value::make_str("display")};
         assert_eq!(dict_to_dis(&dict, &|_| None, None), "display");
     }
 
     #[test]
     fn dict_to_dis_returns_dis_not_str() {
-        let dict = dict!["dis" => Value::make_ref("display")];
+        let dict = dict! {"dis" => Value::make_ref("display")};
         assert_eq!(dict_to_dis(&dict, &|_| None, None), "@display");
     }
 
     #[test]
     fn dict_to_dis_returns_dis_macro() {
-        let dict = dict!["foo" => Value::make_str("bar"), "disMacro" => Value::make_str("hello $foo world!")];
+        let dict = dict! {"foo" => Value::make_str("bar"), "disMacro" => Value::make_str("hello $foo world!")};
         assert_eq!(dict_to_dis(&dict, &|_| None, None), "hello bar world!");
     }
 
     #[test]
     fn dict_to_dis_returns_dis_key_translated() {
-        let dict = dict!["foo" => Value::make_str("bar"), "disKey" => Value::make_str("key")];
+        let dict = dict! {"foo" => Value::make_str("bar"), "disKey" => Value::make_str("key")};
         assert_eq!(dict_to_dis(&dict, &get_localized, None), "translated");
     }
 
     #[test]
     fn dict_to_dis_returns_dis_key_not_translated() {
         let dict =
-            dict!["foo" => Value::make_str("bar"), "disKey" => Value::make_str("notTranslated")];
+            dict! {"foo" => Value::make_str("bar"), "disKey" => Value::make_str("notTranslated")};
         assert_eq!(dict_to_dis(&dict, &get_localized, None), "notTranslated");
     }
 
     #[test]
     fn dict_to_dis_returns_name() {
-        let dict = dict!["name" => Value::make_str("display")];
+        let dict = dict! {"name" => Value::make_str("display")};
         assert_eq!(dict_to_dis(&dict, &|_| None, None), "display");
     }
 
     #[test]
     fn dict_to_dis_returns_def() {
-        let dict = dict!["def" => Value::make_str("display")];
+        let dict = dict! {"def" => Value::make_str("display")};
         assert_eq!(dict_to_dis(&dict, &|_| None, None), "display");
     }
 
     #[test]
     fn dict_to_dis_returns_tag() {
-        let dict = dict!["tag" => Value::make_str("display")];
+        let dict = dict! {"tag" => Value::make_str("display")};
         assert_eq!(dict_to_dis(&dict, &|_| None, None), "display");
     }
 
     #[test]
     fn dict_to_dis_returns_nav_name() {
-        let dict = dict!["navName" => Value::make_str("navName")];
+        let dict = dict! {"navName" => Value::make_str("navName")};
         assert_eq!(dict_to_dis(&dict, &|_| None, None), "navName");
     }
 
     #[test]
     fn dict_to_dis_returns_id() {
-        let dict = dict!["id" => Value::make_ref("id")];
+        let dict = dict! {"id" => Value::make_ref("id")};
         assert_eq!(dict_to_dis(&dict, &|_| None, None), "id");
     }
 
     #[test]
     fn dict_to_dis_returns_id_dis() {
-        let dict = dict!["id" => Value::make_ref_with_dis("id", "dis")];
+        let dict = dict! {"id" => Value::make_ref_with_dis("id", "dis")};
         assert_eq!(dict_to_dis(&dict, &|_| None, None), "dis");
     }
 
     #[test]
     fn dict_returns_dis() {
-        let dict = dict!["dis" => Value::make_str("display")];
+        let dict = dict! {"dis" => Value::make_str("display")};
         assert_eq!(dict.dis(), "display");
     }
 
     #[test]
     fn dict_returns_default_value_if_none_found() {
-        let dict = dict!["something" => Value::make_str("display")];
+        let dict = dict! {"something" => Value::make_str("display")};
         assert_eq!(
             dict_to_dis(&dict, &|_| None, Some("default".into())),
             "default"
