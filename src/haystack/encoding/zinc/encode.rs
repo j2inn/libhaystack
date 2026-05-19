@@ -75,14 +75,14 @@ impl Display for Error {
 impl std::error::Error for Error {}
 
 impl From<std::fmt::Error> for Error {
-    fn from(_: std::fmt::Error) -> Self {
-        Error::from("Format error.")
+    fn from(err: std::fmt::Error) -> Self {
+        Error::Message(err.to_string())
     }
 }
 
 impl From<std::io::Error> for Error {
-    fn from(_: std::io::Error) -> Self {
-        Error::from("IO error.")
+    fn from(err: std::io::Error) -> Self {
+        Error::Message(err.to_string())
     }
 }
 
@@ -93,8 +93,8 @@ impl From<&str> for Error {
 }
 
 impl From<std::string::FromUtf8Error> for Error {
-    fn from(_: std::string::FromUtf8Error) -> Self {
-        Error::from("Utf8 encoding error.")
+    fn from(err: std::string::FromUtf8Error) -> Self {
+        Error::Message(err.to_string())
     }
 }
 

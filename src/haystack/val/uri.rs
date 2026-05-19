@@ -2,7 +2,7 @@
 
 //! Haystack Uri
 
-use crate::haystack::val::Value;
+use crate::haystack::val::{ConversionError, Value};
 
 /// Haystack `Uri`
 ///
@@ -53,7 +53,7 @@ impl From<Uri> for Value {
 
 /// Tries to convert from `Value` to a `Uri`
 impl TryFrom<&Value> for Uri {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Uri(v) => Ok(v.clone()),

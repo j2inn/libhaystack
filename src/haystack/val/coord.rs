@@ -2,7 +2,7 @@
 
 //! Haystack Coord
 
-use crate::haystack::val::Value;
+use crate::haystack::val::{ConversionError, Value};
 use std::{
     cmp::Ordering,
     convert::{From, TryFrom},
@@ -45,7 +45,7 @@ impl From<Coord> for Value {
 
 /// Tries to convert from `Value` to a `Coord`
 impl TryFrom<&Value> for Coord {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Coord(v) => Ok(*v),

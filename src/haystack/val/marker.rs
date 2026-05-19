@@ -2,7 +2,7 @@
 
 //! Haystack Marker
 
-use crate::haystack::val::Value;
+use crate::haystack::val::{ConversionError, Value};
 
 /// Haystack `Marker`
 ///
@@ -28,7 +28,7 @@ impl From<Marker> for Value {
 
 /// Tries to convert from `Marker` `Value` to a `Marker`
 impl TryFrom<&Value> for Marker {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Marker => Ok(Marker),

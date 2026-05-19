@@ -2,7 +2,7 @@
 
 //! Haystack List
 
-use crate::haystack::val::Value;
+use crate::haystack::val::{ConversionError, Value};
 use std::vec::Vec;
 
 /// A Haystack List of `Value`s
@@ -28,7 +28,7 @@ impl From<List> for Value {
 
 /// Tries to convert from `Value` to a `List`
 impl TryFrom<&Value> for List {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::List(v) => Ok(v.clone()),

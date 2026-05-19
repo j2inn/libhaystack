@@ -5,7 +5,7 @@
 use core::fmt;
 use std::ops::Deref;
 
-use crate::haystack::val::Value;
+use crate::haystack::val::{ConversionError, Value};
 
 /// Haystack `Str`
 ///
@@ -76,7 +76,7 @@ impl From<Str> for Value {
 
 /// Tries to convert from `Str` `Value` to a `String`
 impl TryFrom<&Value> for String {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Str(v) => Ok(v.value.clone()),
@@ -87,7 +87,7 @@ impl TryFrom<&Value> for String {
 
 /// Tries to convert from `Str` `Value` to a `Str`
 impl TryFrom<&Value> for Str {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Str(v) => Ok(v.clone()),
