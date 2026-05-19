@@ -2,7 +2,7 @@
 
 //! Haystack DateTime
 
-use crate::haystack::val::Value;
+use crate::haystack::val::{ConversionError, Value};
 use crate::timezone::{
     DateTimeType, is_utc, make_date_time, make_date_time_with_tz, timezone_short_name, utc_now,
 };
@@ -108,7 +108,12 @@ impl FromStr for DateTime {
 
 impl Display for DateTime {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
-        Debug::fmt(&self.value, f)
+        write!(
+            f,
+            "{}{}",
+            self.naive_local().format("%Y-%m-%dT%H:%M:%S"),
+            self.timezone_short_name()
+        )
     }
 }
 
@@ -171,7 +176,7 @@ impl From<DateTimeImpl<chrono_tz::Tz>> for DateTime {
 
 /// Tries to convert from `Value` to a `DateTime`
 impl TryFrom<&Value> for DateTime {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::DateTime(v) => Ok(*v),

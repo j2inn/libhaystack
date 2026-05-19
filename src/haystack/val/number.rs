@@ -2,7 +2,7 @@
 
 //! Haystack Number
 
-use crate::{haystack::val::Value, units::DEFAULT_UNIT, units::Unit};
+use crate::{haystack::val::{ConversionError, Value}, units::DEFAULT_UNIT, units::Unit};
 use std::{
     cmp::Ordering,
     convert::{From, TryFrom},
@@ -97,7 +97,7 @@ impl From<i32> for Value {
 
 /// Tries to convert from `Number` `Value` to a `f64`
 impl TryFrom<&Value> for f64 {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Number(v) => Ok(v.value),
@@ -108,7 +108,7 @@ impl TryFrom<&Value> for f64 {
 
 /// Tries to convert from `Number` `Value` to a `Number`
 impl TryFrom<&Value> for Number {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Number(v) => Ok(*v),

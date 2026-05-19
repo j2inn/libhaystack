@@ -2,7 +2,7 @@
 
 //! Haystack XStr
 
-use crate::haystack::val::Value;
+use crate::haystack::val::{ConversionError, Value};
 
 /// XStr with type and value
 ///
@@ -41,7 +41,7 @@ impl From<XStr> for Value {
 
 /// Tries to convert from `Value` to a `XStr`
 impl TryFrom<&Value> for XStr {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::XStr(v) => Ok(v.clone()),

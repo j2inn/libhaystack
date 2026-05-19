@@ -2,7 +2,7 @@
 
 //! Haystack Time
 
-use crate::haystack::val::Value;
+use crate::haystack::val::{ConversionError, Value};
 use chrono::NaiveTime;
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter};
@@ -111,7 +111,7 @@ impl From<Time> for Value {
 
 /// Tries to convert from `Value` to a `Time`
 impl TryFrom<&Value> for Time {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Time(v) => Ok(*v),

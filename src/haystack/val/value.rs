@@ -158,7 +158,7 @@ impl Value {
 
     /// True if [Value](crate::val::Value) is a `false` (Bool)[crate::val::Bool]
     pub fn is_false(&self) -> bool {
-        !self.is_true()
+        matches!(self, Value::Bool(b) if !b.value)
     }
 
     /// Construct a `Bool` 'false' `Value`

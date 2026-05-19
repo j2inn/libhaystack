@@ -68,6 +68,12 @@
 //! ```
 //!
 
+/// Error type returned by [`std::convert::TryFrom`] conversions on Haystack value types.
+///
+/// This is a named alias for `&'static str` today; it can be evolved into a
+/// structured type in a future release without touching every call-site.
+pub type ConversionError = &'static str;
+
 pub mod boolean;
 pub mod coord;
 pub mod date;

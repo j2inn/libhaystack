@@ -1,6 +1,6 @@
 [package]
 name = "libhaystack"
-version = "3.1.6"
+version = "3.2.0"
 description = "Rust implementation of the Haystack 4 data types, defs, filter, units, and encodings"
 authors = ["J2 Innovations", "Radu Racariu <radur@j2inn.com>"]
 edition = "2024"
@@ -73,7 +73,8 @@ trio-decoding = ["zinc-decoding"]
 [dependencies]
 serde = "1.0"
 serde_json = "1.0"
-uuid = { version = "1.2", features = ["v4"] }
+ulid = "1.2.1"
+getrandom = "0.3"
 chrono = "0.4"
 chrono-tz = "0.10"
 regex = "1.12"
@@ -84,6 +85,7 @@ criterion = "0.8"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
-uuid = { version = "1.2", features = ["v4", "js"] }
+ulid = "1.2.1"
+getrandom = { version = "0.3", features = ["wasm_js"] }
 web-sys = { version = "0.3", features = ["console"] }
 console_error_panic_hook = "0.1"

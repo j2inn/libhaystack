@@ -2,11 +2,17 @@
 
 //! Haystack Ref
 
-use crate::haystack::val::Value;
+use crate::haystack::val::{ConversionError, Value};
 use std::cmp::{Eq, Ord, Ordering, PartialOrd};
 use std::fmt;
 use std::hash::Hash;
-use uuid::Uuid;
+use ulid::Ulid;
+
+/// An empty `Ref` value
+pub static EMPTY_REF: Ref = Ref {
+    value: String::new(),
+    dis: None,
+};
 
 /// Haystack `Ref`
 ///
@@ -37,11 +43,10 @@ impl Ref {
         }
     }
 
-    /// Generate a new Ref based on a V4 UUID
+    /// Generate a new Ref based on a Ulid
     pub fn generate() -> Ref {
-        let uuid = Uuid::new_v4().as_simple().to_string();
         Ref {
-            value: format!("{start}-{end}", start = &uuid[0..8], end = &uuid[26..]),
+            value: Ulid::new().to_string(),
             dis: None,
         }
     }
@@ -106,7 +111,7 @@ impl From<Ref> for Value {
 
 /// Tries to convert from `Value` to a `Ref`
 impl TryFrom<&Value> for Ref {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Ref(v) => Ok(v.clone()),

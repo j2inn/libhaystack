@@ -2,7 +2,7 @@
 
 //! Haystack Remove
 
-use crate::haystack::val::Value;
+use crate::haystack::val::{ConversionError, Value};
 
 /// Haystack `Remove`
 ///
@@ -28,7 +28,7 @@ impl From<Remove> for Value {
 
 /// Tries to convert from `Remove` `Value` to a `Remove`
 impl TryFrom<&Value> for Remove {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Remove => Ok(Remove),

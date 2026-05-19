@@ -2,7 +2,7 @@
 
 //! Haystack NA
 
-use crate::haystack::val::Value;
+use crate::haystack::val::{ConversionError, Value};
 
 /// Haystack `NA`
 ///
@@ -28,7 +28,7 @@ impl From<Na> for Value {
 
 /// Tries to convert from `Na` `Value` to a `Na`
 impl TryFrom<&Value> for Na {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Na => Ok(Na),

@@ -2,7 +2,7 @@
 
 //! Haystack Bool
 
-use crate::haystack::val::Value;
+use crate::haystack::val::{ConversionError, Value};
 
 /// Haystack `Bool`
 ///
@@ -63,7 +63,7 @@ impl From<Bool> for Value {
 
 /// Tries to convert from `Bool` `Value` to a `bool`
 impl TryFrom<&Value> for bool {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Bool(v) => Ok(v.value),
@@ -74,7 +74,7 @@ impl TryFrom<&Value> for bool {
 
 /// Tries to convert from `Bool` `Value` to a `Bool`
 impl TryFrom<&Value> for Bool {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Bool(v) => Ok(*v),

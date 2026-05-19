@@ -3,9 +3,9 @@
 //! Haystack Grid
 
 use crate::dict;
-use crate::haystack::val::Value;
 use crate::haystack::val::dict::*;
-use std::collections::HashSet;
+use crate::haystack::val::{ConversionError, Value};
+use std::collections::BTreeSet;
 use std::iter::Iterator;
 use std::ops::Index;
 
@@ -79,22 +79,12 @@ impl Grid {
 
     /// Constructs a Grid from a list of `Dict`s
     pub fn make_from_dicts(rows: Vec<Dict>) -> Self {
-        let mut col_names = HashSet::<String>::new();
+        let col_names: BTreeSet<String> = rows.iter().flat_map(|el| el.keys().cloned()).collect();
 
-        rows.iter().for_each(|el| {
-            el.keys().for_each(|col_name| {
-                col_names.insert(col_name.clone());
-            })
-        });
-
-        let mut columns: Vec<Column> = col_names
-            .iter()
-            .map(|col_name| Column {
-                name: col_name.clone(),
-                meta: None,
-            })
+        let columns: Vec<Column> = col_names
+            .into_iter()
+            .map(|name| Column { name, meta: None })
             .collect();
-        columns.sort_by(|a, b| a.name.cmp(&b.name));
 
         Grid {
             meta: None,
@@ -226,7 +216,7 @@ impl From<Grid> for Value {
 
 /// Tries to convert from `Value` to a `Grid`
 impl TryFrom<&Value> for Grid {
-    type Error = &'static str;
+    type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Grid(v) => Ok(v.clone()),

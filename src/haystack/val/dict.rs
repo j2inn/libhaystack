@@ -58,8 +58,8 @@ pub trait HaystackDict {
     /// Get the optional `id` of this `Dict`
     fn id(&self) -> Option<&Ref>;
 
-    /// Get the `id` Ref of this `Dict`, or a default Ref if the id is not present
-    fn safe_id(&self) -> Ref;
+    /// Get the `id` Ref of this `Dict`, or a default empty `Ref` if the id is not present
+    fn safe_id(&self) -> &Ref;
 
     /// Get the optional `mod` of this `Dict`.
     /// On record `Dict`s this represents the last time this
@@ -82,46 +82,46 @@ pub trait HaystackDict {
     fn has_remove(&self, key: &str) -> bool;
 
     /// Get optional Bool for the key
-    fn get_bool<'a>(&'a self, key: &str) -> Option<&'a Bool>;
+    fn get_bool(&self, key: &str) -> Option<&Bool>;
 
     /// Get optional Number for the key
-    fn get_num<'a>(&'a self, key: &str) -> Option<&'a Number>;
+    fn get_num(&self, key: &str) -> Option<&Number>;
 
     /// Get optional Ref for the key
-    fn get_ref<'a>(&'a self, key: &str) -> Option<&'a Ref>;
+    fn get_ref(&self, key: &str) -> Option<&Ref>;
 
     /// Get optional Str for the key
-    fn get_str<'a>(&'a self, key: &str) -> Option<&'a Str>;
+    fn get_str(&self, key: &str) -> Option<&Str>;
 
     /// Get optional XStr for the key
-    fn get_xstr<'a>(&'a self, key: &str) -> Option<&'a XStr>;
+    fn get_xstr(&self, key: &str) -> Option<&XStr>;
 
     /// Get optional Uri for the key
-    fn get_uri<'a>(&'a self, key: &str) -> Option<&'a Uri>;
+    fn get_uri(&self, key: &str) -> Option<&Uri>;
 
     /// Get optional Symbol for the key
-    fn get_symbol<'a>(&'a self, key: &str) -> Option<&'a Symbol>;
+    fn get_symbol(&self, key: &str) -> Option<&Symbol>;
 
     /// Get optional Date for the key
-    fn get_date<'a>(&'a self, key: &str) -> Option<&'a Date>;
+    fn get_date(&self, key: &str) -> Option<&Date>;
 
     /// Get optional Time for the key
-    fn get_time<'a>(&'a self, key: &str) -> Option<&'a Time>;
+    fn get_time(&self, key: &str) -> Option<&Time>;
 
     /// Get optional DateTime for the key
-    fn get_date_time<'a>(&'a self, key: &str) -> Option<&'a DateTime>;
+    fn get_date_time(&self, key: &str) -> Option<&DateTime>;
 
     /// Get optional Coord for the key
-    fn get_coord<'a>(&'a self, key: &str) -> Option<&'a Coord>;
+    fn get_coord(&self, key: &str) -> Option<&Coord>;
 
     /// Get optional Dict for the key
-    fn get_dict<'a>(&'a self, key: &str) -> Option<&'a Dict>;
+    fn get_dict(&self, key: &str) -> Option<&Dict>;
 
     /// Get optional List for the key
-    fn get_list<'a>(&'a self, key: &str) -> Option<&'a List>;
+    fn get_list(&self, key: &str) -> Option<&List>;
 
     /// Get optional Grid for the key
-    fn get_grid<'a>(&'a self, key: &str) -> Option<&'a Grid>;
+    fn get_grid(&self, key: &str) -> Option<&Grid>;
 
     /// Get a formatted display string for a dict.
     fn dis(&self) -> Cow<'_, str>;
@@ -641,8 +641,8 @@ impl HaystackDict for Dict {
         self.get_ref("id")
     }
 
-    fn safe_id(&self) -> Ref {
-        self.get_ref("id").map_or(Ref::default(), |id| id.clone())
+    fn safe_id(&self) -> &Ref {
+        self.get_ref("id").unwrap_or(&EMPTY_REF)
     }
 
     fn ts(&self) -> Option<&DateTime> {

@@ -42,7 +42,7 @@ impl<'de> Deserialize<'de> for Remove {
     }
 }
 
-/// Hayson Remove deserializer
+/// Hayson Na deserializer
 impl<'de> Deserialize<'de> for Na {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Na, D::Error> {
         let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
@@ -54,137 +54,36 @@ impl<'de> Deserialize<'de> for Na {
     }
 }
 
-/// Hayson Number deserializer
-impl<'de> Deserialize<'de> for Number {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Number, D::Error> {
-        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
-        match val {
-            HVal::Number(val) => Ok(val),
-            _ => Err(D::Error::custom("Invalid Hayson Number")),
+/// Generates a `Deserialize` impl for a Haystack value type whose JSON
+/// representation is a Hayson object with a matching `_kind` field.
+/// The macro avoids repeating the identical boilerplate for every typed
+/// deserializer: deserialize via the universal `JsonValueDecoderVisitor`,
+/// then destructure the expected `HVal` variant.
+macro_rules! impl_hayson_deserialize {
+    ($type:ident, $err:literal) => {
+        impl<'de> Deserialize<'de> for $type {
+            fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<$type, D::Error> {
+                match deserializer.deserialize_any(JsonValueDecoderVisitor)? {
+                    HVal::$type(inner) => Ok(inner),
+                    _ => Err(D::Error::custom($err)),
+                }
+            }
         }
-    }
+    };
 }
 
-/// Hayson Date deserializer
-impl<'de> Deserialize<'de> for Date {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Date, D::Error> {
-        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
-        match val {
-            HVal::Date(val) => Ok(val),
-            _ => Err(D::Error::custom("Invalid Hayson Date")),
-        }
-    }
-}
-
-/// Hayson Time deserializer
-impl<'de> Deserialize<'de> for Time {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Time, D::Error> {
-        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
-        match val {
-            HVal::Time(val) => Ok(val),
-            _ => Err(D::Error::custom("Invalid Hayson Time")),
-        }
-    }
-}
-
-/// Hayson DateTime deserializer
-impl<'de> Deserialize<'de> for DateTime {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<DateTime, D::Error> {
-        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
-        match val {
-            HVal::DateTime(val) => Ok(val),
-            _ => Err(D::Error::custom("Invalid Hayson DateTime")),
-        }
-    }
-}
-
-/// Hayson Ref deserializer
-impl<'de> Deserialize<'de> for Ref {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Ref, D::Error> {
-        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
-        match val {
-            HVal::Ref(val) => Ok(val),
-            _ => Err(D::Error::custom("Invalid Hayson Ref")),
-        }
-    }
-}
-
-/// Hayson Uri deserializer
-impl<'de> Deserialize<'de> for Uri {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Uri, D::Error> {
-        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
-        match val {
-            HVal::Uri(val) => Ok(val),
-            _ => Err(D::Error::custom("Invalid Hayson Uri")),
-        }
-    }
-}
-
-/// Hayson Symbol deserializer
-impl<'de> Deserialize<'de> for Symbol {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Symbol, D::Error> {
-        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
-        match val {
-            HVal::Symbol(val) => Ok(val),
-            _ => Err(D::Error::custom("Invalid Hayson Symbol")),
-        }
-    }
-}
-
-/// Hayson Str deserializer
-impl<'de> Deserialize<'de> for Str {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Str, D::Error> {
-        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
-        match val {
-            HVal::Str(val) => Ok(val),
-            _ => Err(D::Error::custom("Invalid Hayson Str")),
-        }
-    }
-}
-
-/// Hayson Coord deserializer
-impl<'de> Deserialize<'de> for Coord {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Coord, D::Error> {
-        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
-        match val {
-            HVal::Coord(val) => Ok(val),
-            _ => Err(D::Error::custom("Invalid Hayson Coord")),
-        }
-    }
-}
-
-/// Hayson XStr deserializer
-impl<'de> Deserialize<'de> for XStr {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<XStr, D::Error> {
-        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
-        match val {
-            HVal::XStr(val) => Ok(val),
-            _ => Err(D::Error::custom("Invalid Hayson XStr")),
-        }
-    }
-}
-
-/// Hayson XStr deserializer
-impl<'de> Deserialize<'de> for Dict {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Dict, D::Error> {
-        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
-        match val {
-            HVal::Dict(val) => Ok(val),
-            _ => Err(D::Error::custom("Invalid Hayson Dict")),
-        }
-    }
-}
-
-/// Hayson Grid deserializer
-impl<'de> Deserialize<'de> for Grid {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Grid, D::Error> {
-        let val = deserializer.deserialize_any(JsonValueDecoderVisitor)?;
-        match val {
-            HVal::Grid(val) => Ok(val),
-            _ => Err(D::Error::custom("Invalid Hayson Grid")),
-        }
-    }
-}
+impl_hayson_deserialize!(Number, "Invalid Hayson Number");
+impl_hayson_deserialize!(Date, "Invalid Hayson Date");
+impl_hayson_deserialize!(Time, "Invalid Hayson Time");
+impl_hayson_deserialize!(DateTime, "Invalid Hayson DateTime");
+impl_hayson_deserialize!(Ref, "Invalid Hayson Ref");
+impl_hayson_deserialize!(Uri, "Invalid Hayson Uri");
+impl_hayson_deserialize!(Symbol, "Invalid Hayson Symbol");
+impl_hayson_deserialize!(Str, "Invalid Hayson Str");
+impl_hayson_deserialize!(Coord, "Invalid Hayson Coord");
+impl_hayson_deserialize!(XStr, "Invalid Hayson XStr");
+impl_hayson_deserialize!(Dict, "Invalid Hayson Dict");
+impl_hayson_deserialize!(Grid, "Invalid Hayson Grid");
 
 /// Hayson deserializer
 impl<'de> Deserialize<'de> for HVal {
