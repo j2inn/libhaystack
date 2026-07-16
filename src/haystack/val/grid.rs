@@ -196,6 +196,16 @@ impl<'a> Iterator for IterHelper<'a> {
 }
 
 /// Implement `IntoIterator` for `Grid`
+impl IntoIterator for Grid {
+    type Item = Dict;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.rows.into_iter()
+    }
+}
+
+/// Implement `IntoIterator` for `&Grid`
 impl<'a> IntoIterator for &'a Grid {
     type Item = &'a Dict;
     type IntoIter = IterHelper<'a>;

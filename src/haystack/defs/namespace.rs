@@ -96,7 +96,7 @@ impl Namespace {
         let mut ns = Namespace {
             defs: defs
                 .into_iter()
-                .filter_map(|rec| rec.get_symbol("def").map(|def| (def.clone(), rec.clone())))
+                .filter_map(|rec| rec.get_symbol("def").cloned().map(|def| (def, rec)))
                 .collect(),
 
             ..Default::default()
