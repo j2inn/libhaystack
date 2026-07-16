@@ -194,7 +194,7 @@ impl<'a, R: Read> Lexer<Scanner<'a, R>> {
             Some(TokenValue::Value(value)) => Ok(value.clone()),
             _ => self.scanner.make_generic_err(&format!(
                 "Expected Value token, found token {cur:?}",
-                cur = &self.cur.value
+                cur = self.cur.value
             )),
         }
     }
@@ -204,7 +204,7 @@ impl<'a, R: Read> Lexer<Scanner<'a, R>> {
             Some(TokenValue::Id(value)) => Ok(value.clone()),
             _ => self.scanner.make_generic_err(&format!(
                 "Expected Id token, found token {cur:?}",
-                cur = &self.cur.value
+                cur = self.cur.value
             )),
         }
     }
@@ -236,7 +236,7 @@ impl<'a, R: Read> Lexer<Scanner<'a, R>> {
             _ => self.scanner.make_generic_err(&format!(
                 "{msg}. Expected char token {expect:?}, found token {cur:?}",
                 expect = char as char,
-                cur = &self.cur.value
+                cur = self.cur.value
             )),
         }
     }

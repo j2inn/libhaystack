@@ -86,7 +86,7 @@ impl Mul<&'static Unit> for &Unit {
                 Err(format!(
                     "Cannot match units {this}*{other}",
                     this = self.name(),
-                    other = &other.name()
+                    other = other.name()
                 ))
             };
         }
@@ -130,7 +130,7 @@ impl Div<&'static Unit> for &Unit {
                 Err(format!(
                     "Cannot match units {this}/{other}",
                     this = self.name(),
-                    other = &other.name()
+                    other = other.name()
                 ))
             };
         }
