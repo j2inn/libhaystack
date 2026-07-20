@@ -69,7 +69,8 @@ fn test_grid_iterator() {
 
     let grid = Grid::try_from(&value).unwrap();
     let mut pos = 0;
-    for rec in grid.into_iter() {
+
+    for rec in &grid {
         if pos == 0 {
             assert_eq!(rec, &grid[pos])
         }

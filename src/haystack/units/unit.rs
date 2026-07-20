@@ -86,7 +86,7 @@ impl Mul<&'static Unit> for &Unit {
                 Err(format!(
                     "Cannot match units {this}*{other}",
                     this = self.name(),
-                    other = &other.name()
+                    other = other.name()
                 ))
             };
         }
@@ -130,7 +130,7 @@ impl Div<&'static Unit> for &Unit {
                 Err(format!(
                     "Cannot match units {this}/{other}",
                     this = self.name(),
-                    other = &other.name()
+                    other = other.name()
                 ))
             };
         }
@@ -234,5 +234,44 @@ mod test {
         let u1 = get_unit("ft").expect("Unit");
         let u2 = get_unit("hour").expect("Unit");
         assert!((u1 / u2).is_err());
+    }
+
+    /// Regression: `square_inch` is registered under two aliases (`"square_inch"` and
+    /// `"in²"`), both mapping to the same `Unit`. `match_units` used to count that as two
+    /// ambiguous matches instead of one, so this previously failed with
+    /// "Cannot match units inch*inch" even though `square_inch` is the single unique unit
+    /// for that dimension/scale.
+    #[test]
+    fn test_unit_multiply_result_with_multiple_aliases_is_not_ambiguous() {
+        let inch = get_unit("inch").expect("Unit");
+        assert_eq!(inch * inch, Ok(get_unit("square_inch").expect("Unit")));
+    }
+
+    /// Regression companion to the multiply case above, via division:
+    /// `cubic_meter / meter -> square_meter` (`square_meter` is aliased as `"square_meter"`
+    /// and `"m²"`).
+    #[test]
+    fn test_unit_divide_result_with_multiple_aliases_is_not_ambiguous() {
+        let cubic_meter = get_unit("cubic_meter").expect("Unit");
+        let meter = get_unit("m").expect("Unit");
+        assert_eq!(
+            cubic_meter / meter,
+            Ok(get_unit("square_meter").expect("Unit"))
+        );
+    }
+
+    #[test]
+    fn test_match_units_deduplicates_units_with_multiple_aliases() {
+        let square_inch = get_unit("square_inch").expect("Unit");
+        let matches = super::super::match_units(
+            square_inch.dimensions.expect("dimensions"),
+            square_inch.scale,
+        );
+        assert_eq!(
+            matches.len(),
+            1,
+            "expected exactly one match, got {matches:?}"
+        );
+        assert!(std::ptr::eq(matches[0], square_inch));
     }
 }

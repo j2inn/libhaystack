@@ -120,13 +120,7 @@ pub(super) fn parse_unit<'a>() -> Parser<'a, u8, Unit> {
                             cur
                         })
                 })
-                .and_then(|u| {
-                    if u == UnitDimensions::default() {
-                        None
-                    } else {
-                        Some(u)
-                    }
-                }),
+                .filter(|&u| u != UnitDimensions::default()),
             quantity: QUANTITY.with(|tlv| tlv.borrow().clone()).map(Cow::from),
             scale: dims
                 .as_ref()

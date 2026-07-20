@@ -177,8 +177,8 @@ impl ToZinc for DateTime {
         } else {
             writer.write_fmt(format_args!(
                 "{} {}",
-                &self.to_rfc3339_opts(SecondsFormat::AutoSi, true),
-                &self.timezone_short_name()
+                self.to_rfc3339_opts(SecondsFormat::AutoSi, true),
+                self.timezone_short_name()
             ))?
         }
         Ok(())

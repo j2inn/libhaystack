@@ -221,10 +221,8 @@ impl Mul<Number> for Number {
         } else if other.unit.is_none() {
             self.unit
         } else {
-            match self.unit.unwrap_or(&DEFAULT_UNIT) * other.unit.unwrap_or(&DEFAULT_UNIT) {
-                Ok(u) => Some(u),
-                Err(err) => return Err(err),
-            }
+            let u = (self.unit.unwrap_or(&DEFAULT_UNIT) * other.unit.unwrap_or(&DEFAULT_UNIT))?;
+            Some(u)
         };
 
         Ok(Number::make_with_unit(
@@ -244,10 +242,8 @@ impl Div<Number> for Number {
         } else if other.unit.is_none() {
             self.unit
         } else {
-            match self.unit.unwrap_or(&DEFAULT_UNIT) / other.unit.unwrap_or(&DEFAULT_UNIT) {
-                Ok(u) => Some(u),
-                Err(err) => return Err(err),
-            }
+            let u = (self.unit.unwrap_or(&DEFAULT_UNIT) / other.unit.unwrap_or(&DEFAULT_UNIT))?;
+            Some(u)
         };
 
         Ok(Number::make_with_unit(

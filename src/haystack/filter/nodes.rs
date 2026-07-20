@@ -369,7 +369,7 @@ impl Eval for WildcardEq {
 
 impl Display for WildcardEq {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{} *== {}", &self.id, &self.ref_value)
+        write!(f, "{} *== {}", self.id, self.ref_value)
     }
 }
 

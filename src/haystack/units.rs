@@ -38,20 +38,27 @@ pub fn get_unit_or_default(unit: &str) -> &'static Unit {
 }
 
 /// Match units for the dimension
+///
+/// Returns each distinct unit (by identity) whose dimension and scale match. A unit that is
+/// registered under more than one name/symbol (e.g. `square_inch` is keyed by both
+/// `"square_inch"` and `"in²"`) previously appeared multiple times in the result -- once per
+/// alias -- causing callers (e.g. [`crate::units::unit::Unit`]'s `Mul`/`Div` operators) to
+/// spuriously treat an unambiguous match as ambiguous. Matches are now deduplicated by pointer
+/// identity so each unit is returned at most once regardless of how many aliases it has.
 #[allow(unused_variables)]
 pub fn match_units(dim: UnitDimensions, scale: f64) -> Vec<&'static Unit> {
     #[cfg(feature = "units-db")]
     {
-        units_generated::UNITS
-            .values()
-            .filter_map(|u| {
-                if u.dimensions.as_ref() == Some(&dim) && approx_eq(u.scale, scale) {
-                    Some(*u)
-                } else {
-                    None
-                }
-            })
-            .collect()
+        let mut matches: Vec<&'static Unit> = Vec::new();
+        for u in units_generated::UNITS.values() {
+            if u.dimensions.as_ref() == Some(&dim)
+                && approx_eq(u.scale, scale)
+                && !matches.iter().any(|m| std::ptr::eq(*m, *u))
+            {
+                matches.push(u);
+            }
+        }
+        matches
     }
     #[cfg(not(feature = "units-db"))]
     return Vec::default();
