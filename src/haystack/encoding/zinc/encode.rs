@@ -213,10 +213,10 @@ impl ToZinc for Str {
 
 impl ToZinc for Ref {
     fn to_zinc<W: std::io::Write>(&self, writer: &mut W) -> Result<()> {
-        if let Some(dis) = &self.dis {
-            writer.write_fmt(format_args!("@{} \"{}\"", self.value, dis))?
+        if let Some(dis) = self.dis() {
+            writer.write_fmt(format_args!("@{} \"{}\"", self.value(), dis))?
         } else {
-            writer.write_fmt(format_args!("@{}", self.value))?
+            writer.write_fmt(format_args!("@{}", self.value()))?
         }
         Ok(())
     }
@@ -250,11 +250,12 @@ impl ToZinc for Uri {
 
 impl ToZinc for XStr {
     fn to_zinc<W: std::io::Write>(&self, writer: &mut W) -> Result<()> {
+        let r#type = self.r#type();
         writer.write_fmt(format_args!(
             "{}{}(\"{}\")",
-            self.r#type[0..1].to_uppercase(),
-            &self.r#type[1..],
-            self.value
+            r#type[0..1].to_uppercase(),
+            &r#type[1..],
+            self.value()
         ))?;
         Ok(())
     }

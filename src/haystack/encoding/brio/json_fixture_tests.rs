@@ -358,8 +358,8 @@ mod tests {
         let mut raw: &[u8] = &[CTRL_BUF, 0x03, 0x01, 0x02, 0x03];
         let decoded = from_brio(&mut raw).expect("decode CTRL_BUF");
         let xs = XStr::try_from(&decoded).expect("XStr");
-        assert_eq!(xs.r#type, "Bin");
-        assert_eq!(xs.value, "010203");
+        assert_eq!(xs.r#type(), "Bin");
+        assert_eq!(xs.value(), "010203");
     }
 
     /// CTRL_BUF with a zero-length payload should produce `XStr("Bin", "")`.
@@ -371,8 +371,8 @@ mod tests {
         let mut raw: &[u8] = &[CTRL_BUF, 0x00];
         let decoded = from_brio(&mut raw).expect("decode empty CTRL_BUF");
         let xs = XStr::try_from(&decoded).expect("XStr");
-        assert_eq!(xs.r#type, "Bin");
-        assert_eq!(xs.value, "");
+        assert_eq!(xs.r#type(), "Bin");
+        assert_eq!(xs.value(), "");
     }
 
     /// Strings with indices > MAX_SAFE_CONST_CODE (945) must encode as inline

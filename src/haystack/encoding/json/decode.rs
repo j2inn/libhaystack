@@ -83,7 +83,16 @@ impl_hayson_deserialize!(Str, "Invalid Hayson Str");
 impl_hayson_deserialize!(Coord, "Invalid Hayson Coord");
 impl_hayson_deserialize!(XStr, "Invalid Hayson XStr");
 impl_hayson_deserialize!(Dict, "Invalid Hayson Dict");
-impl_hayson_deserialize!(Grid, "Invalid Hayson Grid");
+
+/// Hayson `Grid` deserializer
+impl<'de> Deserialize<'de> for Grid {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Grid, D::Error> {
+        match deserializer.deserialize_any(JsonValueDecoderVisitor)? {
+            HVal::Grid(inner) => Ok(*inner),
+            _ => Err(D::Error::custom("Invalid Hayson Grid")),
+        }
+    }
+}
 
 /// Hayson deserializer
 impl<'de> Deserialize<'de> for HVal {
@@ -275,18 +284,10 @@ fn parse_number(dict: &Dict) -> Result<HVal, JsonErr> {
 
 fn parse_ref(dict: &Dict) -> Result<HVal, JsonErr> {
     match dict.get_str("val") {
-        Some(val) => match dict.get_str("dis") {
-            Some(dis) => Ok(Ref {
-                value: val.value.clone(),
-                dis: Some(dis.value.clone()),
-            }
-            .into()),
-            None => Ok(Ref {
-                value: val.value.clone(),
-                dis: None,
-            }
-            .into()),
-        },
+        Some(val) => {
+            let dis = dict.get_str("dis").map(|d| d.value.as_str());
+            Ok(Ref::make(val.value.as_str(), dis).into())
+        }
         None => Err(JsonErr::custom("Missing or invalid 'val'")),
     }
 }

@@ -20,30 +20,30 @@ fn test_ref_make_value() {
 #[test]
 fn test_ref_make() {
     let id = Ref::from("id");
-    assert_eq!(id.value, "id".to_string());
+    assert_eq!(id.value(), "id");
 
     let id = Ref::generate();
-    assert!(id.value.len() > 13);
+    assert!(id.value().len() > 13);
 }
 
 #[test]
 fn test_ref_make_with_dis() {
     let id = Ref::make("id", Some("dis"));
-    assert_eq!(id.value, "id".to_string());
-    assert_eq!(id.dis, Some("dis".to_string()));
+    assert_eq!(id.value(), "id");
+    assert_eq!(id.dis(), Some("dis"));
 }
 
 #[test]
 fn test_ref_make_with_dis_none() {
     let id = Ref::make("id", None);
-    assert_eq!(id.value, "id".to_string());
-    assert_eq!(id.dis, None);
+    assert_eq!(id.value(), "id");
+    assert_eq!(id.dis(), None);
 }
 
 #[test]
 fn test_ref_from_string() {
     let id = Ref::from("id".to_string());
-    assert_eq!(id.value, "id".to_string());
+    assert_eq!(id.value(), "id");
 }
 
 #[test]

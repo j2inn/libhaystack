@@ -140,15 +140,12 @@ fn test_value_str() {
 
 #[test]
 fn test_value_ref() {
-    let ref_ = Ref {
-        value: String::from("someId"),
-        dis: Some(String::from("dis")),
-    };
+    let ref_ = Ref::make("someId", Some("dis"));
 
     let value = Value::Ref(ref_.clone());
     assert!(value.is_ref());
     assert_eq!(&Ref::try_from(&value).unwrap(), &ref_);
-    assert_eq!(&Ref::try_from(&value).unwrap().dis.unwrap(), "dis");
+    assert_eq!(Ref::try_from(&value).unwrap().dis().unwrap(), "dis");
 
     assert_eq!(Value::from(Ref::from("someId")), Value::make_ref("someId"));
 }
@@ -356,6 +353,6 @@ fn test_value_grid() {
         ]
     );
 
-    let value = Value::Grid(Grid::make_empty());
+    let value = Value::from(Grid::make_empty());
     assert!(value.is_grid());
 }

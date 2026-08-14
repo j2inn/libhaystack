@@ -937,7 +937,7 @@ where
 
     if let Some(val) = dict.get("id") {
         return if let Value::Ref(val) = val {
-            Cow::Borrowed(val.dis.as_ref().unwrap_or(&val.value))
+            Cow::Borrowed(val.dis().unwrap_or(val.value()))
         } else {
             decode_str_from_value(val)
         };

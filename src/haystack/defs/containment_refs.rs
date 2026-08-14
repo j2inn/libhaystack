@@ -260,7 +260,7 @@ mod tests {
         add_containment_refs(&mut child, &parent, &ns, None);
         assert_eq!(
             child.get("siteRef").and_then(|v| if let Value::Ref(r) = v {
-                Some(r.value.as_str())
+                Some(r.value())
             } else {
                 None
             }),
@@ -279,7 +279,7 @@ mod tests {
         add_containment_refs(&mut child, &parent, &ns, None);
         assert_eq!(
             child.get("siteRef").and_then(|v| if let Value::Ref(r) = v {
-                Some(r.value.as_str())
+                Some(r.value())
             } else {
                 None
             }),
@@ -308,7 +308,7 @@ mod tests {
             child_deprecated
                 .get("floorRef")
                 .and_then(|v| if let Value::Ref(r) = v {
-                    Some(r.value.as_str())
+                    Some(r.value())
                 } else {
                     None
                 }),

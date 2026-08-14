@@ -1195,7 +1195,7 @@ fn test_namespace_transitive_relationship() {
     };
     map.insert("status", &status);
 
-    let resolve = |id: &Ref| map.get(id.value.as_str()).map(|d| (*d).clone());
+    let resolve = |id: &Ref| map.get(id.value()).map(|d| (*d).clone());
 
     // true for a fan that directly references an ahu
     let has = DEFS_NS.has_relationship(
@@ -1283,7 +1283,7 @@ fn test_namespace_reciprocal_relationship() {
     };
     map.insert("ahu", &ahu);
 
-    let resolve = |id: &Ref| map.get(id.value.as_str()).map(|d| (*d).clone());
+    let resolve = |id: &Ref| map.get(id.value()).map(|d| (*d).clone());
 
     // true when `ahu` inputs hot water from `hwp`
     let has = DEFS_NS.has_relationship(

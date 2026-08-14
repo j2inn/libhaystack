@@ -36,7 +36,7 @@ use crate::haystack::val::Value;
 pub unsafe extern "C" fn haystack_value_get_xstr_type(val: *const Value) -> *const c_char {
     match unsafe { val.as_ref() } {
         Some(value) => match value {
-            Value::XStr(xstr) => match CString::new(xstr.r#type.as_bytes()) {
+            Value::XStr(xstr) => match CString::new(xstr.r#type().as_bytes()) {
                 Ok(str) => return str.into_raw(),
                 Err(err) => update_last_error(err),
             },
@@ -73,7 +73,7 @@ pub unsafe extern "C" fn haystack_value_get_xstr_type(val: *const Value) -> *con
 pub unsafe extern "C" fn haystack_value_get_xstr_value(val: *const Value) -> *const c_char {
     match unsafe { val.as_ref() } {
         Some(value) => match value {
-            Value::XStr(xstr) => match CString::new(xstr.value.as_bytes()) {
+            Value::XStr(xstr) => match CString::new(xstr.value().as_bytes()) {
                 Ok(str) => return str.into_raw(),
                 Err(err) => update_last_error(err),
             },

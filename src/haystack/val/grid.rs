@@ -220,7 +220,7 @@ impl<'a> IntoIterator for &'a Grid {
 /// Converts from `Grid` to a `Grid` `Value`
 impl From<Grid> for Value {
     fn from(value: Grid) -> Self {
-        Value::Grid(value)
+        Value::Grid(Box::new(value))
     }
 }
 
@@ -229,7 +229,7 @@ impl TryFrom<&Value> for Grid {
     type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
-            Value::Grid(v) => Ok(v.clone()),
+            Value::Grid(v) => Ok((**v).clone()),
             _ => Err("Value is not an `Grid`"),
         }
     }

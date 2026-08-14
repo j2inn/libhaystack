@@ -6,13 +6,11 @@ use crate::haystack::val::{ConversionError, Value};
 use std::cmp::{Eq, Ord, Ordering, PartialOrd};
 use std::fmt;
 use std::hash::Hash;
+use std::sync::LazyLock;
 use ulid::Ulid;
 
 /// An empty `Ref` value
-pub static EMPTY_REF: Ref = Ref {
-    value: String::new(),
-    dis: None,
-};
+pub static EMPTY_REF: LazyLock<Ref> = LazyLock::new(Ref::default);
 
 /// Haystack `Ref`
 ///
@@ -25,13 +23,13 @@ pub static EMPTY_REF: Ref = Ref {
 /// let ref_value = Value::from(Ref::from("exampleRef"));
 /// assert!(ref_value.is_ref());
 /// // Ref with display
-/// let ref_dis_value = Value::from(Ref{ value: String::from("myRef"), dis: Some(String::from("sample ref")) });
-/// assert_eq!(Ref::try_from(&ref_dis_value).unwrap().dis, Some(String::from("sample ref")));
+/// let ref_dis_value = Value::from(Ref::make("myRef", Some("sample ref")));
+/// assert_eq!(Ref::try_from(&ref_dis_value).unwrap().dis(), Some("sample ref"));
 ///```
 #[derive(Eq, Clone, Debug, Default)]
 pub struct Ref {
-    pub value: String,
-    pub dis: Option<String>,
+    value: Box<str>,
+    dis: Option<Box<str>>,
 }
 
 impl Ref {
@@ -46,14 +44,24 @@ impl Ref {
     /// Generate a new Ref based on a Ulid
     pub fn generate() -> Ref {
         Ref {
-            value: Ulid::new().to_string(),
+            value: Ulid::new().to_string().into(),
             dis: None,
         }
     }
 
-    /// Get a `&str` slice of the underlying `String` payload
+    /// Get a `&str` slice of the underlying id payload
     pub fn as_str(&self) -> &str {
-        self.value.as_str()
+        &self.value
+    }
+
+    /// Get a `&str` slice of the underlying id payload
+    pub fn value(&self) -> &str {
+        &self.value
+    }
+
+    /// Get the optional display name as a `&str` slice
+    pub fn dis(&self) -> Option<&str> {
+        self.dis.as_deref()
     }
 }
 
@@ -89,7 +97,7 @@ impl fmt::Display for Ref {
 impl From<&str> for Ref {
     fn from(value: &str) -> Self {
         Ref {
-            value: String::from(value),
+            value: Box::from(value),
             dis: None,
         }
     }
@@ -98,7 +106,10 @@ impl From<&str> for Ref {
 /// Make a Haystack `Ref` from a `String`
 impl From<String> for Ref {
     fn from(value: String) -> Self {
-        Ref { value, dis: None }
+        Ref {
+            value: value.into(),
+            dis: None,
+        }
     }
 }
 

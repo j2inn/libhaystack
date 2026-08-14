@@ -154,7 +154,7 @@ pub unsafe extern "C" fn haystack_value_make_grid_from_rows_with_meta(
             Value::Grid(grid) => {
                 if let Some(Value::Dict(meta)) = unsafe { meta.as_ref() } {
                     grid.meta = Some(meta.clone());
-                    Some(Box::from(Value::from(grid.clone())))
+                    Some(Box::from(Value::Grid(grid.clone())))
                 } else {
                     new_error("Not a Grid Value");
                     None
