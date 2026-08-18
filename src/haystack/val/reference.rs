@@ -50,11 +50,6 @@ impl Ref {
     }
 
     /// Get a `&str` slice of the underlying id payload
-    pub fn as_str(&self) -> &str {
-        &self.value
-    }
-
-    /// Get a `&str` slice of the underlying id payload
     pub fn value(&self) -> &str {
         &self.value
     }

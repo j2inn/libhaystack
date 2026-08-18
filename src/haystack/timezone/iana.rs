@@ -48,9 +48,9 @@ impl DateTimeType {
         self.tz
     }
 
-    /// The same instant, re-expressed with a fixed UTC offset.
+    /// The same instant, re-expressed with this timezone's fixed offset.
     pub fn to_fixed_offset(&self) -> StdDateTime<FixedOffset> {
-        self.utc.and_utc().fixed_offset()
+        StdDateTime::<Tz>::from_naive_utc_and_offset(self.utc, self.offset()).fixed_offset()
     }
 
     /// The same instant, re-expressed with the given fixed offset.
@@ -199,7 +199,13 @@ static PREFIXES: [&str; 18] = [
     "America/North_Dakota",
 ];
 
-fn find_timezone(name: &str) -> Result<Tz, String> {
+/// Finds an IANA timezone by name.
+///
+/// The name is first parsed as a full IANA identifier (e.g. "America/Los_Angeles").
+/// If that fails, it is treated as a short (city) name (e.g. "Los_Angeles") and
+/// resolved by trying each known region prefix in order until one matches.
+/// Returns an error if no timezone is found.
+pub fn find_timezone(name: &str) -> Result<Tz, String> {
     name.parse().or_else(|err: chrono_tz::ParseError| {
         PREFIXES
             .into_iter()

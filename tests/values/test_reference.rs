@@ -47,9 +47,9 @@ fn test_ref_from_string() {
 }
 
 #[test]
-fn test_ref_as_str() {
+fn test_ref_value() {
     let id = Ref::from("id");
-    assert_eq!(id.as_str(), "id");
+    assert_eq!(id.value(), "id");
 }
 
 #[test]
