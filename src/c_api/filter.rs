@@ -283,7 +283,7 @@ pub unsafe extern "C" fn haystack_filter_match_all_grid(
                     } else {
                         ResultType::FALSE
                     };
-                    *value = Value::Grid(res);
+                    *value = Value::from(res);
                     return ret;
                 } else {
                     new_error("Not a Value result.");

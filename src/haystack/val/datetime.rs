@@ -81,6 +81,14 @@ impl Ord for DateTime {
     }
 }
 
+/// Converts from the internal `DateTimeType` to a `DateTime`
+#[cfg(feature = "timezone-db")]
+impl From<DateTimeType> for DateTime {
+    fn from(value: DateTimeType) -> Self {
+        DateTime { value }
+    }
+}
+
 /// Proxy method calls to the `DateTime`'s `value` member
 impl Deref for DateTime {
     type Target = DateTimeType;
@@ -161,7 +169,7 @@ impl From<DateTimeImpl<FixedOffset>> for DateTime {
 impl From<DateTimeImpl<Utc>> for DateTime {
     fn from(from: DateTimeImpl<Utc>) -> Self {
         DateTime {
-            value: from.with_timezone(&chrono_tz::UTC),
+            value: from.with_timezone(&chrono_tz::UTC).into(),
         }
     }
 }
@@ -170,7 +178,9 @@ impl From<DateTimeImpl<Utc>> for DateTime {
 #[cfg(feature = "timezone-db")]
 impl From<DateTimeImpl<chrono_tz::Tz>> for DateTime {
     fn from(value: DateTimeImpl<chrono_tz::Tz>) -> Self {
-        DateTime { value }
+        DateTime {
+            value: value.into(),
+        }
     }
 }
 

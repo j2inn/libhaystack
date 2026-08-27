@@ -30,7 +30,7 @@ where
         if let Some(cap_match) = caps.get(2).or_else(|| caps.get(4)) {
             if let Some(value) = (self.get_value)(cap_match.as_str()) {
                 if let Value::Ref(val) = value.as_ref() {
-                    dst.push_str(val.dis.as_ref().unwrap_or(&val.value));
+                    dst.push_str(val.dis().unwrap_or(val.value()));
                 } else if let Value::Str(val) = value.as_ref() {
                     dst.push_str(&val.value);
                 } else {

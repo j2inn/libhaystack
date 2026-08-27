@@ -35,7 +35,7 @@ use crate::haystack::val::Value;
 pub unsafe extern "C" fn haystack_value_get_ref_value_len(val: *const Value) -> usize {
     match unsafe { val.as_ref() } {
         Some(value) => match value {
-            Value::Ref(uri) => return uri.value.len(),
+            Value::Ref(uri) => return uri.value().len(),
             _ => new_error("Not a Uri Value"),
         },
         None => new_error("Invalid Value reference"),
@@ -68,7 +68,7 @@ pub unsafe extern "C" fn haystack_value_get_ref_value_len(val: *const Value) -> 
 pub unsafe extern "C" fn haystack_value_get_ref_value(val: *const Value) -> *const c_char {
     match unsafe { val.as_ref() } {
         Some(value) => match value {
-            Value::Ref(uri) => match CString::new(uri.value.as_bytes()) {
+            Value::Ref(uri) => match CString::new(uri.value().as_bytes()) {
                 Ok(str) => return str.into_raw(),
                 Err(err) => update_last_error(err),
             },
@@ -107,7 +107,7 @@ pub unsafe extern "C" fn haystack_value_get_ref_value(val: *const Value) -> *con
 pub unsafe extern "C" fn haystack_value_get_ref_dis(val: *const Value) -> *const c_char {
     match unsafe { val.as_ref() } {
         Some(value) => match value {
-            Value::Ref(uri) => match &uri.dis {
+            Value::Ref(uri) => match uri.dis() {
                 Some(dis) => match CString::new(dis.as_bytes()) {
                     Ok(str) => return str.into_raw(),
                     Err(err) => update_last_error(err),

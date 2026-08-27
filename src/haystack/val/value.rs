@@ -101,7 +101,7 @@ pub enum Value {
     /// Dictionary of `String` key and `Value` values
     Dict(Dict),
     /// Haystack Grid
-    Grid(Grid),
+    Grid(Box<Grid>),
 }
 
 ///
@@ -221,10 +221,7 @@ impl Value {
 
     /// Construct a `Ref` `Value` from a string with a display name
     pub fn make_ref_with_dis(value: &str, dis: &str) -> Value {
-        Value::from(Ref {
-            value: String::from(value),
-            dis: Some(String::from(dis)),
-        })
+        Value::from(Ref::make(value, Some(dis)))
     }
 
     /// True if this `Value` is a haystack `Ref`

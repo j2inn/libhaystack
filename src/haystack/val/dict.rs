@@ -18,7 +18,10 @@ pub(crate) type DictType = BTreeMap<String, Value>;
 #[derive(Clone, Debug)]
 enum DictRepr {
     Small(Vec<(String, Value)>),
-    Tree(DictType),
+    // Boxed so the discriminant can be packed into `Vec`'s pointer niche
+    // (`BTreeMap` doesn't expose an equivalent niche on its own), keeping
+    // `DictRepr`/`Dict` as small as possible.
+    Tree(Box<DictType>),
 }
 
 /// A Haystack Dictionary
@@ -141,7 +144,7 @@ impl Dict {
     /// and the dict will use the `BTreeMap` representation.
     pub fn with_small_max_entries(small_max_entries: usize) -> Dict {
         let value = if small_max_entries == 0 {
-            DictRepr::Tree(DictType::new())
+            DictRepr::Tree(Box::default())
         } else {
             DictRepr::Small(Vec::new())
         };
@@ -163,7 +166,7 @@ impl Dict {
     fn spill_to_tree(&mut self) {
         if let DictRepr::Small(entries) = &mut self.value {
             let map = entries.drain(..).collect::<DictType>();
-            self.value = DictRepr::Tree(map);
+            self.value = DictRepr::Tree(Box::new(map));
         }
     }
 
@@ -366,7 +369,7 @@ impl Dict {
         let Some(mut dict) = Dict::prepare_from_hint(lower, upper) else {
             let map = iter.collect::<Result<DictType, E>>()?;
             return Ok(Dict {
-                value: DictRepr::Tree(map),
+                value: DictRepr::Tree(Box::new(map)),
                 small_max_entries: Dict::SMALL_DICT_MAX_ENTRIES_HINT,
             });
         };
@@ -611,7 +614,7 @@ impl FromIterator<(String, Value)> for Dict {
 
         let Some(mut dict) = Dict::prepare_from_hint(lower, upper) else {
             return Dict {
-                value: DictRepr::Tree(iter.collect()),
+                value: DictRepr::Tree(Box::new(iter.collect())),
                 small_max_entries: Dict::SMALL_DICT_MAX_ENTRIES_HINT,
             };
         };
@@ -741,7 +744,7 @@ impl From<DictType> for Dict {
             }
         } else {
             Dict {
-                value: DictRepr::Tree(from),
+                value: DictRepr::Tree(Box::new(from)),
                 small_max_entries,
             }
         }
@@ -753,7 +756,7 @@ impl From<Dict> for DictType {
     fn from(dict: Dict) -> Self {
         match dict.value {
             DictRepr::Small(entries) => entries.into_iter().collect(),
-            DictRepr::Tree(map) => map,
+            DictRepr::Tree(map) => *map,
         }
     }
 }
@@ -937,7 +940,7 @@ where
 
     if let Some(val) = dict.get("id") {
         return if let Value::Ref(val) = val {
-            Cow::Borrowed(val.dis.as_ref().unwrap_or(&val.value))
+            Cow::Borrowed(val.dis().unwrap_or(val.value()))
         } else {
             decode_str_from_value(val)
         };

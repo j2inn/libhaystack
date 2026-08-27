@@ -309,13 +309,13 @@ impl ToBrio for Number {
 
 impl ToBrio for Ref {
     fn to_brio<W: Write>(&self, writer: &mut W) -> Result<()> {
-        let dis = self.dis.as_deref().unwrap_or("");
-        if let Some(i8_val) = ref_id_to_i8(&self.value) {
+        let dis = self.dis().unwrap_or("");
+        if let Some(i8_val) = ref_id_to_i8(self.value()) {
             writer.write_all(&[CTRL_REF_I8])?;
             writer.write_all(&i8_val.to_be_bytes())?;
         } else {
             writer.write_all(&[CTRL_REF_STR])?;
-            encode_str(writer, &self.value)?;
+            encode_str(writer, self.value())?;
         }
         // Fantom BrioWriter.writeRefDis calls encodeStrChars() — always inline,
         // never a const-table code. The matching reader uses decodeStrChars().
@@ -385,8 +385,8 @@ impl ToBrio for Coord {
 impl ToBrio for XStr {
     fn to_brio<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_all(&[CTRL_XSTR])?;
-        encode_str(writer, &self.r#type)?;
-        encode_str(writer, &self.value)?;
+        encode_str(writer, self.r#type())?;
+        encode_str(writer, self.value())?;
         Ok(())
     }
 }

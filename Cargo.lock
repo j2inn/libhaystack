@@ -388,7 +388,7 @@ checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
 
 [[package]]
 name = "libhaystack"
-version = "3.2.2"
+version = "4.0.0"
 dependencies = [
  "chrono",
  "chrono-tz",

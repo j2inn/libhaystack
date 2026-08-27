@@ -9,10 +9,7 @@ use libhaystack::val::*;
 
 #[test]
 fn test_zinc_ref_encode() {
-    let mut value = Value::Ref(Ref {
-        value: String::from("someId"),
-        dis: Some(String::from("dis")),
-    });
+    let mut value = Value::Ref(Ref::make("someId", Some("dis")));
 
     let mut zinc = to_zinc_string(&value);
     assert_eq!(zinc.unwrap(), r#"@someId "dis""#);

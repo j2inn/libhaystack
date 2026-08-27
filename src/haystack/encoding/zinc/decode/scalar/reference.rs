@@ -29,10 +29,10 @@ pub(crate) fn parse_ref<R: Read>(scanner: &mut Scanner<R>) -> Result<Ref, Error>
         dis = Some(parse_str(scanner)?.value);
     }
 
-    Ok(Ref {
-        value: String::from_utf8_lossy(&ref_chars).to_string(),
-        dis,
-    })
+    Ok(Ref::make(
+        &String::from_utf8_lossy(&ref_chars),
+        dis.as_deref(),
+    ))
 }
 
 #[cfg(test)]

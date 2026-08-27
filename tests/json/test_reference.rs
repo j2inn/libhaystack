@@ -7,10 +7,7 @@ use libhaystack::val::*;
 
 #[test]
 fn test_json_ref_encode() {
-    let mut value = Value::Ref(Ref {
-        value: String::from("someId"),
-        dis: Some(String::from("dis")),
-    });
+    let mut value = Value::Ref(Ref::make("someId", Some("dis")));
 
     let mut json = serde_json::to_string(&value);
     assert_eq!(
@@ -27,13 +24,7 @@ fn test_json_ref_encode() {
 fn test_json_ref_decode() {
     let mut value: Value =
         serde_json::from_str(r#"{"_kind":"ref","val":"someId","dis":"dis"}"#).unwrap();
-    assert_eq!(
-        value,
-        Value::Ref(Ref {
-            value: String::from("someId"),
-            dis: Some(String::from("dis")),
-        })
-    );
+    assert_eq!(value, Value::Ref(Ref::make("someId", Some("dis"))));
 
     value = serde_json::from_str(r#"{"_kind":"ref","val":"id"}"#).unwrap();
 

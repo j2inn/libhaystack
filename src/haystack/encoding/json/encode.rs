@@ -55,12 +55,12 @@ impl Serialize for Remove {
 
 impl Serialize for Ref {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut map = serializer.serialize_map(Some(if self.dis.is_none() { 2 } else { 3 }))?;
+        let dis = self.dis();
+        let mut map = serializer.serialize_map(Some(if dis.is_none() { 2 } else { 3 }))?;
         map.serialize_entry("_kind", "ref")?;
-        map.serialize_entry("val", &self.value)?;
-        if self.dis.is_some() {
-            let dis = self.dis.clone();
-            map.serialize_entry("dis", &dis)?;
+        map.serialize_entry("val", self.value())?;
+        if let Some(dis) = dis {
+            map.serialize_entry("dis", dis)?;
         }
         map.end()
     }
@@ -144,8 +144,8 @@ impl Serialize for XStr {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(Some(3))?;
         map.serialize_entry("_kind", "xstr")?;
-        map.serialize_entry("type", &self.r#type)?;
-        map.serialize_entry("val", &self.value)?;
+        map.serialize_entry("type", self.r#type())?;
+        map.serialize_entry("val", self.value())?;
         map.end()
     }
 }
