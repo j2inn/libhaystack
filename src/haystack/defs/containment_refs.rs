@@ -129,15 +129,15 @@ pub fn add_containment_refs(
     let entity_type_name = namespace
         .def_of_dict(parent)
         .get_symbol("def")
-        .map(|s| s.value().to_string())
+        .map(|s| s.value())
         .unwrap_or_default();
 
     if entity_type_name.is_empty() {
         return String::new();
     }
 
-    let ref_name = find_containment_ref_for_type(namespace, &entity_type_name)
-        .map(|def| def.def_name().to_string())
+    let ref_name = find_containment_ref_for_type(namespace, entity_type_name)
+        .map(|def| def.def_name().to_owned())
         .unwrap_or_default();
 
     if !ref_name.is_empty()

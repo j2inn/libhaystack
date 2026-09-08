@@ -189,7 +189,7 @@ impl ToZinc for Str {
     fn to_zinc<W: std::io::Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_all(b"\"")?;
         let mut buf = [0; 4];
-        for c in self.value().chars() {
+        for c in self.chars() {
             if c < ' ' || c == '"' || c == '\\' {
                 match c {
                     '"' => writer.write_all(br#"\""#)?,

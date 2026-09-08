@@ -176,7 +176,7 @@ impl<'de> Visitor<'de> for JsonValueDecoderVisitor {
             if key == "_kind" {
                 match value {
                     HVal::Str(str_kind) => {
-                        kind = str_kind.value().to_string();
+                        kind = str_kind.to_string();
                         match kind.as_str() {
                             "marker" => return Ok(HVal::make_marker()),
                             "remove" => return Ok(HVal::make_remove()),
@@ -391,7 +391,7 @@ fn parse_grid_meta_and_ver(dict: &Dict) -> (Option<Dict>, String) {
 
     if let Some(ref mut meta_dict) = meta {
         if let Some(ver) = meta_dict.get_str(VER) {
-            grid_ver = ver.value().to_owned();
+            grid_ver = ver.to_string();
             meta_dict.remove(VER);
         }
 
@@ -410,12 +410,12 @@ fn parse_grid_columns(cols: &List) -> Result<Vec<Column>, JsonErr> {
             HVal::Dict(dict) => match dict.get_str("name") {
                 Some(name) => match dict.get("meta") {
                     Some(HVal::Dict(meta)) => Ok(Column {
-                        name: name.value().to_string(),
+                        name: name.to_string(),
                         meta: Some(meta.clone()),
                     }),
                     Some(_) => Err(JsonErr::custom("Invalid 'meta'")),
                     None => Ok(Column {
-                        name: name.value().to_string(),
+                        name: name.to_string(),
                         meta: None,
                     }),
                 },
