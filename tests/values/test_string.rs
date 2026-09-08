@@ -42,10 +42,19 @@ fn test_str_display() {
 }
 
 #[test]
+fn test_str_to_string_matches_display() {
+    let str = Str::make("foo");
+    assert_eq!(str.to_string(), format!("{}", str));
+    assert_eq!(str.to_string(), "foo");
+}
+
+#[test]
 fn test_str_deref() {
     let str = Str::make("hello world");
     // &Str coerces to &str; all str methods are available
+    assert!(!str.is_empty());
     assert_eq!(str.len(), 11);
+    assert!(str.is_ascii());
     assert!(str.contains("world"));
     assert!(str.starts_with("hello"));
 }

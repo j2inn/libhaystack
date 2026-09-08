@@ -47,6 +47,14 @@ impl Str {
     pub fn value(&self) -> &str {
         &self.value
     }
+
+    /// Converts to an owned `String` via a direct byte copy, bypassing the
+    /// `Display`/formatter machinery used by the blanket `ToString` impl.
+    /// Shadows `ToString::to_string` (same output, just faster).
+    #[allow(clippy::inherent_to_string_shadow_display)]
+    pub fn to_string(&self) -> String {
+        self.value.as_ref().to_string()
+    }
 }
 
 // Make a Haystack `Str` from a `String`
@@ -86,7 +94,7 @@ impl TryFrom<&Value> for String {
     type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
-            Value::Str(v) => Ok(v.value.to_string()),
+            Value::Str(v) => Ok(v.to_string()),
             _ => Err("Value is not an `Str`"),
         }
     }
