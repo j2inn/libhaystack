@@ -653,7 +653,7 @@ where
     if let Some(val) = dict.get("disMacro") {
         return if let Value::Str(val) = val {
             dis_macro(
-                &val.value,
+                val.value(),
                 |val| dict.get(val).map(Cow::Borrowed),
                 get_localized,
             )
@@ -664,7 +664,7 @@ where
 
     if let Some(val) = dict.get("disKey") {
         if let Value::Str(val_str) = val
-            && let Some(val_str) = get_localized(&val_str.value)
+            && let Some(val_str) = get_localized(val_str.value())
         {
             return val_str;
         }
@@ -700,7 +700,7 @@ where
 
 fn decode_str_from_value(val: &'_ Value) -> Cow<'_, str> {
     match val {
-        Value::Str(val) => Cow::Borrowed(&val.value),
+        Value::Str(val) => Cow::Borrowed(val.value()),
         _ => Cow::Owned(val.to_string()),
     }
 }

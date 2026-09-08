@@ -450,9 +450,7 @@ impl FromBrio for Value {
                 let dis = decode_str_chars(reader)?;
                 Ok(Value::from(Ref::make(&id, non_empty(dis.as_str()))))
             }
-            CTRL_URI => Ok(Value::from(Uri {
-                value: decode_str(reader)?,
-            })),
+            CTRL_URI => Ok(Value::from(Uri::from(decode_str(reader)?))),
             CTRL_DATE => {
                 let year = read_i16(reader)? as i32;
                 let month = read_u8(reader)? as u32;
@@ -668,9 +666,7 @@ mod tests {
 
     #[test]
     fn test_uri() {
-        let v = Value::from(Uri {
-            value: "https://project-haystack.org".into(),
-        });
+        let v = Value::from(Uri::from("https://project-haystack.org"));
         assert_eq!(round_trip(&v), v);
     }
 
@@ -1161,7 +1157,7 @@ mod tests {
             "n"  => Value::from(Number::make(123.0)),
             "s"  => Value::from("hi"),
             "r"  => Value::from(Ref::make("1deb31b8-7508b187", None)),
-            "u"  => Value::from(Uri { value: "a/b".to_string() }),
+            "u"  => Value::from(Uri::from("a/b")),
             "d"  => Value::from(Date::from_ymd(2021, 6, 15).unwrap()),
             "dt" => Value::from(DateTime::parse_from_rfc3339("2021-06-15T12:00:00Z").unwrap())
         });

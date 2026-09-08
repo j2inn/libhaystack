@@ -48,9 +48,7 @@ pub(crate) fn parse_uri<R: Read>(scanner: &mut Scanner<R>) -> Result<Uri, Error>
 
     scanner.advance()?;
 
-    Ok(Uri {
-        value: String::from_utf8_lossy(&str).to_string(),
-    })
+    Ok(Uri::from(String::from_utf8_lossy(&str).into_owned()))
 }
 
 #[cfg(test)]

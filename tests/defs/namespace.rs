@@ -288,11 +288,7 @@ fn test_namespace_choices_for() {
 fn test_namespace_choices() {
     let ns = Namespace::make(parse_def());
 
-    let mut choices = ns
-        .choices
-        .keys()
-        .map(|k| k.value.as_str())
-        .collect::<Vec<&str>>();
+    let mut choices = ns.choices.keys().map(|k| k.value()).collect::<Vec<&str>>();
 
     choices.sort();
 
@@ -417,7 +413,7 @@ fn test_namespace_tag_on_defs() {
     let mut tag_on_defs = ns
         .tag_on_defs
         .keys()
-        .map(|k| k.value.as_str())
+        .map(|k| k.value())
         .collect::<Vec<&str>>();
     tag_on_defs.sort();
 
@@ -731,7 +727,7 @@ fn test_namespace_reflect() {
     let names = reflect
         .defs
         .iter()
-        .map(|def| def.def_name().as_str())
+        .map(|def| def.def_name())
         .collect::<Vec<&str>>();
 
     assert!(

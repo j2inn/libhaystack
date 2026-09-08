@@ -32,7 +32,7 @@ where
                 if let Value::Ref(val) = value.as_ref() {
                     dst.push_str(val.dis().unwrap_or(val.value()));
                 } else if let Value::Str(val) = value.as_ref() {
-                    dst.push_str(&val.value);
+                    dst.push_str(val.value());
                 } else {
                     dst.push_str(&value.to_string());
                 }

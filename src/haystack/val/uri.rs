@@ -20,7 +20,7 @@ use crate::haystack::val::{ConversionError, Value};
 /// ```
 #[derive(PartialEq, PartialOrd, Eq, Ord, Hash, Clone, Debug, Default)]
 pub struct Uri {
-    pub value: String,
+    value: Box<str>,
 }
 
 impl Uri {
@@ -28,19 +28,28 @@ impl Uri {
     pub fn make(val: &str) -> Self {
         Uri { value: val.into() }
     }
+
+    /// Get a `&str` slice of the underlying payload
+    pub fn value(&self) -> &str {
+        &self.value
+    }
 }
 
 // Make a Haystack `Uri` from a String value
 impl From<String> for Uri {
     fn from(value: String) -> Self {
-        Uri { value }
+        Uri {
+            value: value.into(),
+        }
     }
 }
 
 // Make a Haystack `Uri` from a string value
 impl From<&str> for Uri {
     fn from(value: &str) -> Self {
-        Uri::from(value.to_owned())
+        Uri {
+            value: value.into(),
+        }
     }
 }
 

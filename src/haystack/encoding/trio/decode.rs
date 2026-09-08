@@ -819,10 +819,7 @@ mod tests {
         assert_eq!(dicts[1].get("type"), Some(&Value::make_str("dict")));
         let inner = dicts[1].get_dict("val").expect("inner dict");
         assert!(inner.has("foo"));
-        assert_eq!(
-            inner.get_str("dis").map(|s| s.value.as_str()),
-            Some("Dict!")
-        );
+        assert_eq!(inner.get_str("dis").map(|s| s.value()), Some("Dict!"));
 
         assert_eq!(dicts[2].get("type"), Some(&Value::make_str("grid")));
         let grid = dicts[2].get_grid("val").expect("grid");

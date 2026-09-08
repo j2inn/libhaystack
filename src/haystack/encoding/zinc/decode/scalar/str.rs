@@ -33,9 +33,7 @@ pub(crate) fn parse_str<R: Read>(scanner: &mut Scanner<R>) -> Result<Str, Error>
 
     scanner.advance()?;
 
-    Ok(Str {
-        value: String::from_utf8_lossy(&str).to_string(),
-    })
+    Ok(Str::from(String::from_utf8_lossy(&str).into_owned()))
 }
 
 // Parse a Str escape sequence

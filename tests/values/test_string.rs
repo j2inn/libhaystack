@@ -20,13 +20,13 @@ fn test_str_make_value() {
 #[test]
 fn test_ref_from() {
     let str = Str::from("id");
-    assert_eq!(str.value, "id".to_string());
+    assert_eq!(str.value(), "id".to_string());
 }
 
 #[test]
 fn test_ref_from_string() {
     let str = Str::from("id".to_string());
-    assert_eq!(str.value, "id".to_string());
+    assert_eq!(str.value(), "id".to_string());
 }
 
 #[test]

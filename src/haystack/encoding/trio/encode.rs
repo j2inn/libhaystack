@@ -252,7 +252,7 @@ fn encode_tag(name: &str, value: &Value, multiline_strings: bool) -> String {
 
         // String with multiline option: indented multi-line format.
         Value::Str(s) if multiline_strings => {
-            let indented = s.value.replace('\n', NL_INDENT);
+            let indented = s.value().replace('\n', NL_INDENT);
             format!("{}: \n{}{}", name, INDENT, indented)
         }
 

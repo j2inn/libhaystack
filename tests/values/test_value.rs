@@ -125,9 +125,7 @@ fn test_value_num() {
 
 #[test]
 fn test_value_str() {
-    let value = Value::Str(Str {
-        value: String::from("Foo"),
-    });
+    let value = Value::Str(Str::from("Foo"));
     assert!(value.is_str());
     assert_eq!(Value::from("Foo"), value);
 
@@ -155,7 +153,7 @@ fn test_value_symbol() {
     let value = Value::make_symbol("foo");
     assert!(value.is_symbol());
     assert_eq!(&Symbol::try_from(&value).unwrap(), &Symbol::from("foo"));
-    assert_eq!(Symbol::try_from(&value).unwrap().value, "foo");
+    assert_eq!(Symbol::try_from(&value).unwrap().value(), "foo");
     assert_eq!(
         Value::from(Symbol::from("symbol")),
         Value::make_symbol("symbol")
@@ -173,7 +171,7 @@ fn test_value_uri() {
         &Uri::try_from(&value).unwrap(),
         &Uri::from("http://zoo.bar")
     );
-    assert_eq!(Uri::try_from(&value).unwrap().value, "http://zoo.bar");
+    assert_eq!(Uri::try_from(&value).unwrap().value(), "http://zoo.bar");
     assert_eq!(Value::from(Uri::from("uri")), Value::make_uri("uri"));
 
     let value = Value::Uri(Uri::make("/a/b/c"));

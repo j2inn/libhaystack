@@ -15,7 +15,7 @@ use std::io::{Cursor, Error};
 /// let val = from_str("`/a/sample/uri`").expect("A Value");
 /// assert!(&val.is_uri());
 ///
-/// assert_eq!(Uri::try_from(&val).unwrap().value, "/a/sample/uri");
+/// assert_eq!(Uri::try_from(&val).unwrap().value(), "/a/sample/uri");
 /// ```
 pub fn from_str(str: &str) -> Result<Value, Error> {
     let mut input = Cursor::new(str.as_bytes());

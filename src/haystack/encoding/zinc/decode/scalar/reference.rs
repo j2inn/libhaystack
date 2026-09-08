@@ -26,7 +26,7 @@ pub(crate) fn parse_ref<R: Read>(scanner: &mut Scanner<R>) -> Result<Ref, Error>
     let mut dis: Option<String> = None;
     if !scanner.is_eof && scanner.cur == b' ' && scanner.peek()? == b'"' {
         scanner.read()?;
-        dis = Some(parse_str(scanner)?.value);
+        dis = Some(parse_str(scanner)?.into());
     }
 
     Ok(Ref::make(

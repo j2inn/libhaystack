@@ -35,7 +35,7 @@ use crate::haystack::val::Value;
 pub unsafe extern "C" fn haystack_value_get_str_len(val: *const Value) -> usize {
     match unsafe { val.as_ref() } {
         Some(value) => match value {
-            Value::Str(str) => return str.value.len(),
+            Value::Str(str) => return str.value().len(),
             _ => new_error("Not a Str Value"),
         },
         None => new_error("Invalid Value reference"),
@@ -69,7 +69,7 @@ pub unsafe extern "C" fn haystack_value_get_str_len(val: *const Value) -> usize 
 pub unsafe extern "C" fn haystack_value_get_str_value(val: *const Value) -> *const c_char {
     match unsafe { val.as_ref() } {
         Some(value) => match value {
-            Value::Str(str) => match CString::new(str.value.as_bytes()) {
+            Value::Str(str) => match CString::new(str.value().as_bytes()) {
                 Ok(str) => return str.into_raw(),
                 Err(err) => update_last_error(err),
             },

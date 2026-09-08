@@ -29,8 +29,8 @@ pub trait DefDict: HaystackDict {
     }
 
     /// Return the `def` [Symbol](crate::val::Symbol) name
-    fn def_name(&self) -> &String {
-        &self.def_symbol().value
+    fn def_name(&self) -> &str {
+        self.def_symbol().value()
     }
 }
 
@@ -169,12 +169,12 @@ impl Namespace {
 
     /// True if the name is for a conjunct.
     pub fn is_conjunct(symbol: &Symbol) -> bool {
-        symbol.value.contains('-')
+        symbol.value().contains('-')
     }
 
     /// Decomposes a conjunct into its respective defs and returns them
     pub fn conjuncts_defs(&self, symbol: &Symbol) -> Vec<&Dict> {
-        self.all_matching_names(&symbol.value.split('-').collect::<Vec<&str>>())
+        self.all_matching_names(&symbol.value().split('-').collect::<Vec<&str>>())
     }
 
     /// Computes a list of feature defs.
@@ -195,7 +195,7 @@ impl Namespace {
 
     /// True if the name is for a feature.
     pub fn is_feature(symbol: &Symbol) -> bool {
-        symbol.value.contains(':')
+        symbol.value().contains(':')
     }
 
     /// Computes a list of all the libs implemented by this namespace.
@@ -314,7 +314,7 @@ impl Namespace {
         let mut features = HashSet::<&str>::new();
         for sym in self.defs.keys() {
             if Namespace::is_feature(sym)
-                && let Some((first, _second)) = sym.value.split_once(':')
+                && let Some((first, _second)) = sym.value().split_once(':')
             {
                 features.insert(first);
             }
@@ -330,7 +330,7 @@ impl Namespace {
         for def in self.defs.values() {
             if let Some(tag_on) = def.get_list("tagOn") {
                 let names = tag_on.iter().filter_map(|v| match v {
-                    Value::Symbol(sym) => Some(sym.value.as_str()),
+                    Value::Symbol(sym) => Some(sym.value()),
                     _ => None,
                 });
 
@@ -391,7 +391,7 @@ impl Namespace {
             if !association_def.has("computedFromReciprocal") {
                 return self
                     .get(parent)
-                    .and_then(|def| def.get_list(&association.value))
+                    .and_then(|def| def.get_list(association.value()))
                     .unwrap_or(&Vec::default())
                     .iter()
                     .filter_map(|value| match value {
@@ -423,7 +423,7 @@ impl Namespace {
         let mut matches = HashSet::<&Dict>::new();
 
         for def in self.defs.values() {
-            if let Some(Value::List(list)) = def.get(&reciprocal_of.value) {
+            if let Some(Value::List(list)) = def.get(reciprocal_of.value()) {
                 list.iter()
                     .filter_map(|value| match value {
                         Value::Symbol(sym) => self.get(sym),
@@ -803,7 +803,7 @@ impl Namespace {
             let id = cur_subject.get_ref("id").cloned();
             while let Some((subject_key, subject_val)) = cur_subject.pop_first() {
                 let subject_def = self.get_by_name(&subject_key);
-                let mut rel_val = subject_def.and_then(|def| def.get(&rel_name.value));
+                let mut rel_val = subject_def.and_then(|def| def.get(rel_name.value()));
 
                 // Handle a reciprocal relationship. A reciprocal relationship can only
                 // be inverted when a ref is specified.
@@ -812,7 +812,7 @@ impl Namespace {
                     && subject_val.is_ref()
                     && let Some(reciprocal_of) = reciprocal_of
                 {
-                    rel_val = subject_def.and_then(|def| def.get(&reciprocal_of.value));
+                    rel_val = subject_def.and_then(|def| def.get(reciprocal_of.value()));
 
                     if rel_val.is_some()
                         && let Value::Ref(ref val) = subject_val

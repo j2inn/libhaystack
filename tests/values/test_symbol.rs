@@ -20,5 +20,5 @@ fn test_symbol_make_value() {
 #[test]
 fn test_symbol_from() {
     let sym = Symbol::from("some-sym");
-    assert_eq!(sym.value, "some-sym".to_string());
+    assert_eq!(sym.value(), "some-sym".to_string());
 }

@@ -26,9 +26,7 @@ pub(crate) fn parse_symbol<R: Read>(scanner: &mut Scanner<R>) -> Result<Symbol, 
         return scanner.make_generic_err("Unexpected empty Symbol ");
     }
 
-    Ok(Symbol {
-        value: String::from_utf8_lossy(&symbol).to_string(),
-    })
+    Ok(Symbol::from(String::from_utf8_lossy(&symbol).into_owned()))
 }
 
 #[cfg(test)]
