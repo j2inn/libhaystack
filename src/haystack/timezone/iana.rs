@@ -4,7 +4,8 @@
 //! provided by chrono_tz.
 
 use chrono::{
-    DateTime as StdDateTime, FixedOffset, NaiveDateTime, Offset, TimeZone, Timelike, Utc,
+    DateTime as StdDateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Offset, TimeDelta,
+    TimeZone, Timelike, Utc,
 };
 
 use chrono_tz::{OffsetName, Tz, UTC};
@@ -97,6 +98,82 @@ impl DateTimeType {
     /// The nanosecond component of this datetime's local time.
     pub fn nanosecond(&self) -> u32 {
         self.naive_local().nanosecond()
+    }
+
+    /// The date component of this datetime's local time (see `chrono::DateTime::date_naive`).
+    pub fn date_naive(&self) -> NaiveDate {
+        self.naive_local().date()
+    }
+
+    /// The time-of-day component of this datetime's local time.
+    pub fn time(&self) -> NaiveTime {
+        self.naive_local().time()
+    }
+
+    /// The Unix timestamp, in milliseconds.
+    pub fn timestamp_millis(&self) -> i64 {
+        self.utc.and_utc().timestamp_millis()
+    }
+
+    /// The Unix timestamp, in nanoseconds, if it fits in an `i64` (see
+    /// `chrono::DateTime::timestamp_nanos_opt`).
+    pub fn timestamp_nanos_opt(&self) -> Option<i64> {
+        self.utc.and_utc().timestamp_nanos_opt()
+    }
+
+    /// Adds a signed duration, returning `None` on overflow. The offset is re-resolved for the
+    /// shifted instant (from `tz`), so this is DST-safe unlike shifting a naive/local time.
+    pub fn checked_add_signed(&self, rhs: TimeDelta) -> Option<Self> {
+        Some(DateTimeType {
+            utc: self.utc.checked_add_signed(rhs)?,
+            tz: self.tz,
+        })
+    }
+
+    /// Subtracts a signed duration, returning `None` on overflow. See `checked_add_signed`.
+    pub fn checked_sub_signed(&self, rhs: TimeDelta) -> Option<Self> {
+        Some(DateTimeType {
+            utc: self.utc.checked_sub_signed(rhs)?,
+            tz: self.tz,
+        })
+    }
+
+    /// The signed duration between two instants (`self - rhs`).
+    pub fn signed_duration_since(&self, rhs: Self) -> TimeDelta {
+        self.utc - rhs.utc
+    }
+
+    /// Re-expresses the same instant in a different IANA timezone, keeping the compact
+    /// `DateTimeType` representation. Unlike `with_timezone` (which converts to a fixed-offset
+    /// `chrono::DateTime`), this stays a `DateTimeType` so the timezone remains a full IANA id
+    /// (with correct DST behavior for datetimes computed from the result).
+    pub fn with_iana_timezone(&self, tz: Tz) -> Self {
+        DateTimeType { utc: self.utc, tz }
+    }
+}
+
+/// Mirrors `chrono::DateTime<Tz>`'s own `Add`/`Sub` operator overloads (which also panic on
+/// overflow, via `chrono::DateTime::add`/`sub`).
+impl std::ops::Add<TimeDelta> for DateTimeType {
+    type Output = DateTimeType;
+    fn add(self, rhs: TimeDelta) -> DateTimeType {
+        self.checked_add_signed(rhs)
+            .expect("`DateTimeType + TimeDelta` overflowed")
+    }
+}
+
+impl std::ops::Sub<TimeDelta> for DateTimeType {
+    type Output = DateTimeType;
+    fn sub(self, rhs: TimeDelta) -> DateTimeType {
+        self.checked_sub_signed(rhs)
+            .expect("`DateTimeType - TimeDelta` overflowed")
+    }
+}
+
+impl std::ops::Sub<DateTimeType> for DateTimeType {
+    type Output = TimeDelta;
+    fn sub(self, rhs: DateTimeType) -> TimeDelta {
+        self.signed_duration_since(rhs)
     }
 }
 
