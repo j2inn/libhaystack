@@ -15,15 +15,6 @@ use std::ops::Index;
 // Alias for the underlying Dict type
 pub(crate) type DictType = BTreeMap<String, Value>;
 
-#[derive(Clone, Debug)]
-enum DictRepr {
-    Small(Vec<(String, Value)>),
-    // Boxed so the discriminant can be packed into `Vec`'s pointer niche
-    // (`BTreeMap` doesn't expose an equivalent niche on its own), keeping
-    // `DictRepr`/`Dict` as small as possible.
-    Tree(Box<DictType>),
-}
-
 /// A Haystack Dictionary
 ///
 /// Uses a hybrid back-store: a sorted small-vector for tiny dicts and a
@@ -51,8 +42,7 @@ enum DictRepr {
 ///```
 #[derive(Clone, Debug)]
 pub struct Dict {
-    value: DictRepr,
-    small_max_entries: usize,
+    entries: HybridMap<String, Value, DictType>,
 }
 
 /// Dictionary trait with utilities that help working with
@@ -132,253 +122,149 @@ pub trait HaystackDict {
 
 impl Dict {
     /// Hint for the maximum number of entries for the small-vector back-store.
-    pub const SMALL_DICT_MAX_ENTRIES_HINT: usize = 32;
+    pub const SMALL_DICT_MAX_ENTRIES_HINT: usize =
+        HybridMap::<String, Value, DictType>::DEFAULT_SMALL_MAX_ENTRIES;
 
     /// Construct a new `Dict` with a threshold of 32 entries for the small-vector back-store.
     pub fn new() -> Dict {
-        Self::with_small_max_entries(Self::SMALL_DICT_MAX_ENTRIES_HINT)
+        Dict {
+            entries: HybridMap::new(),
+        }
     }
 
     /// Construct a new `Dict` with a custom small-store threshold.
     /// If `small_max_entries` is 0, the small-vector back-store is disabled
     /// and the dict will use the `BTreeMap` representation.
     pub fn with_small_max_entries(small_max_entries: usize) -> Dict {
-        let value = if small_max_entries == 0 {
-            DictRepr::Tree(Box::default())
-        } else {
-            DictRepr::Small(Vec::new())
-        };
         Dict {
-            value,
-            small_max_entries,
+            entries: HybridMap::with_small_max_entries(small_max_entries),
         }
     }
 
     /// Return the active small-store threshold for this dict.
+    #[inline]
     pub fn small_max_entries(&self) -> usize {
-        self.small_max_entries
+        self.entries.small_max_entries()
     }
 
-    fn small_search(entries: &[(String, Value)], key: &str) -> Result<usize, usize> {
-        entries.binary_search_by(|(k, _)| k.as_str().cmp(key))
-    }
-
-    fn spill_to_tree(&mut self) {
-        if let DictRepr::Small(entries) = &mut self.value {
-            let map = entries.drain(..).collect::<DictType>();
-            self.value = DictRepr::Tree(Box::new(map));
-        }
-    }
-
+    /// Returns the number of entries in the dict.
+    #[inline]
     pub fn len(&self) -> usize {
-        match &self.value {
-            DictRepr::Small(entries) => entries.len(),
-            DictRepr::Tree(map) => map.len(),
-        }
+        self.entries.len()
     }
 
+    /// Returns `true` if the dict contains no entries.
+    #[inline]
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.entries.is_empty()
     }
 
+    /// Removes all entries from the dict.
+    #[inline]
     pub fn clear(&mut self) {
-        match &mut self.value {
-            DictRepr::Small(entries) => entries.clear(),
-            DictRepr::Tree(map) => map.clear(),
-        }
+        self.entries.clear();
     }
 
+    /// Returns `true` if the dict contains `key`.
+    #[inline]
     pub fn contains_key(&self, key: &str) -> bool {
-        self.get(key).is_some()
+        self.entries.contains_key(key)
     }
 
+    /// Returns a reference to the value for `key`, if present.
+    #[inline]
     pub fn get(&self, key: &str) -> Option<&Value> {
-        match &self.value {
-            DictRepr::Small(entries) => Self::small_search(entries, key)
-                .ok()
-                .map(|pos| &entries[pos].1),
-            DictRepr::Tree(map) => map.get(key),
-        }
+        self.entries.get(key)
     }
 
+    /// Returns a mutable reference to the value for `key`, if present.
+    #[inline]
     pub fn get_mut(&mut self, key: &str) -> Option<&mut Value> {
-        match &mut self.value {
-            DictRepr::Small(entries) => Self::small_search(entries, key)
-                .ok()
-                .map(|pos| &mut entries[pos].1),
-            DictRepr::Tree(map) => map.get_mut(key),
-        }
+        self.entries.get_mut(key)
     }
 
+    /// Inserts a key-value pair, returning the previous value for `key`, if any.
     pub fn insert(&mut self, key: String, value: Value) -> Option<Value> {
-        match &mut self.value {
-            DictRepr::Small(entries) => {
-                if entries.len() < self.small_max_entries
-                    && entries
-                        .last()
-                        .is_none_or(|(last_key, _)| key.as_str() > last_key.as_str())
-                {
-                    entries.push((key, value));
-                    return None;
-                }
-
-                match Self::small_search(entries, &key) {
-                    Ok(pos) => Some(std::mem::replace(&mut entries[pos].1, value)),
-                    Err(pos) => {
-                        if entries.len() < self.small_max_entries {
-                            entries.insert(pos, (key, value));
-                            None
-                        } else {
-                            self.spill_to_tree();
-                            match &mut self.value {
-                                DictRepr::Tree(map) => map.insert(key, value),
-                                DictRepr::Small(_) => None,
-                            }
-                        }
-                    }
-                }
-            }
-            DictRepr::Tree(map) => map.insert(key, value),
-        }
+        self.entries.insert(key, value)
     }
 
+    /// Removes `key` from the dict, returning its value if it was present.
+    #[inline]
     pub fn remove(&mut self, key: &str) -> Option<Value> {
-        match &mut self.value {
-            DictRepr::Small(entries) => Self::small_search(entries, key)
-                .ok()
-                .map(|pos| entries.remove(pos).1),
-            DictRepr::Tree(map) => map.remove(key),
-        }
+        self.entries.remove(key)
     }
 
+    /// Removes and returns the first (lowest-keyed) entry, if any.
+    #[inline]
     pub fn pop_first(&mut self) -> Option<(String, Value)> {
-        match &mut self.value {
-            DictRepr::Small(entries) => {
-                if entries.is_empty() {
-                    None
-                } else {
-                    Some(entries.remove(0))
-                }
-            }
-            DictRepr::Tree(map) => map.pop_first(),
-        }
+        self.entries.pop_first()
     }
 
-    /// Demote a `Tree`-backed dict back to `Small` when its entry count has
-    /// dropped to at or below the small-store threshold.
+    /// Demote a tree-backed dict back to the small-vector store when its
+    /// entry count has dropped to at or below the small-store threshold.
     ///
     /// This is the inverse of the automatic spill that happens in [`insert`](Self::insert).
     /// Call it after a burst of [`remove`](Self::remove) calls to recover the
     /// performance and memory advantages of the sorted-vector representation.
     ///
-    /// If the dict is already `Small`-backed this is a no-op.
+    /// If the dict is already small-backed this is a no-op.
     pub fn shrink_to_fit(&mut self) {
-        if let DictRepr::Tree(map) = &self.value
-            && map.len() <= self.small_max_entries
-        {
-            let entries = map.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
-            self.value = DictRepr::Small(entries);
-        }
+        self.entries.shrink_to_fit();
     }
 
     /// Retains only the entries for which the predicate returns `true`.
     ///
     /// Mirrors [`BTreeMap::retain`](std::collections::BTreeMap::retain).
-    /// When called on a `Tree`-backed dict and the surviving entry count drops
+    /// When called on a tree-backed dict and the surviving entry count drops
     /// to or below the small-store threshold, the storage is automatically
     /// downgraded back to the sorted-vector representation.
     pub fn retain<F>(&mut self, mut f: F)
     where
         F: FnMut(&str, &mut Value) -> bool,
     {
-        match &mut self.value {
-            DictRepr::Small(entries) => {
-                entries.retain_mut(|(k, v)| f(k.as_str(), v));
-            }
-            DictRepr::Tree(map) => {
-                map.retain(|k, v| f(k.as_str(), v));
-            }
-        }
-        // Downgrade Tree -> Small when the surviving count drops to the threshold.
-        // No-op when already Small.
-        self.shrink_to_fit();
+        self.entries.retain(|k, v| f(k.as_str(), v));
     }
 
+    /// Returns an iterator over `(&String, &Value)` pairs, in key order.
+    #[inline]
     pub fn iter(&self) -> DictIter<'_> {
-        match &self.value {
-            DictRepr::Small(entries) => DictIter::Small(entries.iter()),
-            DictRepr::Tree(map) => DictIter::Tree(map.iter()),
-        }
+        self.entries.iter()
     }
 
+    /// Returns an iterator over `(&String, &mut Value)` pairs, in key order.
+    #[inline]
     pub fn iter_mut(&mut self) -> DictIterMut<'_> {
-        match &mut self.value {
-            DictRepr::Small(entries) => DictIterMut::Small(entries.iter_mut()),
-            DictRepr::Tree(map) => DictIterMut::Tree(map.iter_mut()),
-        }
+        self.entries.iter_mut()
     }
 
+    /// Returns an iterator over `&String` keys, in key order.
+    #[inline]
     pub fn keys(&self) -> DictKeys<'_> {
-        DictKeys { inner: self.iter() }
+        self.entries.keys()
     }
 
+    /// Returns an iterator over `&Value` values, in key order.
+    #[inline]
     pub fn values(&self) -> DictValues<'_> {
-        DictValues { inner: self.iter() }
+        self.entries.values()
     }
 
+    /// Returns an iterator over `&mut Value` values, in key order.
+    #[inline]
     pub fn values_mut(&mut self) -> DictValuesMut<'_> {
-        DictValuesMut {
-            inner: self.iter_mut(),
-        }
-    }
-
-    /// Returns `None` when the size hint signals the entry count will exceed
-    /// the small-vec threshold (callers should build a `Tree` directly), or
-    /// `Some(dict)` with a `Small`-backed dict pre-allocated to the hinted
-    /// capacity.
-    fn prepare_from_hint(lower: usize, upper: Option<usize>) -> Option<Dict> {
-        if lower > Self::SMALL_DICT_MAX_ENTRIES_HINT
-            || upper.is_some_and(|upper| upper > Self::SMALL_DICT_MAX_ENTRIES_HINT)
-        {
-            return None;
-        }
-        let mut dict = Dict::new();
-        if lower > 0
-            && let DictRepr::Small(entries) = &mut dict.value
-        {
-            entries.reserve(lower.min(dict.small_max_entries));
-        }
-        Some(dict)
+        self.entries.values_mut()
     }
 
     /// Constructs a `Dict` from a fallible iterator of `(String, Value)` pairs.
     ///
-    /// Applies the same size-hint optimisation as [`FromIterator`]: when the
-    /// iterator reports more than `small_max_entries` items the backing store
-    /// starts as a `Tree` directly, skipping the small-vec stage.
-    ///
     /// The first `Err` item short-circuits collection and is returned
-    /// immediately, leaving any remaining items unconsumed.
+    /// immediately, leaving any remaining items unconsumed. See
+    /// [`HybridMap::try_from_iter`] for details on the size-hint optimisation applied.
     pub fn try_from_iter<E, I>(iter: I) -> Result<Self, E>
     where
         I: IntoIterator<Item = Result<(String, Value), E>>,
     {
-        let iter = iter.into_iter();
-        let (lower, upper) = iter.size_hint();
-
-        let Some(mut dict) = Dict::prepare_from_hint(lower, upper) else {
-            let map = iter.collect::<Result<DictType, E>>()?;
-            return Ok(Dict {
-                value: DictRepr::Tree(Box::new(map)),
-                small_max_entries: Dict::SMALL_DICT_MAX_ENTRIES_HINT,
-            });
-        };
-
-        for result in iter {
-            let (k, v) = result?;
-            dict.insert(k, v);
-        }
-        Ok(dict)
+        HybridMap::try_from_iter(iter).map(|entries| Dict { entries })
     }
 }
 
@@ -405,90 +291,21 @@ impl Hash for Dict {
     }
 }
 
-pub enum DictIter<'a> {
-    Small(std::slice::Iter<'a, (String, Value)>),
-    Tree(std::collections::btree_map::Iter<'a, String, Value>),
-}
+/// Iterator over `(&String, &Value)` pairs, in key order.
+pub type DictIter<'a> = HybridIter<'a, String, Value, DictType>;
 
-impl<'a> Iterator for DictIter<'a> {
-    type Item = (&'a String, &'a Value);
+/// Iterator over `(&String, &mut Value)` pairs, in key order.
+pub type DictIterMut<'a> = HybridIterMut<'a, String, Value, DictType>;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            DictIter::Small(iter) => iter.next().map(|(k, v)| (k, v)),
-            DictIter::Tree(iter) => iter.next(),
-        }
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        match self {
-            DictIter::Small(iter) => iter.size_hint(),
-            DictIter::Tree(iter) => iter.size_hint(),
-        }
-    }
-}
-
-impl ExactSizeIterator for DictIter<'_> {}
-
-pub enum DictIterMut<'a> {
-    Small(std::slice::IterMut<'a, (String, Value)>),
-    Tree(std::collections::btree_map::IterMut<'a, String, Value>),
-}
-
-impl<'a> Iterator for DictIterMut<'a> {
-    type Item = (&'a String, &'a mut Value);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            DictIterMut::Small(iter) => iter.next().map(|(k, v)| (&*k, v)),
-            DictIterMut::Tree(iter) => iter.next(),
-        }
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        match self {
-            DictIterMut::Small(iter) => iter.size_hint(),
-            DictIterMut::Tree(iter) => iter.size_hint(),
-        }
-    }
-}
-
-impl ExactSizeIterator for DictIterMut<'_> {}
-
-pub enum DictIntoIter {
-    Small(std::vec::IntoIter<(String, Value)>),
-    Tree(std::collections::btree_map::IntoIter<String, Value>),
-}
-
-impl Iterator for DictIntoIter {
-    type Item = (String, Value);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            DictIntoIter::Small(iter) => iter.next(),
-            DictIntoIter::Tree(iter) => iter.next(),
-        }
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        match self {
-            DictIntoIter::Small(iter) => iter.size_hint(),
-            DictIntoIter::Tree(iter) => iter.size_hint(),
-        }
-    }
-}
-
-impl ExactSizeIterator for DictIntoIter {}
+/// Owning iterator over `(String, Value)` pairs, in key order.
+pub type DictIntoIter = HybridIntoIter<String, Value, DictType>;
 
 impl IntoIterator for Dict {
     type Item = (String, Value);
     type IntoIter = DictIntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
-        match self.value {
-            DictRepr::Small(entries) => DictIntoIter::Small(entries.into_iter()),
-            DictRepr::Tree(map) => DictIntoIter::Tree(map.into_iter()),
-        }
+        self.entries.into_iter()
     }
 }
 
@@ -519,59 +336,14 @@ impl Index<&str> for Dict {
     }
 }
 
-pub struct DictKeys<'a> {
-    inner: DictIter<'a>,
-}
+/// Iterator over `&String` keys, in key order.
+pub type DictKeys<'a> = HybridKeys<'a, String, Value, DictType>;
 
-impl<'a> Iterator for DictKeys<'a> {
-    type Item = &'a String;
+/// Iterator over `&Value` values, in key order.
+pub type DictValues<'a> = HybridValues<'a, String, Value, DictType>;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|(k, _)| k)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.inner.size_hint()
-    }
-}
-
-impl ExactSizeIterator for DictKeys<'_> {}
-
-pub struct DictValues<'a> {
-    inner: DictIter<'a>,
-}
-
-impl<'a> Iterator for DictValues<'a> {
-    type Item = &'a Value;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|(_, v)| v)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.inner.size_hint()
-    }
-}
-
-impl ExactSizeIterator for DictValues<'_> {}
-
-pub struct DictValuesMut<'a> {
-    inner: DictIterMut<'a>,
-}
-
-impl<'a> Iterator for DictValuesMut<'a> {
-    type Item = &'a mut Value;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|(_, v)| v)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.inner.size_hint()
-    }
-}
-
-impl ExactSizeIterator for DictValuesMut<'_> {}
+/// Iterator over `&mut Value` values, in key order.
+pub type DictValuesMut<'a> = HybridValuesMut<'a, String, Value, DictType>;
 
 /// A newtype wrapper around any `IntoIterator` whose items are
 /// `Result<(String, Value), E>`, used as the source type for
@@ -609,20 +381,9 @@ where
 /// Allows constructing a `Dict` from a `(String, Value)` tuple iterator
 impl FromIterator<(String, Value)> for Dict {
     fn from_iter<T: IntoIterator<Item = (String, Value)>>(iter: T) -> Self {
-        let mut iter = iter.into_iter();
-        let (lower, upper) = iter.size_hint();
-
-        let Some(mut dict) = Dict::prepare_from_hint(lower, upper) else {
-            return Dict {
-                value: DictRepr::Tree(Box::new(iter.collect())),
-                small_max_entries: Dict::SMALL_DICT_MAX_ENTRIES_HINT,
-            };
-        };
-
-        for (k, v) in iter.by_ref() {
-            dict.insert(k, v);
+        Dict {
+            entries: iter.into_iter().collect(),
         }
-        dict
     }
 }
 
@@ -736,17 +497,8 @@ impl HaystackDict for Dict {
 /// Converts from `DictType` to a `Dict`
 impl From<DictType> for Dict {
     fn from(from: DictType) -> Self {
-        let small_max_entries = Dict::SMALL_DICT_MAX_ENTRIES_HINT;
-        if from.len() <= small_max_entries {
-            Dict {
-                value: DictRepr::Small(from.into_iter().collect()),
-                small_max_entries,
-            }
-        } else {
-            Dict {
-                value: DictRepr::Tree(Box::new(from)),
-                small_max_entries,
-            }
+        Dict {
+            entries: HybridMap::from(from),
         }
     }
 }
@@ -754,10 +506,7 @@ impl From<DictType> for Dict {
 /// Converts from `Dict` to a `DictType`
 impl From<Dict> for DictType {
     fn from(dict: Dict) -> Self {
-        match dict.value {
-            DictRepr::Small(entries) => entries.into_iter().collect(),
-            DictRepr::Tree(map) => *map,
-        }
+        dict.entries.into_inner()
     }
 }
 
@@ -960,7 +709,6 @@ fn decode_str_from_value(val: &'_ Value) -> Cow<'_, str> {
 mod test {
     use std::borrow::Cow;
 
-    use crate::val::dict::DictRepr;
     use crate::val::{Dict, HaystackDict, Value, dict_to_dis};
 
     fn get_localized<'a>(key: &str) -> Option<Cow<'a, str>> {
@@ -1107,7 +855,7 @@ mod test {
 
     /// Returns true if the dict is backed by the Small (Vec) repr.
     fn is_small(d: &Dict) -> bool {
-        matches!(d.value, DictRepr::Small(_))
+        d.entries.is_small()
     }
 
     // -- with_small_max_entries ------------------------------------------------
