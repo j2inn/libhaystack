@@ -58,6 +58,11 @@ impl Ref {
     pub fn dis(&self) -> Option<&str> {
         self.dis.as_deref()
     }
+
+    /// Set the optional display name in place
+    pub fn set_dis(&mut self, dis: Option<String>) {
+        self.dis = dis.map(|s| s.into());
+    }
 }
 
 /// Implement equality operator for Ref
@@ -112,6 +117,13 @@ impl From<String> for Ref {
 impl From<Ref> for Value {
     fn from(value: Ref) -> Self {
         Value::Ref(value)
+    }
+}
+
+/// Extracts the owned id payload `String` from a `Ref`, discarding the display name
+impl From<Ref> for String {
+    fn from(value: Ref) -> String {
+        value.value.into()
     }
 }
 

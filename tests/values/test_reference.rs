@@ -41,6 +41,14 @@ fn test_ref_make_with_dis_none() {
 }
 
 #[test]
+fn test_ref_with_dis() {
+    let mut id = Ref::make("id", Some("dis"));
+    id.set_dis(Some("new_dis".to_owned()));
+    assert_eq!(id.value(), "id");
+    assert_eq!(id.dis(), Some("new_dis"));
+}
+
+#[test]
 fn test_ref_from_string() {
     let id = Ref::from("id".to_string());
     assert_eq!(id.value(), "id");
