@@ -55,6 +55,11 @@ impl Str {
     pub fn to_string(&self) -> String {
         self.value.as_ref().to_string()
     }
+
+    /// Consumes the `Str`, returning the inner `Box<str>` with no reallocation
+    pub fn into_inner(self) -> Box<str> {
+        self.value
+    }
 }
 
 // Make a Haystack `Str` from a `String`

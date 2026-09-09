@@ -49,6 +49,13 @@ fn test_str_to_string_matches_display() {
 }
 
 #[test]
+fn test_str_into_inner() {
+    let str = Str::make("foo");
+    let inner: Box<str> = str.into_inner();
+    assert_eq!(&*inner, "foo");
+}
+
+#[test]
 fn test_str_deref() {
     let str = Str::make("hello world");
     // &Str coerces to &str; all str methods are available
