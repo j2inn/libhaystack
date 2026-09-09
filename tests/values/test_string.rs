@@ -56,6 +56,13 @@ fn test_str_into_inner() {
 }
 
 #[test]
+fn test_str_from_box_str() {
+    let boxed: Box<str> = "foo".into();
+    let str = Str::from(boxed);
+    assert_eq!(str.value(), "foo");
+}
+
+#[test]
 fn test_str_deref() {
     let str = Str::make("hello world");
     // &Str coerces to &str; all str methods are available

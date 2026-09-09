@@ -80,6 +80,13 @@ impl From<&str> for Str {
     }
 }
 
+// Make a Haystack `Str` from a `Box<str>`
+impl From<Box<str>> for Str {
+    fn from(value: Box<str>) -> Self {
+        Str { value }
+    }
+}
+
 /// Converts from `&str` slice to a `Str` `Value`
 impl From<&str> for Value {
     fn from(value: &str) -> Self {
