@@ -20,13 +20,13 @@ fn test_str_make_value() {
 #[test]
 fn test_ref_from() {
     let str = Str::from("id");
-    assert_eq!(str.value, "id".to_string());
+    assert_eq!(str.value(), "id".to_string());
 }
 
 #[test]
 fn test_ref_from_string() {
     let str = Str::from("id".to_string());
-    assert_eq!(str.value, "id".to_string());
+    assert_eq!(str.value(), "id".to_string());
 }
 
 #[test]
@@ -42,10 +42,33 @@ fn test_str_display() {
 }
 
 #[test]
+fn test_str_to_string_matches_display() {
+    let str = Str::make("foo");
+    assert_eq!(str.to_string(), format!("{}", str));
+    assert_eq!(str.to_string(), "foo");
+}
+
+#[test]
+fn test_str_into_inner() {
+    let str = Str::make("foo");
+    let inner: Box<str> = str.into_inner();
+    assert_eq!(&*inner, "foo");
+}
+
+#[test]
+fn test_str_from_box_str() {
+    let boxed: Box<str> = "foo".into();
+    let str = Str::from(boxed);
+    assert_eq!(str.value(), "foo");
+}
+
+#[test]
 fn test_str_deref() {
     let str = Str::make("hello world");
     // &Str coerces to &str; all str methods are available
+    assert!(!str.is_empty());
     assert_eq!(str.len(), 11);
+    assert!(str.is_ascii());
     assert!(str.contains("world"));
     assert!(str.starts_with("hello"));
 }

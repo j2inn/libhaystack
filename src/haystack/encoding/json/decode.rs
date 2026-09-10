@@ -176,7 +176,7 @@ impl<'de> Visitor<'de> for JsonValueDecoderVisitor {
             if key == "_kind" {
                 match value {
                     HVal::Str(str_kind) => {
-                        kind = str_kind.value;
+                        kind = str_kind.to_string();
                         match kind.as_str() {
                             "marker" => return Ok(HVal::make_marker()),
                             "remove" => return Ok(HVal::make_remove()),
@@ -285,8 +285,8 @@ fn parse_number(dict: &Dict) -> Result<HVal, JsonErr> {
 fn parse_ref(dict: &Dict) -> Result<HVal, JsonErr> {
     match dict.get_str("val") {
         Some(val) => {
-            let dis = dict.get_str("dis").map(|d| d.value.as_str());
-            Ok(Ref::make(val.value.as_str(), dis).into())
+            let dis = dict.get_str("dis").map(|d| d.value());
+            Ok(Ref::make(val.value(), dis).into())
         }
         None => Err(JsonErr::custom("Missing or invalid 'val'")),
     }
@@ -294,14 +294,14 @@ fn parse_ref(dict: &Dict) -> Result<HVal, JsonErr> {
 
 fn parse_symbol(dict: &Dict) -> Result<HVal, JsonErr> {
     match dict.get_str("val") {
-        Some(val) => Ok(HVal::make_symbol(&val.value)),
+        Some(val) => Ok(HVal::make_symbol(val.value())),
         None => Err(JsonErr::custom("Missing or invalid 'val'")),
     }
 }
 
 fn parse_uri(dict: &Dict) -> Result<HVal, JsonErr> {
     match dict.get_str("val") {
-        Some(val) => Ok(HVal::make_uri(&val.value)),
+        Some(val) => Ok(HVal::make_uri(val.value())),
         None => Err(JsonErr::custom("Missing or invalid 'val'")),
     }
 }
@@ -328,11 +328,11 @@ fn parse_time(dict: &Dict) -> Result<HVal, JsonErr> {
 
 fn parse_datetime(dict: &Dict) -> Result<HVal, JsonErr> {
     match dict.get_str("val") {
-        Some(val) => match DateTime::parse_from_rfc3339(&val.value) {
+        Some(val) => match DateTime::parse_from_rfc3339(val.value()) {
             Ok(date) => match dict.get_str("tz") {
                 Some(tz) => {
                     let datetime =
-                        make_date_time_with_tz(&date.with_timezone(&Utc.fix()), &tz.value);
+                        make_date_time_with_tz(&date.with_timezone(&Utc.fix()), tz.value());
                     match datetime {
                         Ok(datetime) => Ok(HVal::DateTime(datetime.into())),
                         Err(err) => Err(JsonErr::custom(err)),
@@ -359,7 +359,7 @@ fn parse_coord(dict: &Dict) -> Result<HVal, JsonErr> {
 fn parse_xstr(dict: &Dict) -> Result<HVal, JsonErr> {
     match dict.get_str("type") {
         Some(r#type) => match dict.get_str("val") {
-            Some(val) => Ok(HVal::make_xstr_from(&r#type.value, &val.value)),
+            Some(val) => Ok(HVal::make_xstr_from(r#type.value(), val.value())),
             None => Err(JsonErr::custom("Missing or invalid 'val'")),
         },
         None => Err(JsonErr::custom("Missing or invalid 'type'")),
@@ -391,7 +391,7 @@ fn parse_grid_meta_and_ver(dict: &Dict) -> (Option<Dict>, String) {
 
     if let Some(ref mut meta_dict) = meta {
         if let Some(ver) = meta_dict.get_str(VER) {
-            grid_ver = ver.value.to_owned();
+            grid_ver = ver.to_string();
             meta_dict.remove(VER);
         }
 
@@ -410,12 +410,12 @@ fn parse_grid_columns(cols: &List) -> Result<Vec<Column>, JsonErr> {
             HVal::Dict(dict) => match dict.get_str("name") {
                 Some(name) => match dict.get("meta") {
                     Some(HVal::Dict(meta)) => Ok(Column {
-                        name: name.value.clone(),
+                        name: name.to_string(),
                         meta: Some(meta.clone()),
                     }),
                     Some(_) => Err(JsonErr::custom("Invalid 'meta'")),
                     None => Ok(Column {
-                        name: name.value.clone(),
+                        name: name.to_string(),
                         meta: None,
                     }),
                 },

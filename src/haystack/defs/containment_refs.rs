@@ -55,7 +55,7 @@ pub fn get_contained_by_refs_for_super_type(
         .filter(|def| options.deprecated || !def.has("deprecated"))
         .filter_map(|def| {
             let contained_by_sym = def.get_symbol("containedBy")?;
-            if namespace.fits(&Symbol::make(contained_by_sym.value.as_str()), &super_sym) {
+            if namespace.fits(&Symbol::make(contained_by_sym.value()), &super_sym) {
                 Some(def.def_name().to_string())
             } else {
                 None
@@ -129,15 +129,15 @@ pub fn add_containment_refs(
     let entity_type_name = namespace
         .def_of_dict(parent)
         .get_symbol("def")
-        .map(|s| s.value.clone())
+        .map(|s| s.value())
         .unwrap_or_default();
 
     if entity_type_name.is_empty() {
         return String::new();
     }
 
-    let ref_name = find_containment_ref_for_type(namespace, &entity_type_name)
-        .map(|def| def.def_name().to_string())
+    let ref_name = find_containment_ref_for_type(namespace, entity_type_name)
+        .map(|def| def.def_name().to_owned())
         .unwrap_or_default();
 
     if !ref_name.is_empty()

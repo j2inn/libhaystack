@@ -70,7 +70,7 @@ impl Serialize for Uri {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(Some(2))?;
         map.serialize_entry("_kind", "uri")?;
-        map.serialize_entry("val", &self.value)?;
+        map.serialize_entry("val", self.value())?;
         map.end()
     }
 }
@@ -79,7 +79,7 @@ impl Serialize for Symbol {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(Some(2))?;
         map.serialize_entry("_kind", "symbol")?;
-        map.serialize_entry("val", &self.value)?;
+        map.serialize_entry("val", self.value())?;
         map.end()
     }
 }
@@ -208,7 +208,7 @@ impl Serialize for HVal {
 
             HVal::Number(val) => Number::serialize(val, serializer),
 
-            HVal::Str(val) => serializer.serialize_str(val.value.as_str()),
+            HVal::Str(val) => serializer.serialize_str(val.value()),
 
             HVal::Ref(val) => Ref::serialize(val, serializer),
 

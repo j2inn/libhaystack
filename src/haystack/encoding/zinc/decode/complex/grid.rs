@@ -123,7 +123,7 @@ fn parse_grid_ver<R: Read>(parser: &mut ParserType<R>) -> Result<String, Error> 
     let ver = parser.lexer.expect_value()?;
 
     match ver {
-        Value::Str(str) => Ok(str.value),
+        Value::Str(str) => Ok(String::from(str)),
         _ => parser
             .lexer
             .make_generic_err(&format!("Expecting 'ver' to be a Str, got '{ver:?}'.")),

@@ -58,6 +58,23 @@ impl Ref {
     pub fn dis(&self) -> Option<&str> {
         self.dis.as_deref()
     }
+
+    /// Set the optional display name in place
+    pub fn set_dis(&mut self, dis: Option<String>) {
+        self.dis = dis.map(|s| s.into());
+    }
+
+    /// Consumes the `Ref` and returns the underlying id and optional display name as a tuple.
+    pub fn into_parts(self) -> (Box<str>, Option<Box<str>>) {
+        (self.value, self.dis)
+    }
+
+    /// Constructs a `Ref` directly from its id and optional display name,
+    /// the inverse of `into_parts`, avoiding reallocation when both are
+    /// already owned `Box<str>`.
+    pub fn from_parts(value: Box<str>, dis: Option<Box<str>>) -> Self {
+        Ref { value, dis }
+    }
 }
 
 /// Implement equality operator for Ref
@@ -108,10 +125,24 @@ impl From<String> for Ref {
     }
 }
 
+/// Make a Haystack `Ref` from a `Box<str>` value
+impl From<Box<str>> for Ref {
+    fn from(value: Box<str>) -> Self {
+        Ref { value, dis: None }
+    }
+}
+
 /// Converts from `Ref` to a `Ref` `Value`
 impl From<Ref> for Value {
     fn from(value: Ref) -> Self {
         Value::Ref(value)
+    }
+}
+
+/// Extracts the owned id payload `String` from a `Ref`, discarding the display name
+impl From<Ref> for String {
+    fn from(value: Ref) -> String {
+        value.value.into()
     }
 }
 

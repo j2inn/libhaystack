@@ -29,7 +29,7 @@ use crate::haystack::val::{ConversionError, Value};
 /// ```
 #[derive(PartialEq, PartialOrd, Eq, Ord, Hash, Clone, Debug, Default)]
 pub struct Str {
-    pub value: String,
+    value: Box<str>,
 }
 
 impl Str {
@@ -38,16 +38,36 @@ impl Str {
         Str { value: val.into() }
     }
 
-    /// Get a `&str` slice of the underlying `String` payload
+    /// Get a `&str` slice of the underlying payload
     pub fn as_str(&self) -> &str {
-        self.value.as_str()
+        &self.value
+    }
+
+    /// Get a `&str` slice of the underlying payload
+    pub fn value(&self) -> &str {
+        &self.value
+    }
+
+    /// Converts to an owned `String` via a direct byte copy, bypassing the
+    /// `Display`/formatter machinery used by the blanket `ToString` impl.
+    /// Shadows `ToString::to_string` (same output, just faster).
+    #[allow(clippy::inherent_to_string_shadow_display)]
+    pub fn to_string(&self) -> String {
+        self.value.as_ref().to_string()
+    }
+
+    /// Consumes the `Str`, returning the inner `Box<str>` with no reallocation
+    pub fn into_inner(self) -> Box<str> {
+        self.value
     }
 }
 
 // Make a Haystack `Str` from a `String`
 impl From<String> for Str {
     fn from(value: String) -> Self {
-        Str { value }
+        Str {
+            value: value.into(),
+        }
     }
 }
 
@@ -55,8 +75,15 @@ impl From<String> for Str {
 impl From<&str> for Str {
     fn from(value: &str) -> Self {
         Str {
-            value: value.to_owned(),
+            value: value.into(),
         }
+    }
+}
+
+// Make a Haystack `Str` from a `Box<str>`
+impl From<Box<str>> for Str {
+    fn from(value: Box<str>) -> Self {
+        Str { value }
     }
 }
 
@@ -79,7 +106,7 @@ impl TryFrom<&Value> for String {
     type Error = ConversionError;
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
-            Value::Str(v) => Ok(v.value.clone()),
+            Value::Str(v) => Ok(v.to_string()),
             _ => Err("Value is not an `Str`"),
         }
     }
@@ -121,7 +148,7 @@ impl AsRef<str> for Str {
 /// Extracts the owned `String` from a `Str`
 impl From<Str> for String {
     fn from(s: Str) -> String {
-        s.value
+        s.value.into()
     }
 }
 
@@ -135,13 +162,13 @@ impl From<String> for Value {
 /// Allows comparing `Str` with `str` directly: `some_str == "foo"`
 impl PartialEq<str> for Str {
     fn eq(&self, other: &str) -> bool {
-        self.value == other
+        self.value.as_ref() == other
     }
 }
 
 /// Allows comparing `Str` with `String` directly: `some_str == owned`
 impl PartialEq<String> for Str {
     fn eq(&self, other: &String) -> bool {
-        self.value == *other
+        self.value.as_ref() == other.as_str()
     }
 }

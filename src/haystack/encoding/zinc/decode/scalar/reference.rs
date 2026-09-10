@@ -26,13 +26,18 @@ pub(crate) fn parse_ref<R: Read>(scanner: &mut Scanner<R>) -> Result<Ref, Error>
     let mut dis: Option<String> = None;
     if !scanner.is_eof && scanner.cur == b' ' && scanner.peek()? == b'"' {
         scanner.read()?;
-        dis = Some(parse_str(scanner)?.value);
+        dis = Some(parse_str(scanner)?.into());
     }
 
-    Ok(Ref::make(
-        &String::from_utf8_lossy(&ref_chars),
-        dis.as_deref(),
-    ))
+    // Reuse the buffer directly when valid UTF-8 (the common case) instead of
+    // cloning via `from_utf8_lossy(..).into_owned()`.
+    let value = String::from_utf8(ref_chars)
+        .unwrap_or_else(|e| String::from_utf8_lossy(e.as_bytes()).into_owned());
+
+    let mut r = Ref::from(value);
+    r.set_dis(dis);
+
+    Ok(r)
 }
 
 #[cfg(test)]

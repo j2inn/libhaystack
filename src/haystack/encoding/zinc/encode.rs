@@ -189,7 +189,7 @@ impl ToZinc for Str {
     fn to_zinc<W: std::io::Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_all(b"\"")?;
         let mut buf = [0; 4];
-        for c in self.value.chars() {
+        for c in self.chars() {
             if c < ' ' || c == '"' || c == '\\' {
                 match c {
                     '"' => writer.write_all(br#"\""#)?,
@@ -224,7 +224,7 @@ impl ToZinc for Ref {
 
 impl ToZinc for Symbol {
     fn to_zinc<W: std::io::Write>(&self, writer: &mut W) -> Result<()> {
-        writer.write_fmt(format_args!("^{}", self.value))?;
+        writer.write_fmt(format_args!("^{}", self.value()))?;
         Ok(())
     }
 }
@@ -232,7 +232,7 @@ impl ToZinc for Symbol {
 impl ToZinc for Uri {
     fn to_zinc<W: std::io::Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_all(b"`")?;
-        for c in self.value.chars() {
+        for c in self.value().chars() {
             if c < ' ' {
                 continue;
             }

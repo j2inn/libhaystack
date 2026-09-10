@@ -265,7 +265,7 @@ impl ToBrio for Bool {
 impl ToBrio for Str {
     fn to_brio<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_all(&[CTRL_STR])?;
-        encode_str(writer, &self.value)?;
+        encode_str(writer, self.value())?;
         Ok(())
     }
 }
@@ -273,7 +273,7 @@ impl ToBrio for Str {
 impl ToBrio for Uri {
     fn to_brio<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_all(&[CTRL_URI])?;
-        encode_str(writer, &self.value)?;
+        encode_str(writer, self.value())?;
         Ok(())
     }
 }
@@ -281,7 +281,7 @@ impl ToBrio for Uri {
 impl ToBrio for Symbol {
     fn to_brio<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_all(&[CTRL_SYMBOL])?;
-        encode_str(writer, &self.value)?;
+        encode_str(writer, self.value())?;
         Ok(())
     }
 }
@@ -679,9 +679,7 @@ mod tests {
 
     #[test]
     fn test_uri() {
-        let v = Value::from(Uri {
-            value: "http://example.com".into(),
-        });
+        let v = Value::from(Uri::from("http://example.com"));
         let bytes = enc(&v);
         assert_eq!(bytes[0], CTRL_URI);
     }

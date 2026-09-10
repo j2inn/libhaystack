@@ -315,7 +315,7 @@ impl Eval for IsA {
 impl Display for IsA {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         f.write_str("^")?;
-        f.write_str(&self.symbol.value)
+        f.write_str(self.symbol.value())
     }
 }
 
@@ -392,7 +392,7 @@ impl Eval for Relation {
 
         context.ns.has_relationship(
             context.dict,
-            &Symbol::from(self.rel.value.as_str()),
+            &Symbol::from(self.rel.value()),
             &self.rel_term,
             &self.ref_value,
             &resolve,
@@ -402,7 +402,7 @@ impl Eval for Relation {
 
 impl Display for Relation {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}?", self.rel.value)?;
+        write!(f, "{}?", self.rel.value())?;
 
         if let Some(rel_term) = &self.rel_term {
             write!(f, " {rel_term}")?;

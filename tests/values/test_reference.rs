@@ -41,6 +41,14 @@ fn test_ref_make_with_dis_none() {
 }
 
 #[test]
+fn test_ref_with_dis() {
+    let mut id = Ref::make("id", Some("dis"));
+    id.set_dis(Some("new_dis".to_owned()));
+    assert_eq!(id.value(), "id");
+    assert_eq!(id.dis(), Some("new_dis"));
+}
+
+#[test]
 fn test_ref_from_string() {
     let id = Ref::from("id".to_string());
     assert_eq!(id.value(), "id");
@@ -55,4 +63,36 @@ fn test_ref_value() {
 #[test]
 fn test_ref_cmp() {
     assert!(Ref::from("abc") < Ref::from("xyz"));
+}
+
+#[test]
+fn test_ref_from_box_str() {
+    let boxed: Box<str> = "id".into();
+    let id = Ref::from(boxed);
+    assert_eq!(id.value(), "id");
+    assert_eq!(id.dis(), None);
+}
+
+#[test]
+fn test_ref_into_parts() {
+    let id = Ref::make("id", Some("dis"));
+    let (value, dis) = id.into_parts();
+    assert_eq!(&*value, "id");
+    assert_eq!(dis.as_deref(), Some("dis"));
+}
+
+#[test]
+fn test_ref_from_parts() {
+    let value: Box<str> = "id".into();
+    let dis: Box<str> = "dis".into();
+    let id = Ref::from_parts(value, Some(dis));
+    assert_eq!(id.value(), "id");
+    assert_eq!(id.dis(), Some("dis"));
+}
+
+#[test]
+fn test_ref_into_parts_from_parts_round_trip() {
+    let id = Ref::make("id", Some("dis"));
+    let (value, dis) = id.clone().into_parts();
+    assert_eq!(Ref::from_parts(value, dis), id);
 }

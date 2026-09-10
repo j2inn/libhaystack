@@ -5,26 +5,31 @@
 use super::scanner::Scanner;
 use std::fmt::Display;
 use std::io::{Error, Read};
-use std::string::ToString;
 
 /// Zinc identifier
 #[derive(PartialEq, Eq, PartialOrd, Clone, Debug)]
 pub struct Id {
-    pub(super) value: String,
+    pub(super) value: Box<str>,
+}
+
+impl Id {
+    pub fn into_inner(self) -> Box<str> {
+        self.value
+    }
 }
 
 impl From<&str> for Id {
     //! Converts from `&str` to an `Id`
     fn from(value: &str) -> Self {
         Id {
-            value: String::from(value),
+            value: Box::from(value),
         }
     }
 }
 
 impl Display for Id {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.value.clone())
+        write!(f, "{}", self.value)
     }
 }
 
@@ -35,7 +40,9 @@ pub(crate) fn parse_id<R: Read>(scanner: &mut Scanner<R>) -> Result<Id, Error> {
     }
     let value = parse_literal(scanner)?;
 
-    Ok(Id { value })
+    Ok(Id {
+        value: Box::from(value),
+    })
 }
 
 /// Parse a Zinc literal, such as `NA`
@@ -48,7 +55,8 @@ pub(super) fn parse_literal<R: Read>(scanner: &mut Scanner<R>) -> Result<String,
     }
 
     if !id.is_empty() {
-        Ok(String::from_utf8_lossy(&id).to_string())
+        Ok(String::from_utf8(id)
+            .unwrap_or_else(|e| String::from_utf8_lossy(e.as_bytes()).into_owned()))
     } else {
         scanner.make_generic_err("Unexpected empty literal")
     }

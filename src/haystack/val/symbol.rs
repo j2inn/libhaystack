@@ -22,7 +22,7 @@ use crate::haystack::val::{ConversionError, Value};
 /// ```
 #[derive(PartialEq, PartialOrd, Eq, Ord, Hash, Clone, Debug, Default)]
 pub struct Symbol {
-    pub value: String,
+    value: Box<str>,
 }
 
 impl Symbol {
@@ -30,18 +30,39 @@ impl Symbol {
     pub fn make(val: &str) -> Self {
         Symbol { value: val.into() }
     }
+
+    /// Get a `&str` slice of the underlying payload
+    pub fn value(&self) -> &str {
+        &self.value
+    }
+
+    /// Consumes the `Symbol` and returns the underlying `Box<str>` value.
+    pub fn into_inner(self) -> Box<str> {
+        self.value
+    }
 }
 
 // Make a Haystack `Symbol` from a string value
 impl From<&str> for Symbol {
     fn from(value: &str) -> Self {
-        Symbol::from(value.to_owned())
+        Symbol {
+            value: value.into(),
+        }
     }
 }
 
 // Make a Haystack `Symbol` from a String value
 impl From<String> for Symbol {
     fn from(value: String) -> Self {
+        Symbol {
+            value: value.into(),
+        }
+    }
+}
+
+// Make a Haystack `Symbol` from a Box<str> value
+impl From<Box<str>> for Symbol {
+    fn from(value: Box<str>) -> Self {
         Symbol { value }
     }
 }

@@ -24,7 +24,9 @@ pub struct XStr {
     value: Box<str>,
 }
 impl XStr {
-    pub fn make(r#type: &str, value: &str) -> XStr {
+    /// Accepts anything convertible to `Box<str>` (e.g. `&str`, `String`, `Box<str>`)
+    /// so an already-owned string can be moved in without an extra clone.
+    pub fn make(r#type: impl Into<Box<str>>, value: impl Into<Box<str>>) -> XStr {
         XStr {
             r#type: r#type.into(),
             value: value.into(),
@@ -39,6 +41,11 @@ impl XStr {
     /// Get the `value` field as a `&str` slice
     pub fn value(&self) -> &str {
         &self.value
+    }
+
+    /// Consumes the `XStr` and returns the underlying `type` and `value` as a tuple.
+    pub fn into_parts(self) -> (Box<str>, Box<str>) {
+        (self.r#type, self.value)
     }
 }
 

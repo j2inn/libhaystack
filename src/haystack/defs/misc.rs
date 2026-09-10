@@ -15,7 +15,7 @@ use crate::{
 /// A list of dicts.
 ///
 pub(super) fn parse_multi_line_string_to_dicts(val: &Str) -> Vec<Dict> {
-    val.value
+    val.value()
         .split('\n')
         .map(|line| line.trim())
         .filter(|line| !line.is_empty() && !line.starts_with("//"))

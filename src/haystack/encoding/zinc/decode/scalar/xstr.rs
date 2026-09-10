@@ -20,7 +20,7 @@ pub(crate) fn parse_xstr_body<R: Read>(
     scanner.consume_spaces()?;
     scanner.expect_and_consume(b')')?;
 
-    Ok(XStr::make(name, value.as_str()))
+    Ok(XStr::make(name, value.into_inner()))
 }
 
 #[cfg(test)]
