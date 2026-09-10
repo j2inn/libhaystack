@@ -16,3 +16,11 @@ fn test_xstr_make_value() {
 
     assert_eq!(XStr::try_from(&value), Ok(XStr::make("type", "value")));
 }
+
+#[test]
+fn test_xstr_into_inner() {
+    let xstr = XStr::make("type", "value");
+    let (r#type, value) = xstr.into_inner();
+    assert_eq!(&*r#type, "type");
+    assert_eq!(&*value, "value");
+}

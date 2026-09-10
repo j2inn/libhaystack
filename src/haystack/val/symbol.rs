@@ -35,6 +35,11 @@ impl Symbol {
     pub fn value(&self) -> &str {
         &self.value
     }
+
+    /// Consumes the `Symbol` and returns the underlying `Box<str>` value.
+    pub fn into_inner(self) -> Box<str> {
+        self.value
+    }
 }
 
 // Make a Haystack `Symbol` from a string value
@@ -52,6 +57,13 @@ impl From<String> for Symbol {
         Symbol {
             value: value.into(),
         }
+    }
+}
+
+// Make a Haystack `Symbol` from a Box<str> value
+impl From<Box<str>> for Symbol {
+    fn from(value: Box<str>) -> Self {
+        Symbol { value }
     }
 }
 

@@ -33,6 +33,11 @@ impl Uri {
     pub fn value(&self) -> &str {
         &self.value
     }
+
+    /// Consumes the `Uri` and returns the underlying `Box<str>` value.
+    pub fn into_inner(self) -> Box<str> {
+        self.value
+    }
 }
 
 // Make a Haystack `Uri` from a String value
@@ -50,6 +55,13 @@ impl From<&str> for Uri {
         Uri {
             value: value.into(),
         }
+    }
+}
+
+// Make a Haystack `Uri` from a Box<str> value
+impl From<Box<str>> for Uri {
+    fn from(value: Box<str>) -> Self {
+        Uri { value }
     }
 }
 

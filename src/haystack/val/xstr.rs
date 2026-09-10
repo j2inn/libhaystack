@@ -40,6 +40,11 @@ impl XStr {
     pub fn value(&self) -> &str {
         &self.value
     }
+
+    /// Consumes the `XStr` and returns the underlying `type` and `value` as a tuple.
+    pub fn into_inner(self) -> (Box<str>, Box<str>) {
+        (self.r#type, self.value)
+    }
 }
 
 /// Converts from `XStr` to a `XStr` `Value`

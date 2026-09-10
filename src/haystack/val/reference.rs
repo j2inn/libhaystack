@@ -63,6 +63,11 @@ impl Ref {
     pub fn set_dis(&mut self, dis: Option<String>) {
         self.dis = dis.map(|s| s.into());
     }
+
+    /// Consumes the `Ref` and returns the underlying id and optional display name as a tuple.
+    pub fn into_inner(self) -> (Box<str>, Option<Box<str>>) {
+        (self.value, self.dis)
+    }
 }
 
 /// Implement equality operator for Ref
@@ -110,6 +115,13 @@ impl From<String> for Ref {
             value: value.into(),
             dis: None,
         }
+    }
+}
+
+/// Make a Haystack `Ref` from a `Box<str>` value
+impl From<Box<str>> for Ref {
+    fn from(value: Box<str>) -> Self {
+        Ref { value, dis: None }
     }
 }
 

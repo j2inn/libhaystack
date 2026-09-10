@@ -64,3 +64,19 @@ fn test_ref_value() {
 fn test_ref_cmp() {
     assert!(Ref::from("abc") < Ref::from("xyz"));
 }
+
+#[test]
+fn test_ref_from_box_str() {
+    let boxed: Box<str> = "id".into();
+    let id = Ref::from(boxed);
+    assert_eq!(id.value(), "id");
+    assert_eq!(id.dis(), None);
+}
+
+#[test]
+fn test_ref_into_inner() {
+    let id = Ref::make("id", Some("dis"));
+    let (value, dis) = id.into_inner();
+    assert_eq!(&*value, "id");
+    assert_eq!(dis.as_deref(), Some("dis"));
+}
