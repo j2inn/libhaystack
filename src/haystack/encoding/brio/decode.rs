@@ -258,7 +258,7 @@ fn decode_buf_as_xstr<R: Read>(reader: &mut R) -> Result<XStr> {
         .read_exact(&mut bytes)
         .map_err(|e| Error::Message(e.to_string()))?;
     let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
-    Ok(XStr::make("Bin", &hex))
+    Ok(XStr::make("Bin", hex))
 }
 
 /// Decode a non-empty Dict payload: `'{' varint(count) (key value)* '}'`
@@ -439,16 +439,16 @@ impl FromBrio for Value {
                 let u = decode_str(reader)?;
                 Ok(Value::from(make_number(v, &u)))
             }
-            CTRL_STR => Ok(Value::from(decode_str(reader)?.as_str())),
+            CTRL_STR => Ok(Value::from(decode_str(reader)?)),
             CTRL_REF_STR => {
                 let id = decode_str(reader)?;
                 let dis = decode_str_chars(reader)?;
-                Ok(Value::from(Ref::make(&id, non_empty(dis.as_str()))))
+                Ok(Value::from(make_ref(id, dis)))
             }
             CTRL_REF_I8 => {
                 let id = i8_to_ref_id(read_i64(reader)?);
                 let dis = decode_str_chars(reader)?;
-                Ok(Value::from(Ref::make(&id, non_empty(dis.as_str()))))
+                Ok(Value::from(make_ref(id, dis)))
             }
             CTRL_URI => Ok(Value::from(Uri::from(decode_str(reader)?))),
             CTRL_DATE => {
@@ -486,10 +486,10 @@ impl FromBrio for Value {
                 Ok(Value::from(Coord::make(lat, lng)))
             }
             CTRL_XSTR => Ok(Value::from(XStr::make(
-                &decode_str(reader)?,
-                &decode_str(reader)?,
+                decode_str(reader)?,
+                decode_str(reader)?,
             ))),
-            CTRL_SYMBOL => Ok(Value::from(Symbol::make(&decode_str(reader)?))),
+            CTRL_SYMBOL => Ok(Value::from(Symbol::from(decode_str(reader)?))),
             CTRL_BUF => decode_buf_as_xstr(reader).map(Value::from),
             CTRL_DICT_EMPTY => Ok(Value::from(Dict::default())),
             CTRL_DICT => decode_dict_payload(reader).map(Value::from),
@@ -543,6 +543,16 @@ fn make_number(v: f64, unit: &str) -> Number {
 /// Return `Some(s)` if `s` is non-empty, otherwise `None`.
 fn non_empty(s: &str) -> Option<&str> {
     if s.is_empty() { None } else { Some(s) }
+}
+
+/// Build a `Ref` from an owned id and an owned (possibly empty) display name,
+/// moving both strings in directly to avoid re-allocating them.
+fn make_ref(id: String, dis: String) -> Ref {
+    let mut r = Ref::from(id);
+    if non_empty(&dis).is_some() {
+        r.set_dis(Some(dis));
+    }
+    r
 }
 
 // ---------------------------------------------------------------------------

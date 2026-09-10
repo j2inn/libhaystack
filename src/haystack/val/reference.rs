@@ -65,8 +65,15 @@ impl Ref {
     }
 
     /// Consumes the `Ref` and returns the underlying id and optional display name as a tuple.
-    pub fn into_inner(self) -> (Box<str>, Option<Box<str>>) {
+    pub fn into_parts(self) -> (Box<str>, Option<Box<str>>) {
         (self.value, self.dis)
+    }
+
+    /// Constructs a `Ref` directly from its id and optional display name,
+    /// the inverse of `into_parts`, avoiding reallocation when both are
+    /// already owned `Box<str>`.
+    pub fn from_parts(value: Box<str>, dis: Option<Box<str>>) -> Self {
+        Ref { value, dis }
     }
 }
 

@@ -48,7 +48,12 @@ pub(crate) fn parse_uri<R: Read>(scanner: &mut Scanner<R>) -> Result<Uri, Error>
 
     scanner.advance()?;
 
-    Ok(Uri::from(String::from_utf8_lossy(&str).into_owned()))
+    // Reuse the buffer directly when valid UTF-8 (the common case) instead of
+    // cloning via `from_utf8_lossy(..).into_owned()`.
+    let value = String::from_utf8(str)
+        .unwrap_or_else(|e| String::from_utf8_lossy(e.as_bytes()).into_owned());
+
+    Ok(Uri::from(value))
 }
 
 #[cfg(test)]

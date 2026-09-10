@@ -187,9 +187,8 @@ impl<'a, R: Read> Lexer<Scanner<'a, R>> {
                             b'?' => {
                                 self.scanner.read().ok();
 
-                                self.cur = LexerToken::make(TokenValue::Rel(Symbol::from(
-                                    id.to_string().as_str(),
-                                )))
+                                self.cur =
+                                    LexerToken::make(TokenValue::Rel(Symbol::from(id.into_inner())))
                             }
                             b'-' => {
                                 self.scanner.read()?;

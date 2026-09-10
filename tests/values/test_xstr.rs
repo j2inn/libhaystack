@@ -18,9 +18,9 @@ fn test_xstr_make_value() {
 }
 
 #[test]
-fn test_xstr_into_inner() {
+fn test_xstr_into_parts() {
     let xstr = XStr::make("type", "value");
-    let (r#type, value) = xstr.into_inner();
+    let (r#type, value) = xstr.into_parts();
     assert_eq!(&*r#type, "type");
     assert_eq!(&*value, "value");
 }

@@ -33,7 +33,12 @@ pub(crate) fn parse_str<R: Read>(scanner: &mut Scanner<R>) -> Result<Str, Error>
 
     scanner.advance()?;
 
-    Ok(Str::from(String::from_utf8_lossy(&str).into_owned()))
+    // Reuse the buffer directly when valid UTF-8 (the common case) instead of
+    // cloning via `from_utf8_lossy(..).into_owned()`.
+    let value = String::from_utf8(str)
+        .unwrap_or_else(|e| String::from_utf8_lossy(e.as_bytes()).into_owned());
+
+    Ok(Str::from(value))
 }
 
 // Parse a Str escape sequence

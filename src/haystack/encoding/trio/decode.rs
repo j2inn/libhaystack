@@ -254,7 +254,7 @@ impl<R: BufRead> TrioReader<R> {
             // Colon with nothing after it -> multi-line string.
             Some("") => {
                 let lines = self.read_indented_lines();
-                Value::Str(Str::make(&lines.join("\n")))
+                Value::Str(Str::from(lines.join("\n")))
             }
 
             // Colon followed by `[` (possibly with trailing whitespace) -> multi-line Zinc list.

@@ -74,9 +74,25 @@ fn test_ref_from_box_str() {
 }
 
 #[test]
-fn test_ref_into_inner() {
+fn test_ref_into_parts() {
     let id = Ref::make("id", Some("dis"));
-    let (value, dis) = id.into_inner();
+    let (value, dis) = id.into_parts();
     assert_eq!(&*value, "id");
     assert_eq!(dis.as_deref(), Some("dis"));
+}
+
+#[test]
+fn test_ref_from_parts() {
+    let value: Box<str> = "id".into();
+    let dis: Box<str> = "dis".into();
+    let id = Ref::from_parts(value, Some(dis));
+    assert_eq!(id.value(), "id");
+    assert_eq!(id.dis(), Some("dis"));
+}
+
+#[test]
+fn test_ref_into_parts_from_parts_round_trip() {
+    let id = Ref::make("id", Some("dis"));
+    let (value, dis) = id.clone().into_parts();
+    assert_eq!(Ref::from_parts(value, dis), id);
 }
