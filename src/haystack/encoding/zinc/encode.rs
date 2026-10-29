@@ -240,7 +240,12 @@ impl ToZinc for Uri {
                 '`' => writer.write_all(br"\`")?,
                 '\\' => writer.write_all(br"\\")?,
                 '\x20'..='\x7e' => writer.write_all(&[c as u8])?,
-                _ => writer.write_fmt(format_args!("\\u{:04x}", c as u32))?,
+                _ => {
+                    // Write chars above U+FFFF as a surrogate pair.
+                    for unit in c.encode_utf16(&mut [0u16; 2]) {
+                        writer.write_fmt(format_args!("\\u{:04x}", unit))?
+                    }
+                }
             }
         }
         writer.write_all(b"`")?;

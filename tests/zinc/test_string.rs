@@ -43,3 +43,18 @@ fn test_zinc_str_decode() {
 fn test_zinc_str_decode_bad() {
     assert!(from_str(r#""non terminated"#).is_err());
 }
+
+#[test]
+fn test_zinc_str_unicode_escapes() {
+    assert_eq!(from_str(r#""\u{1F600}""#).unwrap(), Value::make_str("😀"));
+    assert_eq!(
+        from_str(r#""\ud83d\ude00""#).unwrap(),
+        Value::make_str("😀")
+    );
+
+    // Non-ASCII is written as UTF-8 and round trips.
+    let value = Value::make_str("a😀b");
+    let zinc = to_zinc_string(&value).unwrap();
+    assert_eq!(zinc, r#""a😀b""#);
+    assert_eq!(from_str(&zinc).unwrap(), value);
+}
