@@ -31,9 +31,16 @@ pub(crate) fn parse_uri<R: Read>(scanner: &mut Scanner<R>) -> Result<Uri, Error>
                     str.push(next);
                     scanner.read()?;
                 }
-                _ => {
+                b'u' => {
+                    scanner.read()?; // u
                     let unicode = parse_str_unicode_escape(scanner)?;
                     str.extend_from_slice(unicode.as_bytes());
+                }
+                _ => {
+                    return scanner.make_generic_err(&format!(
+                        "Invalid Uri escape sequence '{}'",
+                        next as char
+                    ));
                 }
             };
         } else {
@@ -76,6 +83,23 @@ mod test {
             let str = parse_uri(&mut scanner);
             assert_eq!(str.ok(), Some(Uri::make("/@\\#")));
         }
+    }
+
+    fn parse(input: &str) -> Result<Uri, std::io::Error> {
+        let mut input = Cursor::new(input.as_bytes());
+        let mut scanner = super::Scanner::make(&mut input).expect("Scanner");
+        parse_uri(&mut scanner)
+    }
+
+    #[test]
+    fn test_zinc_parse_uri_unicode_escape() {
+        assert_eq!(parse(r#"`/f\u1ff6o`"#).ok(), Some(Uri::make("/fῶo")));
+        assert_eq!(parse(r#"`a\u{1F600}b`"#).ok(), Some(Uri::make("a😀b")));
+        assert_eq!(parse(r#"`a\ud83d\ude00b`"#).ok(), Some(Uri::make("a😀b")));
+        assert_eq!(parse(r#"`a😀b`"#).ok(), Some(Uri::make("a😀b")));
+        assert!(parse(r#"`a\x`"#).is_err());
+        assert!(parse(r#"`a\nb`"#).is_err());
+        assert!(parse(r#"`a\ud83d`"#).is_ok());
     }
 
     #[test]
