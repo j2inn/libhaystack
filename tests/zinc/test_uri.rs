@@ -25,3 +25,21 @@ fn test_zinc_uri_decode() {
 fn test_zinc_uri_decode_bad() {
     assert!(from_str(r#"`^"#).is_err());
 }
+
+#[test]
+fn test_zinc_uri_unicode() {
+    let value = Value::make_uri("/fῶo");
+    let zinc = to_zinc_string(&value).unwrap();
+    assert_eq!(zinc, r#"`/f\u1ff6o`"#);
+    assert_eq!(from_str(&zinc).unwrap(), value);
+
+    let value = Value::make_uri("a😀b");
+    let zinc = to_zinc_string(&value).unwrap();
+    assert_eq!(zinc, r#"`a\ud83d\ude00b`"#);
+    assert_eq!(from_str(&zinc).unwrap(), value);
+
+    assert_eq!(
+        from_str(r#"`a\u{1F600}b`"#).unwrap(),
+        Value::make_uri("a😀b")
+    );
+}

@@ -273,6 +273,26 @@ impl<'a, R: Read> Scanner<'a, R> {
         Some(self.buffer_peek(next))
     }
 
+    /// Returns true if the bytes after the current one match `seq`, without
+    /// consuming them. Bytes already stashed by a previous peek are compared
+    /// first, and no further input is read after the first mismatch.
+    pub fn next_is(&mut self, seq: &[u8]) -> bool {
+        for (i, expected) in seq.iter().enumerate() {
+            let byte = match self.next.as_ref().and_then(|next| next.get(i)) {
+                Some(byte) => *byte,
+                None => match self.safe_peek() {
+                    Some(byte) => byte,
+                    None => return false,
+                },
+            };
+
+            if byte != *expected {
+                return false;
+            }
+        }
+        true
+    }
+
     /// Create am error for an missing expect condition
     /// Current position and the current char are captured
     pub fn make_expect_err<T, E: std::fmt::Display>(&self, item: E) -> Result<T, Error> {
@@ -394,6 +414,28 @@ mod test {
         assert_eq!(scanner.cur, b'3');
 
         assert!(scanner.peek().is_err());
+    }
+
+    #[test]
+    fn test_zinc_scanner_next_is() {
+        let mut input = Cursor::new("abcdef".as_bytes());
+        let mut scanner = super::Scanner::make(&mut input).expect("Scanner");
+
+        assert!(scanner.next_is(b"bc"));
+        assert!(!scanner.next_is(b"bx"));
+
+        // Stashed bytes are compared rather than skipped and are still read in order.
+        assert_eq!(scanner.peek().ok(), Some(b'd'));
+        assert!(scanner.next_is(b"bcd"));
+        assert_eq!(scanner.read().ok(), Some(b'b'));
+        assert!(scanner.next_is(b"cd"));
+        assert_eq!(scanner.read().ok(), Some(b'c'));
+        assert_eq!(scanner.read().ok(), Some(b'd'));
+
+        // Stops at the end of input without matching.
+        assert!(!scanner.next_is(b"efg"));
+        assert_eq!(scanner.read().ok(), Some(b'e'));
+        assert_eq!(scanner.read().ok(), Some(b'f'));
     }
 
     #[test]

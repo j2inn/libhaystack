@@ -57,33 +57,99 @@ pub(super) fn parse_str_escape<R: Read>(scanner: &mut Scanner<R>) -> Result<Stri
         b'`' => Ok("`".into()),
         b'\\' => Ok("\\".into()),
         b'u' => Ok(parse_str_unicode_escape(scanner)?),
-        _ => scanner.make_generic_err(&format!("Invalid escape sequence '{}'", scanner.cur)),
+        _ => scanner.make_generic_err(&format!(
+            "Invalid escape sequence '{}'",
+            scanner.cur as char
+        )),
     }
 }
 
-// Parse a Str unicode char escape sequence
+// Parse a Str unicode char escape sequence, either `\uXXXX` or `\u{X}`.
+// Surrogate pairs written as two `\uXXXX` escapes are joined into one char.
 pub(super) fn parse_str_unicode_escape<R: Read>(scanner: &mut Scanner<R>) -> Result<String, Error> {
-    if scanner.cur == b'u' {
-        let mut esc = Vec::new();
+    if scanner.cur != b'u' {
+        return scanner.make_generic_err(&format!(
+            "Invalid escape sequence '{}'",
+            scanner.cur as char
+        ));
+    }
 
+    let code = parse_unicode_code(scanner)?;
+
+    if (0xD800..=0xDBFF).contains(&code) && scanner.next_is(b"\\u") {
+        scanner.read()?; // \
+        scanner.read()?; // u
+        let low = parse_unicode_code(scanner)?;
+
+        if (0xDC00..=0xDFFF).contains(&low) {
+            let code_point = 0x10000 + ((code - 0xD800) << 10) + (low - 0xDC00);
+            return Ok(to_char(code_point).to_string());
+        }
+
+        return Ok(format!("{}{}", to_char(code), to_char(low)));
+    }
+
+    Ok(to_char(code).to_string())
+}
+
+// Convert a code point to a char, using the replacement char for lone surrogates.
+fn to_char(code: u32) -> char {
+    char::from_u32(code).unwrap_or(char::REPLACEMENT_CHARACTER)
+}
+
+// Read the code of a `\uXXXX` or `\u{X}` escape. The scanner must be on the `u`
+// and is left on the last character of the escape.
+fn parse_unicode_code<R: Read>(scanner: &mut Scanner<R>) -> Result<u32, Error> {
+    let mut esc = String::new();
+
+    if scanner.next_is(b"{") {
+        scanner.read()?; // {
+
+        loop {
+            scanner.read()?;
+
+            if scanner.cur == b'}' {
+                break;
+            }
+            if !scanner.is_hex_digit() {
+                return scanner.make_generic_err(&format!(
+                    "Invalid unicode escape '{esc}{}'",
+                    scanner.cur as char
+                ));
+            }
+            if esc.len() == 6 {
+                return scanner.make_generic_err(&format!(
+                    "Invalid unicode escape '{esc}{}...', must have 1 to 6 hex digits",
+                    scanner.cur as char
+                ));
+            }
+            esc.push(scanner.cur as char)
+        }
+
+        if esc.is_empty() {
+            return scanner
+                .make_generic_err("Invalid unicode escape '{}', must have 1 to 6 hex digits");
+        }
+    } else {
         for _ in 0..4 {
             scanner.read()?;
 
             if !scanner.is_hex_digit() {
-                return scanner
-                    .make_generic_err(&format!("Invalid unicode escape '{}'", scanner.cur));
+                return scanner.make_generic_err(&format!(
+                    "Invalid unicode escape '{}'",
+                    scanner.cur as char
+                ));
             }
-            esc.push(scanner.cur)
+            esc.push(scanner.cur as char)
         }
+    }
 
-        let str = String::from_utf8_lossy(&esc).to_string();
-        match u16::from_str_radix(&str, 16) {
-            Ok(char) => Ok(String::from_utf16_lossy(&[char])),
-            Err(err) => scanner
-                .make_generic_err(&format!("Invalid unicode escape char '{str}', err: {err}")),
+    match u32::from_str_radix(&esc, 16) {
+        Ok(code) if code <= 0x10FFFF => Ok(code),
+        Ok(_) => scanner.make_generic_err(&format!("Invalid unicode escape '{esc}', out of range")),
+        Err(err) => {
+            scanner.make_generic_err(&format!("Invalid unicode escape '{esc}', err: {err}"))
         }
-    } else {
-        scanner.make_generic_err(&format!("Invalid escape sequence '{}'", scanner.cur))
     }
 }
 
@@ -148,5 +214,57 @@ mod test {
 
         let str = parse_str(&mut scanner);
         assert_eq!(str.ok(), Some(Str::make("\x08\x0c")));
+    }
+
+    fn parse(input: &str) -> Result<Str, std::io::Error> {
+        let mut input = Cursor::new(input.as_bytes());
+        let mut scanner = super::Scanner::make(&mut input).expect("Scanner");
+        parse_str(&mut scanner)
+    }
+
+    #[test]
+    fn test_zinc_parse_str_unicode_escapes() {
+        assert_eq!(parse(r#""Hell\u00D3""#).ok(), Some(Str::make("HellÓ")));
+        assert_eq!(parse(r#""Hell\u{D3}!""#).ok(), Some(Str::make("HellÓ!")));
+        assert_eq!(parse(r#""a\u{1F600}b""#).ok(), Some(Str::make("a😀b")));
+        assert_eq!(
+            parse(r#""\u{0}\u{10FFFF}""#).ok(),
+            Some(Str::make("\0\u{10FFFF}"))
+        );
+    }
+
+    #[test]
+    fn test_zinc_parse_str_surrogate_pairs() {
+        assert_eq!(parse(r#""a\ud83d\ude00b""#).ok(), Some(Str::make("a😀b")));
+        assert_eq!(
+            parse(r#""a\u{D83D}\u{DE00}b""#).ok(),
+            Some(Str::make("a😀b"))
+        );
+        assert_eq!(parse(r#""a😀b""#).ok(), Some(Str::make("a😀b")));
+
+        // Lone and mismatched surrogates become replacement characters.
+        assert_eq!(parse(r#""\ud83d""#).ok(), Some(Str::make("\u{FFFD}")));
+        assert_eq!(parse(r#""\ud83d\n""#).ok(), Some(Str::make("\u{FFFD}\n")));
+        assert_eq!(
+            parse(r#""\ud83d\u0041""#).ok(),
+            Some(Str::make("\u{FFFD}A"))
+        );
+    }
+
+    #[test]
+    fn test_zinc_parse_str_bad_unicode_escapes() {
+        for bad in [
+            r#""\u{}""#,
+            r#""\u{1234567}""#,
+            r#""\u{110000}""#,
+            r#""\u{12G}""#,
+            r#""\u{12"#,
+            r#""\u12G4""#,
+            r#""\u12"#,
+            r#""\ud83d\"#,
+            r#""\ud83d"#,
+        ] {
+            assert!(parse(bad).is_err(), "{bad} should fail");
+        }
     }
 }

@@ -323,6 +323,15 @@ mod test {
             "Unicode escape"
         );
 
+        let mut input = Cursor::new(r#""a \u{1F600} string""#.as_bytes());
+        let mut lexer = Lexer::make(&mut input).expect("Should create lexer");
+
+        assert_eq!(
+            lexer.read().ok(),
+            Some(&LexerToken::make_value("a 😀 string".into())),
+            "Braced unicode escape"
+        );
+
         let mut input = Cursor::new("\"\\t\\n\\\\\"".as_bytes());
         let mut lexer = Lexer::make(&mut input).expect("Should create lexer");
 
@@ -356,6 +365,15 @@ mod test {
             lexer.read().ok(),
             Some(&LexerToken::make_value(Uri::from(r#"/a/b\#&"#).into())),
             "Special characters escape"
+        );
+
+        let mut input = Cursor::new(r#"`/a\u{1F600}`"#.as_bytes());
+        let mut lexer = Lexer::make(&mut input).expect("Should create lexer");
+
+        assert_eq!(
+            lexer.read().ok(),
+            Some(&LexerToken::make_value(Uri::from("/a😀").into())),
+            "Braced unicode escape"
         );
 
         let mut input = Cursor::new("`".as_bytes());
