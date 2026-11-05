@@ -92,7 +92,7 @@ jobs:
           retention-days: 14
 
       - name: Report coverage on PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: romeovs/lcov-reporter-action@v0.4.0
         with:
           lcov-file: lcov.info
