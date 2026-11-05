@@ -263,22 +263,32 @@ impl<'de> Visitor<'de> for JsonValueDecoderVisitor {
 }
 
 fn parse_number(dict: &Dict) -> Result<HVal, JsonErr> {
-    match dict.get_num("val") {
-        Some(val) => match dict.get_str("unit") {
-            Some(unit) => {
-                if let Some(unit) = get_unit(unit.as_str()) {
-                    Ok(Number {
-                        value: val.value,
-                        unit: Some(unit),
-                    }
-                    .into())
-                } else {
-                    Err(JsonErr::custom(format!("Unit not found: {unit:?}")))
-                }
-            }
-            None => Ok((*val).into()),
+    let val = match dict.get_str("val") {
+        Some(val) => match val.as_str() {
+            "INF" => Number::make(f64::INFINITY),
+            "-INF" => Number::make(f64::NEG_INFINITY),
+            "NaN" => Number::make(f64::NAN),
+            _ => return Err(JsonErr::custom("Invalid 'val' string")),
         },
-        None => Err(JsonErr::custom("Missing or invalid 'val'")),
+        None => match dict.get_num("val") {
+            Some(val) => *val,
+            None => return Err(JsonErr::custom("Missing or invalid 'val'")),
+        },
+    };
+
+    match dict.get_str("unit") {
+        Some(unit) => {
+            if let Some(unit) = get_unit(unit.as_str()) {
+                Ok(Number {
+                    value: val.value,
+                    unit: Some(unit),
+                }
+                .into())
+            } else {
+                Err(JsonErr::custom(format!("Unit not found: {unit:?}")))
+            }
+        }
+        None => Ok(val.into()),
     }
 }
 

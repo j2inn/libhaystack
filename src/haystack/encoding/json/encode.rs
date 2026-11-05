@@ -86,13 +86,34 @@ impl Serialize for Symbol {
 
 impl Serialize for Number {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        if let Some(unit) = self.unit {
-            let mut map = serializer.serialize_map(Some(3))?;
+        // JSON has no representation for these values, Hayson encodes them as strings
+        let non_finite = if self.value.is_nan() {
+            Some("NaN")
+        } else if self.value == f64::INFINITY {
+            Some("INF")
+        } else if self.value == f64::NEG_INFINITY {
+            Some("-INF")
+        } else {
+            None
+        };
+
+        if self.unit.is_some() || non_finite.is_some() {
+            let len = if self.unit.is_some() { 3 } else { 2 };
+            let mut map = serializer.serialize_map(Some(len))?;
             map.serialize_entry("_kind", "number")?;
-            map.serialize_entry("val", &self.value)?;
-            map.serialize_entry("unit", unit.symbol())?;
+            match non_finite {
+                Some(val) => map.serialize_entry("val", val)?,
+                None => map.serialize_entry("val", &self.value)?,
+            }
+            if let Some(unit) = self.unit {
+                map.serialize_entry("unit", unit.symbol())?;
+            }
             map.end()
-        } else if self.value.fract() == 0.0 {
+        } else if self.value.fract() == 0.0
+            // `i64::MAX as f64` rounds up to 2^63, which doesn't fit in an i64, hence the `<`
+            && self.value >= i64::MIN as f64
+            && self.value < i64::MAX as f64
+        {
             serializer.serialize_i64(self.value as i64)
         } else {
             serializer.serialize_f64(self.value)
