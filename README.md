@@ -81,6 +81,24 @@ let value: Value = dict.into();
 assert!(value.is_dict());
 ```
 
+### Spans
+
+Time ranges modelled after Haxall's `Span` (timezone-aware, inclusive start, exclusive end) and `DateSpan` (date-only, inclusive) are available in the [span](https://docs.rs/libhaystack/latest/libhaystack/haystack/span/index.html) module.
+
+```rust
+use chrono_tz::Tz;
+use libhaystack::span::*;
+
+// Parse an absolute date range in a timezone (the end date is exclusive)
+let span = Span::from_str("2026-04-01,2026-05-01", Tz::Europe__London).expect("Span");
+assert_eq!(span.num_days(), 30);
+assert!(span.aligns_to_month());
+
+// Relative spans resolve against the current date
+let this_week = Span::make_rel(SpanMode::ThisWeek, Tz::UTC);
+assert!(this_week.mode().is_rel());
+```
+
 ### Filter
 
 A Haystack 4 compliant [filter](https://docs.rs/libhaystack/latest/libhaystack/haystack/filter/index.html) parser and evaluator is provided that uses the [ontology](https://project-haystack.org/doc/docHaystack/Ontology) definitions from Project Haystack.

@@ -15,6 +15,8 @@ pub mod defs;
 pub mod encoding;
 #[cfg(feature = "filter")]
 pub mod filter;
+#[cfg(all(feature = "value", feature = "timezone-db"))]
+pub mod span;
 #[cfg(feature = "timezone")]
 pub mod timezone;
 #[cfg(feature = "units")]
