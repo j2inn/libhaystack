@@ -21,7 +21,7 @@
 use crate::val::{Date, DateTime};
 use chrono::{
     Datelike, Days, FixedOffset, LocalResult, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta,
-    TimeZone, Weekday,
+    TimeZone, Timelike, Weekday,
 };
 use chrono_tz::Tz;
 
@@ -392,6 +392,9 @@ impl Span {
         if self.aligns_to_month() {
             return DateSpan::from_period(Date::from(start), DateSpanPeriod::Month);
         }
+        if self.aligns_to_quarter() {
+            return DateSpan::from_period(Date::from(start), DateSpanPeriod::Quarter);
+        }
         if self.aligns_to_year() {
             return DateSpan::from_period(Date::from(start), DateSpanPeriod::Year);
         }
@@ -594,14 +597,16 @@ impl Span {
     ///
     /// - relative span: the mode name, e.g. `"thisWeek"`
     /// - single day: `"YYYY-MM-DD"`
-    /// - midnight-aligned range: `"YYYY-MM-DD,YYYY-MM-DD"` (the end date is **exclusive**)
+    /// - midnight-aligned range (including an empty one): `"YYYY-MM-DD,YYYY-MM-DD"` (the end
+    ///   date is **exclusive**)
     /// - anything else: `"<rfc3339>,<rfc3339>"`
     pub fn to_str(&self) -> String {
         if self.mode.is_rel() {
             return self.mode.dis().to_string();
         }
         if self.aligns_to_dates {
-            if self.aligns_to_day() {
+            // An empty span (num_days == 0) must not collapse to a date, which parses as a full day.
+            if self.aligns_to_day() && self.num_days() == 1 {
                 return self.start.date_naive().format("%Y-%m-%d").to_string();
             }
             return format!(
@@ -703,7 +708,11 @@ fn local_to_date_time(local: NaiveDateTime, tz: Tz) -> DateTime {
             // Step forward until the local time exists again. Transitions are aligned to
             // whole minutes, and no real gap is longer than a few hours, but scan a full day
             // so this always terminates with a valid instant.
-            let mut probe = local;
+            // Drop seconds so stepping by whole minutes lands exactly on the transition instant.
+            let mut probe = local
+                .with_second(0)
+                .and_then(|t| t.with_nanosecond(0))
+                .unwrap_or(local);
             for _ in 0..(24 * 60) {
                 probe += TimeDelta::minutes(1);
                 match tz.from_local_datetime(&probe) {
@@ -747,7 +756,7 @@ impl From<&Span> for DateSpan {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::{NaiveDate, Timelike};
+    use chrono::NaiveDate;
 
     const LONDON: Tz = Tz::Europe__London;
     /// Cairo's DST starts at midnight, so some dates have no local midnight at all.
@@ -1110,9 +1119,8 @@ mod tests {
         assert!(range.is_range());
         assert_eq!((range.start, range.end), (d(2026, 4, 1), d(2026, 4, 9)));
 
-        // There is no quarter branch: a quarter converts to an explicit range.
         let quarter = span("2026-04-01,2026-07-01", Tz::UTC).to_date_span();
-        assert!(quarter.is_range());
+        assert!(quarter.is_quarter());
         assert_eq!(
             (quarter.start, quarter.end),
             (d(2026, 4, 1), d(2026, 6, 30))
@@ -1267,5 +1275,29 @@ mod tests {
         // 01:30 does not exist in London on 2026-03-29; the first instant after the gap is used.
         let gap = local_to_date_time(nd(2026, 3, 29).and_hms_opt(1, 30, 0).unwrap(), LONDON);
         assert_eq!((gap.hour(), gap.minute()), (2, 0));
+        assert_eq!(gap.second(), 0);
+
+        // Seconds are dropped when resolving a gap.
+        let gap = local_to_date_time(nd(2026, 3, 29).and_hms_opt(1, 30, 30).unwrap(), LONDON);
+        assert_eq!((gap.hour(), gap.minute(), gap.second()), (2, 0, 0));
+    }
+
+    #[test]
+    fn empty_midnight_span_round_trips_as_empty() {
+        let empty = span("2026-04-01,2026-04-01", Tz::UTC);
+        assert_eq!(empty.num_days(), 0);
+        let encoded = empty.to_str();
+        assert_eq!(encoded, "2026-04-01,2026-04-01");
+        assert_eq!(span(&encoded, Tz::UTC), empty);
+    }
+
+    #[test]
+    fn quarter_aligned_span_converts_to_quarter_date_span() {
+        let q4 = span("2026-10-01,2027-01-01", Tz::UTC).to_date_span();
+        assert!(q4.is_quarter());
+        assert_eq!((q4.start, q4.end), (d(2026, 10, 1), d(2026, 12, 31)));
+
+        let this_quarter = Span::make_rel(SpanMode::ThisQuarter, Tz::UTC).to_date_span();
+        assert!(this_quarter.is_quarter());
     }
 }
