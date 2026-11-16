@@ -81,6 +81,34 @@ let value: Value = dict.into();
 assert!(value.is_dict());
 ```
 
+### Spans
+
+Time ranges modelled after Haxall's `Span` (timezone-aware, inclusive start, exclusive end) and `DateSpan` (date-only, inclusive) are available in the [span](https://docs.rs/libhaystack/latest/libhaystack/haystack/span/index.html) module.
+
+```rust
+use chrono_tz::Tz;
+use libhaystack::span::*;
+
+// Parse an absolute date range in a timezone (the end date is exclusive)
+let span = Span::from_str("2026-04-01,2026-05-01", Tz::Europe__London).expect("Span");
+assert_eq!(span.num_days(), 30);
+assert!(span.aligns_to_month());
+
+// Relative spans resolve against the current date
+let this_week = Span::make_rel(SpanMode::ThisWeek, Tz::UTC);
+assert!(this_week.mode().is_rel());
+```
+
+For an application-owned clock, use `Span::make_rel_on(mode, today, tz)`,
+`Span::from_str_on(text, today, tz)`, and `span.fresh_on(today)`. Pass a Haystack `Date`
+representing the local date in the target timezone; these APIs do not read the system clock.
+
+`span.is_empty()` tests whether the bounds are equal. `span.each_day(...)` visits no dates
+for an empty span. Use `span.try_to_date_span()` when converting to an inclusive `DateSpan`:
+it returns `None` for empty spans. The existing `to_date_span()` retains its compatibility
+behavior, including converting an empty midnight-aligned span to a single day. `span.dis()`
+renders an empty span as a datetime range (e.g. `01-Apr-2026 00:00..01-Apr-2026 00:00`).
+
 ### Filter
 
 A Haystack 4 compliant [filter](https://docs.rs/libhaystack/latest/libhaystack/haystack/filter/index.html) parser and evaluator is provided that uses the [ontology](https://project-haystack.org/doc/docHaystack/Ontology) definitions from Project Haystack.
