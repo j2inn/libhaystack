@@ -1,4 +1,4 @@
-// Copyright (c) 2026, Siemens. All Rights Reserved
+// Copyright (c) 2026, J2 Innovations. All Rights Reserved
 
 //! Haystack time span types, ported from Haxall's `Span` and `DateSpan`.
 //!
