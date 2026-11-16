@@ -625,4 +625,266 @@ mod tests {
         let year = DateSpan::from_period(d(2010, 6, 1), DateSpanPeriod::Year);
         assert_eq!(year.dis(), "01-Jan-2010..31-Dec-2010");
     }
+
+    fn ends(span: &DateSpan) -> (Date, Date) {
+        (span.start, span.end)
+    }
+
+    #[test]
+    fn make_date_falls_back_to_min_for_invalid_input() {
+        assert_eq!(make_date(2026, 13, 1), NaiveDate::MIN);
+        assert_eq!(
+            make_date(2026, 4, 15),
+            NaiveDate::from_ymd_opt(2026, 4, 15).unwrap()
+        );
+    }
+
+    #[test]
+    fn month_abbr_covers_all_months() {
+        let names: Vec<&str> = (1..=12).map(month_abbr).collect();
+        assert_eq!(
+            names,
+            [
+                "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+            ]
+        );
+        assert_eq!(month_abbr(0), "");
+        assert_eq!(month_abbr(13), "");
+    }
+
+    #[test]
+    fn period_string_round_trip() {
+        let periods = [
+            DateSpanPeriod::Day,
+            DateSpanPeriod::Week,
+            DateSpanPeriod::Month,
+            DateSpanPeriod::Quarter,
+            DateSpanPeriod::Year,
+            DateSpanPeriod::Range,
+        ];
+        for period in periods {
+            assert_eq!(DateSpanPeriod::from_str(period.as_str()), Some(period));
+        }
+        assert_eq!(DateSpanPeriod::from_str("bogus"), None);
+    }
+
+    #[test]
+    fn period_predicates() {
+        let day = DateSpan::from_period(d(2026, 4, 15), DateSpanPeriod::Day);
+        let week = DateSpan::from_period(d(2026, 4, 15), DateSpanPeriod::Week);
+        let month = DateSpan::from_period(d(2026, 4, 15), DateSpanPeriod::Month);
+        let quarter = DateSpan::from_period(d(2026, 4, 15), DateSpanPeriod::Quarter);
+        let year = DateSpan::from_period(d(2026, 4, 15), DateSpanPeriod::Year);
+        let range = DateSpan::range(d(2026, 4, 1), d(2026, 4, 2));
+
+        assert!(day.is_day() && !day.is_week());
+        assert!(week.is_week() && !week.is_month());
+        assert!(month.is_month() && !month.is_quarter());
+        assert!(quarter.is_quarter() && !quarter.is_year());
+        assert!(year.is_year() && !year.is_range());
+        assert!(range.is_range() && !range.is_day());
+    }
+
+    #[test]
+    fn from_period_range_is_single_day() {
+        let span = DateSpan::from_period(d(2026, 4, 15), DateSpanPeriod::Range);
+        assert_eq!(ends(&span), (d(2026, 4, 15), d(2026, 4, 15)));
+        assert!(span.is_range());
+    }
+
+    #[test]
+    fn from_period_year_end_rollovers() {
+        let december = DateSpan::from_period(d(2026, 12, 10), DateSpanPeriod::Month);
+        assert_eq!(ends(&december), (d(2026, 12, 1), d(2026, 12, 31)));
+
+        let q3 = DateSpan::from_period(d(2026, 8, 10), DateSpanPeriod::Quarter);
+        assert_eq!(ends(&q3), (d(2026, 7, 1), d(2026, 9, 30)));
+
+        let q4 = DateSpan::from_period(d(2026, 11, 10), DateSpanPeriod::Quarter);
+        assert_eq!(ends(&q4), (d(2026, 10, 1), d(2026, 12, 31)));
+    }
+
+    #[test]
+    fn prev_and_next_for_every_period() {
+        let day = DateSpan::from_period(d(2026, 4, 15), DateSpanPeriod::Day);
+        assert_eq!(ends(&day.prev()), (d(2026, 4, 14), d(2026, 4, 14)));
+        assert_eq!(ends(&day.next()), (d(2026, 4, 16), d(2026, 4, 16)));
+
+        let week = DateSpan::from_period(d(2026, 4, 15), DateSpanPeriod::Week);
+        assert_eq!(ends(&week.prev()), (d(2026, 4, 5), d(2026, 4, 11)));
+        assert_eq!(ends(&week.next()), (d(2026, 4, 19), d(2026, 4, 25)));
+
+        let january = DateSpan::from_period(d(2026, 1, 10), DateSpanPeriod::Month);
+        assert_eq!(ends(&january.prev()), (d(2025, 12, 1), d(2025, 12, 31)));
+        assert_eq!(ends(&january.prev().next()), ends(&january));
+
+        let quarter = DateSpan::from_period(d(2026, 4, 15), DateSpanPeriod::Quarter);
+        assert_eq!(ends(&quarter.prev()), (d(2026, 1, 1), d(2026, 3, 31)));
+        assert_eq!(ends(&quarter.next()), (d(2026, 7, 1), d(2026, 9, 30)));
+        assert!(quarter.prev().is_quarter() && quarter.next().is_quarter());
+
+        let year = DateSpan::from_period(d(2026, 4, 15), DateSpanPeriod::Year);
+        assert_eq!(ends(&year.prev()), (d(2025, 1, 1), d(2025, 12, 31)));
+        assert_eq!(ends(&year.next()), (d(2027, 1, 1), d(2027, 12, 31)));
+
+        // A range shifts by its own length (10 days).
+        let range = DateSpan::range(d(2026, 4, 1), d(2026, 4, 10));
+        assert_eq!(ends(&range.prev()), (d(2026, 3, 22), d(2026, 3, 31)));
+        assert_eq!(ends(&range.next()), (d(2026, 4, 11), d(2026, 4, 20)));
+        assert!(range.prev().is_range() && range.next().is_range());
+    }
+
+    #[test]
+    fn plus_minus_preserve_period() {
+        let month = DateSpan::from_period(d(2026, 4, 15), DateSpanPeriod::Month);
+        assert!(month.plus(Duration::days(1)).is_month());
+        assert!(month.minus(Duration::days(1)).is_month());
+    }
+
+    #[test]
+    fn each_month_visits_every_overlapping_month() {
+        let span = DateSpan::range(d(2026, 1, 15), d(2026, 3, 10));
+        let mut months = Vec::new();
+        span.each_month(|m| months.push(ends(&m)));
+        assert_eq!(
+            months,
+            vec![
+                (d(2026, 1, 1), d(2026, 1, 31)),
+                (d(2026, 2, 1), d(2026, 2, 28)),
+                (d(2026, 3, 1), d(2026, 3, 31)),
+            ]
+        );
+
+        let mut count = 0;
+        DateSpan::range(d(2026, 4, 3), d(2026, 4, 20)).each_month(|_| count += 1);
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn to_date_list_has_one_date_per_day() {
+        let span = DateSpan::range(d(2026, 2, 27), d(2026, 3, 2));
+        assert_eq!(
+            span.to_date_list(),
+            vec![d(2026, 2, 27), d(2026, 2, 28), d(2026, 3, 1), d(2026, 3, 2)]
+        );
+    }
+
+    #[test]
+    fn from_str_keywords() {
+        let today = d(2026, 4, 15); // a Wednesday
+        let cases = [
+            (
+                "thisWeek",
+                d(2026, 4, 12),
+                d(2026, 4, 18),
+                DateSpanPeriod::Week,
+            ),
+            (
+                "thisMonth",
+                d(2026, 4, 1),
+                d(2026, 4, 30),
+                DateSpanPeriod::Month,
+            ),
+            (
+                "thisQuarter",
+                d(2026, 4, 1),
+                d(2026, 6, 30),
+                DateSpanPeriod::Quarter,
+            ),
+            (
+                "thisYear",
+                d(2026, 1, 1),
+                d(2026, 12, 31),
+                DateSpanPeriod::Year,
+            ),
+            (
+                "lastWeek",
+                d(2026, 4, 5),
+                d(2026, 4, 11),
+                DateSpanPeriod::Week,
+            ),
+            (
+                "lastMonth",
+                d(2026, 3, 1),
+                d(2026, 3, 31),
+                DateSpanPeriod::Month,
+            ),
+            (
+                "lastQuarter",
+                d(2026, 1, 1),
+                d(2026, 3, 31),
+                DateSpanPeriod::Quarter,
+            ),
+            (
+                "lastYear",
+                d(2025, 1, 1),
+                d(2025, 12, 31),
+                DateSpanPeriod::Year,
+            ),
+            (
+                "pastWeek",
+                d(2026, 4, 8),
+                d(2026, 4, 15),
+                DateSpanPeriod::Range,
+            ),
+            (
+                "pastMonth",
+                d(2026, 3, 16),
+                d(2026, 4, 15),
+                DateSpanPeriod::Range,
+            ),
+            (
+                "pastYear",
+                d(2025, 4, 15),
+                d(2026, 4, 15),
+                DateSpanPeriod::Range,
+            ),
+        ];
+        for (text, start, end, period) in cases {
+            let span = DateSpan::from_str(text, today).unwrap_or_else(|| panic!("{text}"));
+            assert_eq!(ends(&span), (start, end), "{text}");
+            assert_eq!(span.period, period, "{text}");
+        }
+    }
+
+    #[test]
+    fn from_str_trims_whitespace_and_parses_week_period() {
+        let today = d(2026, 4, 15);
+        assert!(DateSpan::from_str("  today ", today).unwrap().is_day());
+
+        // 2026-04-01 is a Wednesday
+        let week = DateSpan::from_str("2026-04-01,week", today).unwrap();
+        assert_eq!(ends(&week), (d(2026, 3, 29), d(2026, 4, 4)));
+    }
+
+    #[test]
+    fn from_str_rejects_bad_dates() {
+        let today = d(2026, 4, 15);
+        assert!(DateSpan::from_str("2026-13-01,month", today).is_none());
+        assert!(DateSpan::from_str("2026-04-01,2026-99-99", today).is_none());
+        assert!(DateSpan::from_str("", today).is_none());
+    }
+
+    #[test]
+    fn to_str_round_trips_for_every_period() {
+        let today = d(2026, 4, 15);
+        let spans = [
+            DateSpan::from_period(today, DateSpanPeriod::Day),
+            DateSpan::from_period(today, DateSpanPeriod::Week),
+            DateSpan::from_period(today, DateSpanPeriod::Month),
+            DateSpan::from_period(today, DateSpanPeriod::Quarter),
+            DateSpan::from_period(today, DateSpanPeriod::Year),
+            DateSpan::range(d(2026, 4, 3), d(2026, 4, 9)),
+        ];
+        for span in spans {
+            let encoded = span.to_str();
+            assert_eq!(DateSpan::from_str(&encoded, today), Some(span), "{encoded}");
+        }
+    }
+
+    #[test]
+    fn dis_for_single_day() {
+        let day = DateSpan::from_period(d(2026, 4, 5), DateSpanPeriod::Day);
+        assert_eq!(day.dis(), "05-Apr-2026..05-Apr-2026");
+    }
 }

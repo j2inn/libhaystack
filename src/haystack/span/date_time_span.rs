@@ -990,4 +990,282 @@ mod tests {
             SpanMode::ThisMonth
         );
     }
+
+    const ALL_MODES: [SpanMode; 15] = [
+        SpanMode::Abs,
+        SpanMode::Today,
+        SpanMode::Yesterday,
+        SpanMode::ThisWeek,
+        SpanMode::LastWeek,
+        SpanMode::PastWeek,
+        SpanMode::ThisMonth,
+        SpanMode::LastMonth,
+        SpanMode::PastMonth,
+        SpanMode::ThisQuarter,
+        SpanMode::LastQuarter,
+        SpanMode::PastQuarter,
+        SpanMode::ThisYear,
+        SpanMode::LastYear,
+        SpanMode::PastYear,
+    ];
+
+    fn dates(span: &Span) -> (NaiveDate, NaiveDate) {
+        (span.start().date_naive(), span.end().date_naive())
+    }
+
+    #[test]
+    fn calendar_helpers_saturate_and_roll_over() {
+        assert_eq!(add_days(NaiveDate::MAX, 1), NaiveDate::MAX);
+        assert_eq!(sub_days(NaiveDate::MIN, 1), NaiveDate::MIN);
+        assert_eq!(first_of_month(nd(2026, 4, 15)), nd(2026, 4, 1));
+        assert_eq!(first_of_next_month(nd(2026, 12, 15)), nd(2027, 1, 1));
+        assert_eq!(first_of_next_month(nd(2026, 4, 15)), nd(2026, 5, 1));
+        assert_eq!(first_of_quarter(nd(2026, 11, 10)), nd(2026, 10, 1));
+        assert_eq!(first_of_next_quarter(nd(2026, 11, 10)), nd(2027, 1, 1));
+        assert_eq!(first_of_next_quarter(nd(2026, 5, 10)), nd(2026, 7, 1));
+        assert_eq!(first_of_year(2026), nd(2026, 1, 1));
+    }
+
+    #[test]
+    fn start_of_week_is_sunday() {
+        assert_eq!(start_of_week(nd(2026, 4, 12)), nd(2026, 4, 12)); // Sunday
+        assert_eq!(start_of_week(nd(2026, 4, 18)), nd(2026, 4, 12)); // Saturday
+    }
+
+    #[test]
+    fn span_mode_helpers() {
+        for mode in ALL_MODES {
+            assert_eq!(SpanMode::from_str(mode.dis()), Some(mode));
+            assert_eq!(mode.is_abs(), mode == SpanMode::Abs);
+            assert_eq!(mode.is_rel(), mode != SpanMode::Abs);
+        }
+        assert_eq!(SpanMode::from_str("bogus"), None);
+
+        assert_eq!(SpanMode::Abs.period(), SpanModePeriod::Abs);
+        assert_eq!(SpanMode::Yesterday.period(), SpanModePeriod::Day);
+        assert_eq!(SpanMode::PastWeek.period(), SpanModePeriod::Week);
+        assert_eq!(SpanMode::LastMonth.period(), SpanModePeriod::Month);
+        assert_eq!(SpanMode::PastQuarter.period(), SpanModePeriod::Quarter);
+        assert_eq!(SpanMode::ThisYear.period(), SpanModePeriod::Year);
+    }
+
+    #[test]
+    fn do_make_rel_remaining_modes_and_rollovers() {
+        let today = nd(2026, 4, 15);
+        let past_quarter = Span::do_make_rel(SpanMode::PastQuarter, today, Tz::UTC);
+        assert_eq!(dates(&past_quarter), (nd(2026, 1, 15), nd(2026, 4, 15)));
+        let past_year = Span::do_make_rel(SpanMode::PastYear, today, Tz::UTC);
+        assert_eq!(dates(&past_year), (nd(2025, 4, 15), nd(2026, 4, 15)));
+        let abs = Span::do_make_rel(SpanMode::Abs, today, Tz::UTC);
+        assert_eq!(dates(&abs), (nd(2026, 4, 15), nd(2026, 4, 16)));
+
+        let last_quarter = Span::do_make_rel(SpanMode::LastQuarter, nd(2026, 1, 10), Tz::UTC);
+        assert_eq!(dates(&last_quarter), (nd(2025, 10, 1), nd(2026, 1, 1)));
+        let this_quarter = Span::do_make_rel(SpanMode::ThisQuarter, nd(2026, 11, 10), Tz::UTC);
+        assert_eq!(dates(&this_quarter), (nd(2026, 10, 1), nd(2027, 1, 1)));
+        let this_month = Span::do_make_rel(SpanMode::ThisMonth, nd(2026, 12, 10), Tz::UTC);
+        assert_eq!(dates(&this_month), (nd(2026, 12, 1), nd(2027, 1, 1)));
+        let last_month = Span::do_make_rel(SpanMode::LastMonth, nd(2026, 1, 10), Tz::UTC);
+        assert_eq!(dates(&last_month), (nd(2025, 12, 1), nd(2026, 1, 1)));
+    }
+
+    #[test]
+    fn today_and_fresh() {
+        let today = Span::today(Tz::UTC);
+        assert_eq!(today.mode(), SpanMode::Today);
+        assert_eq!(today.num_days(), 1);
+        assert_eq!(today.fresh().mode(), SpanMode::Today);
+
+        let abs = span("2026-04-01,2026-05-01", Tz::UTC);
+        assert_eq!(abs.fresh(), abs);
+    }
+
+    #[test]
+    fn start_and_end_dates() {
+        let april = span("2026-04-01,2026-05-01", Tz::UTC);
+        assert_eq!(april.start_date(), d(2026, 4, 1));
+        assert_eq!(april.end_date(), d(2026, 5, 1));
+    }
+
+    #[test]
+    fn to_time_zone_same_zone_is_identity() {
+        let april = span("2026-04-01,2026-05-01", LONDON);
+        assert_eq!(april.to_time_zone(LONDON), april);
+    }
+
+    #[test]
+    fn to_date_span_period_detection() {
+        let week = span("2026-04-05,2026-04-12", Tz::UTC).to_date_span();
+        assert!(week.is_week());
+        assert_eq!((week.start, week.end), (d(2026, 4, 5), d(2026, 4, 11)));
+
+        let month = span("2026-04-01,2026-05-01", Tz::UTC).to_date_span();
+        assert!(month.is_month());
+
+        let year = span("2026-01-01,2027-01-01", Tz::UTC).to_date_span();
+        assert!(year.is_year());
+        assert_eq!((year.start, year.end), (d(2026, 1, 1), d(2026, 12, 31)));
+
+        let range = span("2026-04-01,2026-04-10", Tz::UTC).to_date_span();
+        assert!(range.is_range());
+        assert_eq!((range.start, range.end), (d(2026, 4, 1), d(2026, 4, 9)));
+
+        // There is no quarter branch: a quarter converts to an explicit range.
+        let quarter = span("2026-04-01,2026-07-01", Tz::UTC).to_date_span();
+        assert!(quarter.is_range());
+        assert_eq!(
+            (quarter.start, quarter.end),
+            (d(2026, 4, 1), d(2026, 6, 30))
+        );
+    }
+
+    #[test]
+    fn from_span_for_date_span() {
+        let april = span("2026-04-01,2026-05-01", Tz::UTC);
+        assert_eq!(DateSpan::from(&april), april.to_date_span());
+    }
+
+    #[test]
+    fn quarter_numbers() {
+        assert_eq!(span("2026-01-01,2026-02-01", Tz::UTC).quarter(), 1);
+        assert_eq!(span("2026-05-01,2026-06-01", Tz::UTC).quarter(), 2);
+        assert_eq!(span("2026-08-01,2026-09-01", Tz::UTC).quarter(), 3);
+        assert_eq!(span("2026-11-01,2026-12-01", Tz::UTC).quarter(), 4);
+    }
+
+    #[test]
+    fn alignment_negative_cases() {
+        let may = span("2026-05-01,2026-06-01", Tz::UTC);
+        assert!(may.aligns_to_month());
+        assert!(!may.aligns_to_quarter());
+
+        assert!(span("2026-10-01,2027-01-01", Tz::UTC).aligns_to_quarter());
+        assert!(!span("2026-04-02,2026-07-01", Tz::UTC).aligns_to_quarter());
+        assert!(!span("2026-04-02,2026-05-01", Tz::UTC).aligns_to_month());
+        assert!(!span("2026-01-01,2026-12-01", Tz::UTC).aligns_to_year());
+        // 2026-04-06 is a Monday
+        assert!(!span("2026-04-06,2026-04-13", Tz::UTC).aligns_to_week());
+
+        let timed = span("2026-07-01T10:00:00Z,2026-07-01T12:00:00Z", Tz::UTC);
+        assert!(!timed.aligns_to_day());
+        assert!(!timed.aligns_to_week());
+        assert!(!timed.aligns_to_month());
+        assert!(!timed.aligns_to_quarter());
+        assert!(!timed.aligns_to_year());
+    }
+
+    #[test]
+    fn prev_next_of_relative_modes() {
+        let prev_cases = [
+            (SpanMode::Today, SpanMode::Yesterday),
+            (SpanMode::ThisWeek, SpanMode::LastWeek),
+            (SpanMode::ThisMonth, SpanMode::LastMonth),
+            (SpanMode::ThisQuarter, SpanMode::LastQuarter),
+            (SpanMode::ThisYear, SpanMode::LastYear),
+        ];
+        for (mode, expected) in prev_cases {
+            assert_eq!(Span::make_rel(mode, Tz::UTC).prev().mode(), expected);
+            assert_eq!(Span::make_rel(expected, Tz::UTC).next().mode(), mode);
+        }
+    }
+
+    #[test]
+    fn prev_next_of_aligned_absolute_spans() {
+        let day = span("2026-04-15", Tz::UTC);
+        assert_eq!(dates(&day.prev()), (nd(2026, 4, 14), nd(2026, 4, 15)));
+        assert_eq!(dates(&day.next()), (nd(2026, 4, 16), nd(2026, 4, 17)));
+
+        let week = span("2026-04-05,2026-04-12", Tz::UTC);
+        assert_eq!(dates(&week.prev()), (nd(2026, 3, 29), nd(2026, 4, 5)));
+        assert_eq!(dates(&week.next()), (nd(2026, 4, 12), nd(2026, 4, 19)));
+
+        let april = span("2026-04-01,2026-05-01", Tz::UTC);
+        assert_eq!(dates(&april.prev()), (nd(2026, 3, 1), nd(2026, 4, 1)));
+        assert_eq!(dates(&april.next()), (nd(2026, 5, 1), nd(2026, 6, 1)));
+
+        let q2 = span("2026-04-01,2026-07-01", Tz::UTC);
+        assert_eq!(dates(&q2.prev()), (nd(2026, 1, 1), nd(2026, 4, 1)));
+        assert_eq!(dates(&q2.next()), (nd(2026, 7, 1), nd(2026, 10, 1)));
+
+        let year = span("2026-01-01,2027-01-01", Tz::UTC);
+        assert_eq!(dates(&year.prev()), (nd(2025, 1, 1), nd(2026, 1, 1)));
+        assert_eq!(dates(&year.next()), (nd(2027, 1, 1), nd(2028, 1, 1)));
+    }
+
+    #[test]
+    fn prev_next_of_generic_ranges() {
+        let range = span("2026-04-01,2026-04-11", Tz::UTC);
+        assert_eq!(dates(&range.prev()), (nd(2026, 3, 22), nd(2026, 4, 1)));
+        assert_eq!(dates(&range.next()), (nd(2026, 4, 11), nd(2026, 4, 21)));
+
+        let timed = span("2026-07-01T10:00:00Z,2026-07-01T12:00:00Z", Tz::UTC);
+        let (prev, next) = (timed.prev(), timed.next());
+        assert_eq!((prev.start().hour(), prev.end().hour()), (8, 10));
+        assert_eq!((next.start().hour(), next.end().hour()), (12, 14));
+        assert_eq!(prev.mode(), SpanMode::Abs);
+    }
+
+    #[test]
+    fn to_str_forms() {
+        assert_eq!(span("thisWeek", Tz::UTC).to_str(), "thisWeek");
+        assert_eq!(span("2026-04-15", Tz::UTC).to_str(), "2026-04-15");
+        assert_eq!(
+            span("2026-04-01,2026-05-01", Tz::UTC).to_str(),
+            "2026-04-01,2026-05-01"
+        );
+        let timed = span("2026-07-01T10:00:00Z,2026-07-01T12:00:00Z", Tz::UTC).to_str();
+        assert!(
+            timed.contains("T10:00:00") && timed.contains("T12:00:00"),
+            "{timed}"
+        );
+    }
+
+    #[test]
+    fn from_str_rejects_invalid_input() {
+        for text in [
+            "garbage",
+            "abs",
+            "",
+            "2026-04-01,garbage",
+            "garbage,2026-04-01",
+            "2026-05-01,2026-04-01",
+            "2026-13-01",
+        ] {
+            assert!(Span::from_str(text, Tz::UTC).is_none(), "{text}");
+        }
+    }
+
+    #[test]
+    fn from_str_accepts_flexible_timestamps() {
+        let spaced = span(" 2026-04-01 , 2026-05-01 ", Tz::UTC);
+        assert!(spaced.aligns_to_month());
+
+        let minutes = span("2026-07-01T10:00,2026-07-01T12:30", LONDON);
+        assert_eq!(minutes.start().hour(), 10);
+        assert_eq!(minutes.end().minute(), 30);
+
+        let fractional = span("2026-07-01T10:00:00.500,2026-07-01T11:00:00.500", LONDON);
+        assert_eq!(fractional.start().hour(), 10);
+
+        let offset = span(
+            "2026-07-01T10:00:00+02:00,2026-07-01T12:00:00+02:00",
+            Tz::UTC,
+        );
+        assert_eq!(offset.start().hour(), 8);
+
+        let mixed = span("2026-07-01,2026-07-01T12:00:00Z", Tz::UTC);
+        assert!(!mixed.aligns_to_dates());
+    }
+
+    #[test]
+    fn local_time_resolution_across_dst() {
+        // 01:30 happens twice in London on 2026-10-25; the earlier (BST) instant is used.
+        let ambiguous = local_to_date_time(nd(2026, 10, 25).and_hms_opt(1, 30, 0).unwrap(), LONDON);
+        assert_eq!(ambiguous.naive_utc().hour(), 0);
+        assert_eq!(ambiguous.naive_utc().minute(), 30);
+
+        // 01:30 does not exist in London on 2026-03-29; the first instant after the gap is used.
+        let gap = local_to_date_time(nd(2026, 3, 29).and_hms_opt(1, 30, 0).unwrap(), LONDON);
+        assert_eq!((gap.hour(), gap.minute()), (2, 0));
+    }
 }
