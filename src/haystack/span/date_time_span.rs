@@ -281,8 +281,27 @@ impl Span {
     /// Create a relative span for the given mode and timezone, resolved against the current
     /// date in that timezone.
     pub fn make_rel(mode: SpanMode, tz: Tz) -> Self {
-        let today = chrono::Utc::now().with_timezone(&tz).date_naive();
-        Span::do_make_rel(mode, today, tz)
+        Span::do_make_rel(mode, local_today(tz), tz)
+    }
+
+    /// Resolve a relative mode using a caller-supplied local date in `tz`, without reading
+    /// the system clock. The resulting span retains its relative mode.
+    ///
+    /// `SpanMode::Abs` has no period to resolve and yields an absolute single-day span.
+    ///
+    /// ```
+    /// use chrono::NaiveDate;
+    /// use chrono_tz::Tz;
+    /// use libhaystack::{span::{Span, SpanMode}, val::Date};
+    ///
+    /// let today = Date::from(NaiveDate::from_ymd_opt(2026, 3, 29).unwrap());
+    /// let span = Span::make_rel_on(SpanMode::Today, today, Tz::Europe__London);
+    /// assert_eq!(span.start_date(), today);
+    /// assert_eq!(span.num_days(), 1);
+    /// assert_eq!(span.mode(), SpanMode::Today);
+    /// ```
+    pub fn make_rel_on(mode: SpanMode, today: Date, tz: Tz) -> Self {
+        Span::do_make_rel(mode, *today, tz)
     }
 
     /// Resolve a relative mode against a given "today" date in `tz`.
@@ -334,6 +353,15 @@ impl Span {
         Span::make_rel(self.mode, self.tz())
     }
 
+    /// Refresh using a caller-supplied local date in this span's timezone.
+    /// Absolute spans are returned unchanged.
+    pub fn fresh_on(&self, today: Date) -> Self {
+        if self.mode.is_abs() {
+            return self.clone();
+        }
+        Span::make_rel_on(self.mode, today, self.tz())
+    }
+
     /// Inclusive start DateTime.
     pub fn start(&self) -> &DateTime {
         &self.start
@@ -380,6 +408,9 @@ impl Span {
     }
 
     /// Convert to a `DateSpan` using the aligned local dates.
+    ///
+    /// For compatibility, an empty midnight-aligned span converts to a single day.
+    /// Use [`try_to_date_span`](Self::try_to_date_span) to reject empty spans instead.
     pub fn to_date_span(&self) -> DateSpan {
         let start = self.start.date_naive();
         if !self.aligns_to_dates {
@@ -406,6 +437,21 @@ impl Span {
             Date::from(start),
             Date::from(sub_days(self.end.date_naive(), 1)),
         )
+    }
+
+    /// Convert to an inclusive `DateSpan`, returning `None` for an empty span.
+    /// Non-empty spans use the same local-date semantics as [`to_date_span`](Self::to_date_span).
+    pub fn try_to_date_span(&self) -> Option<DateSpan> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.to_date_span())
+        }
+    }
+
+    /// Whether this span contains no instants.
+    pub fn is_empty(&self) -> bool {
+        self.start == self.end
     }
 
     /// Check if a DateTime is contained within this span (inclusive start, exclusive end).
@@ -587,12 +633,14 @@ impl Span {
         )
     }
 
-    /// Iterate over each day in the span (delegates to `to_date_span().each_day`).
+    /// Iterate over each day in the span. Empty spans invoke no callbacks.
     pub fn each_day<F>(&self, func: F)
     where
         F: FnMut(Date, i32),
     {
-        self.to_date_span().each_day(func);
+        if let Some(dates) = self.try_to_date_span() {
+            dates.each_day(func);
+        }
     }
 
     /// Machine-parseable string representation, round-trippable through
@@ -625,8 +673,9 @@ impl Span {
     /// Always renders the explicit inclusive `start..end` date range (or datetime range, for a
     /// span not aligned to midnight boundaries) with a zero-padded day and 4-digit year,
     /// matching the format used by the Funcs.xeto docs' own examples, regardless of mode.
+    /// An empty span is rendered as a datetime range, so it does not read as a whole day.
     pub fn dis(&self) -> String {
-        if !self.aligns_to_dates {
+        if !self.aligns_to_dates || self.is_empty() {
             return format!(
                 "{}..{}",
                 fmt_datetime_dd_mmm_yyyy_hm(&self.start),
@@ -656,12 +705,25 @@ impl Span {
     /// `tz`).
     #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str, tz: Tz) -> Option<Self> {
+        Span::parse(s, tz, || local_today(tz))
+    }
+
+    /// Parse using a caller-supplied local date in `tz` to resolve relative modes, without
+    /// reading the system clock. Absolute input does not depend on `today`.
+    ///
+    /// Accepts the same formats as [`from_str`](Self::from_str).
+    pub fn from_str_on(s: &str, today: Date, tz: Tz) -> Option<Self> {
+        Span::parse(s, tz, || *today)
+    }
+
+    /// `today` is only evaluated for relative mode keywords.
+    fn parse(s: &str, tz: Tz, today: impl FnOnce() -> NaiveDate) -> Option<Self> {
         let s = s.trim();
 
         if let Some(mode) = SpanMode::from_str(s)
             && mode.is_rel()
         {
-            return Some(Span::make_rel(mode, tz));
+            return Some(Span::do_make_rel(mode, today(), tz));
         }
 
         if let Some((start_str, end_str)) = s
@@ -735,6 +797,11 @@ fn local_to_date_time(local: NaiveDateTime, tz: Tz) -> DateTime {
 /// [`local_to_date_time`] for how the gap is resolved.
 fn date_at_midnight(date: NaiveDate, tz: Tz) -> DateTime {
     local_to_date_time(date.and_time(NaiveTime::MIN), tz)
+}
+
+/// The current local date in `tz`, from the system clock.
+fn local_today(tz: Tz) -> NaiveDate {
+    chrono::Utc::now().with_timezone(&tz).date_naive()
 }
 
 /// Check if a DateTime is at local midnight.
@@ -1330,5 +1397,102 @@ mod tests {
 
         let this_quarter = Span::make_rel(SpanMode::ThisQuarter, Tz::UTC).to_date_span();
         assert!(this_quarter.is_quarter());
+    }
+
+    #[test]
+    fn caller_date_resolves_every_relative_mode_without_losing_mode_or_timezone() {
+        for mode in ALL_MODES.into_iter().filter(SpanMode::is_rel) {
+            let actual = Span::make_rel_on(mode, d(2028, 2, 29), LONDON);
+            let expected = Span::do_make_rel(mode, nd(2028, 2, 29), LONDON);
+            assert_eq!(actual.start(), expected.start());
+            assert_eq!(actual.end(), expected.end());
+            assert_eq!(actual.mode(), mode);
+            assert_eq!(actual.tz(), LONDON);
+        }
+        let today = Span::make_rel_on(SpanMode::Today, d(2028, 2, 29), LONDON);
+        assert_eq!(dates(&today), (nd(2028, 2, 29), nd(2028, 3, 1)));
+
+        let abs = Span::make_rel_on(SpanMode::Abs, d(2028, 2, 29), LONDON);
+        assert_eq!(abs.mode(), SpanMode::Abs);
+        assert_eq!(dates(&abs), (nd(2028, 2, 29), nd(2028, 3, 1)));
+    }
+
+    #[test]
+    fn caller_date_refreshes_bounds_despite_mode_based_equality() {
+        let april = Span::make_rel_on(SpanMode::ThisMonth, d(2026, 4, 15), LONDON);
+        let may = april.fresh_on(d(2026, 5, 15));
+        assert_eq!(may.mode(), SpanMode::ThisMonth);
+        assert_eq!(may.tz(), LONDON);
+        assert_eq!(dates(&may), (nd(2026, 5, 1), nd(2026, 6, 1)));
+        assert_eq!(dates(&april), (nd(2026, 4, 1), nd(2026, 5, 1)));
+        let absolute = span("2026-04-01,2026-05-01", LONDON);
+        assert_eq!(absolute.fresh_on(d(2030, 1, 1)), absolute);
+    }
+
+    #[test]
+    fn caller_date_parsing_resolves_keywords_and_preserves_absolute_input() {
+        for mode in ALL_MODES.into_iter().filter(SpanMode::is_rel) {
+            let parsed = Span::from_str_on(mode.dis(), d(2026, 3, 29), LONDON).unwrap();
+            let expected = Span::make_rel_on(mode, d(2026, 3, 29), LONDON);
+            assert_eq!(parsed.start(), expected.start());
+            assert_eq!(parsed.end(), expected.end());
+            assert_eq!(parsed.mode(), mode);
+            assert_eq!(parsed.tz(), LONDON);
+        }
+        for input in [
+            "2026-04-01",
+            "2026-04-01,2026-05-01",
+            "2026-04-01T10:00:00Z,2026-04-02T10:00:00Z",
+        ] {
+            let parsed = Span::from_str_on(input, d(2030, 1, 1), LONDON).unwrap();
+            assert_eq!(parsed, span(input, LONDON));
+        }
+        assert!(Span::from_str_on("invalid", d(2030, 1, 1), LONDON).is_none());
+    }
+
+    #[test]
+    fn empty_spans_have_no_date_conversion_or_iteration() {
+        for input in [
+            "2026-04-01,2026-04-01",
+            "2026-04-01T12:30:00Z,2026-04-01T12:30:00Z",
+        ] {
+            let empty = span(input, LONDON);
+            assert!(empty.is_empty());
+            assert!(empty.try_to_date_span().is_none());
+            empty.each_day(|_, _| panic!("empty span must not visit a date"));
+            let utc = empty.to_time_zone(Tz::UTC);
+            assert!(utc.is_empty());
+            assert!(utc.try_to_date_span().is_none());
+        }
+    }
+
+    #[test]
+    fn empty_span_dis_shows_instants_not_a_day() {
+        let empty = span("2026-04-01,2026-04-01", LONDON);
+        assert_eq!(empty.dis(), "01-Apr-2026 00:00..01-Apr-2026 00:00");
+        assert_eq!(span("2026-04-01", LONDON).dis(), "01-Apr-2026..01-Apr-2026");
+    }
+
+    #[test]
+    fn nonempty_conversion_and_iteration_preserve_dst_calendar_days() {
+        let range = span("2026-03-28,2026-03-31", LONDON);
+        assert!(!range.is_empty());
+        assert_eq!(range.try_to_date_span(), Some(range.to_date_span()));
+        let mut visited = Vec::new();
+        range.each_day(|date, index| visited.push((date, index)));
+        assert_eq!(
+            visited,
+            vec![
+                (d(2026, 3, 28), 0),
+                (d(2026, 3, 29), 1),
+                (d(2026, 3, 30), 2)
+            ]
+        );
+        let short = span("2026-03-29T10:00:00Z,2026-03-29T10:00:01Z", LONDON);
+        assert!(!short.is_empty());
+        assert!(short.try_to_date_span().is_some());
+        let mut count = 0;
+        short.each_day(|_, _| count += 1);
+        assert_eq!(count, 1);
     }
 }
