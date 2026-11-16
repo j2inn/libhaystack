@@ -222,7 +222,10 @@ pub enum SpanModePeriod {
 ///
 /// A `Span` can be absolute (fixed dates) or relative (a `SpanMode` that resolves lazily).
 /// Call `fresh()` to resolve a relative span to absolute dates.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Equality follows Haxall: relative spans are equal when their modes match (whatever dates
+/// or timezone they resolved to), absolute spans when their start and end match.
+#[derive(Debug, Clone)]
 pub struct Span {
     start: DateTime,
     end: DateTime,
@@ -747,6 +750,17 @@ fn start_of_week(date: NaiveDate) -> NaiveDate {
     sub_days(date, days as u64)
 }
 
+impl PartialEq for Span {
+    fn eq(&self, other: &Self) -> bool {
+        if self.mode != other.mode {
+            return false;
+        }
+        self.mode.is_rel() || (self.start == other.start && self.end == other.end)
+    }
+}
+
+impl Eq for Span {}
+
 impl From<&Span> for DateSpan {
     fn from(span: &Span) -> Self {
         span.to_date_span()
@@ -1087,6 +1101,23 @@ mod tests {
 
         let abs = span("2026-04-01,2026-05-01", Tz::UTC);
         assert_eq!(abs.fresh(), abs);
+    }
+
+    #[test]
+    fn equality_of_relative_spans_is_by_mode() {
+        let april = Span::do_make_rel(SpanMode::ThisMonth, nd(2026, 4, 15), LONDON);
+        let may = Span::do_make_rel(SpanMode::ThisMonth, nd(2026, 5, 15), Tz::UTC);
+        assert_eq!(april, may);
+        assert_ne!(
+            april,
+            Span::do_make_rel(SpanMode::LastMonth, nd(2026, 5, 15), LONDON)
+        );
+
+        // An absolute span with the same dates as a relative one is still different.
+        let abs = span("2026-04-01,2026-05-01", LONDON);
+        assert_eq!(dates(&abs), dates(&april));
+        assert_ne!(abs, april);
+        assert_ne!(abs, span("2026-04-01,2026-05-02", LONDON));
     }
 
     #[test]

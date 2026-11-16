@@ -8,7 +8,7 @@
 //! timezone component.
 
 use crate::val::Date;
-use chrono::{Datelike, Duration, NaiveDate};
+use chrono::{Datelike, Duration, Months, NaiveDate};
 
 /// Construct a `NaiveDate` from year/month/day that are **known to be valid** by construction.
 ///
@@ -186,28 +186,25 @@ impl DateSpan {
         *date >= self.start && *date <= self.end
     }
 
-    /// Shift the span forward by a duration.
+    /// Shift the span forward by a duration. The result is always a `Range`.
     pub fn plus(&self, duration: Duration) -> Self {
-        DateSpan {
-            start: Date::from(*self.start + duration),
-            end: Date::from(*self.end + duration),
-            period: self.period,
-        }
+        DateSpan::range(
+            Date::from(*self.start + duration),
+            Date::from(*self.end + duration),
+        )
     }
 
-    /// Shift the span backward by a duration.
+    /// Shift the span backward by a duration. The result is always a `Range`.
     pub fn minus(&self, duration: Duration) -> Self {
-        DateSpan {
-            start: Date::from(*self.start - duration),
-            end: Date::from(*self.end - duration),
-            period: self.period,
-        }
+        DateSpan::range(
+            Date::from(*self.start - duration),
+            Date::from(*self.end - duration),
+        )
     }
 
     /// Get the previous period (e.g., previous month, previous week).
-    /// For `Range` period, shift back by the current span's duration.
+    /// For `Range` period, roll start and end back one day.
     pub fn prev(&self) -> Self {
-        let days = self.num_days();
         match self.period {
             DateSpanPeriod::Day => {
                 let new_start = *self.start - Duration::days(1);
@@ -238,22 +235,13 @@ impl DateSpan {
                 let prev_first = *self.start - Duration::days(1);
                 DateSpan::from_period(Date::from(prev_first), DateSpanPeriod::Year)
             }
-            DateSpanPeriod::Range => {
-                let new_start = *self.start - Duration::days(days);
-                let new_end = *self.end - Duration::days(days);
-                DateSpan::new(
-                    Date::from(new_start),
-                    Date::from(new_end),
-                    DateSpanPeriod::Range,
-                )
-            }
+            DateSpanPeriod::Range => self.minus(Duration::days(1)),
         }
     }
 
     /// Get the next period (e.g., next month, next week).
-    /// For `Range` period, shift forward by the current span's duration.
+    /// For `Range` period, roll start and end forward one day.
     pub fn next(&self) -> Self {
-        let days = self.num_days();
         match self.period {
             DateSpanPeriod::Day => {
                 let new_start = *self.start + Duration::days(1);
@@ -284,15 +272,7 @@ impl DateSpan {
                 let next_first = *self.end + Duration::days(1);
                 DateSpan::from_period(Date::from(next_first), DateSpanPeriod::Year)
             }
-            DateSpanPeriod::Range => {
-                let new_start = *self.start + Duration::days(days);
-                let new_end = *self.end + Duration::days(days);
-                DateSpan::new(
-                    Date::from(new_start),
-                    Date::from(new_end),
-                    DateSpanPeriod::Range,
-                )
-            }
+            DateSpanPeriod::Range => self.plus(Duration::days(1)),
         }
     }
 
@@ -386,16 +366,21 @@ impl DateSpan {
     /// Supported formats:
     /// - `"YYYY-MM-DD,period"` — e.g., `"2026-04-01,month"`
     /// - `"YYYY-MM-DD,YYYY-MM-DD"` — explicit range
-    /// - `"today"` — today as a day span
+    /// - `"today"`, `"yesterday"` — a single day span
     /// - `"thisWeek"`, `"thisMonth"`, `"thisQuarter"`, `"thisYear"` — current period
     /// - `"lastWeek"`, `"lastMonth"`, `"lastQuarter"`, `"lastYear"` — previous period
-    /// - `"pastWeek"`, `"pastMonth"`, `"pastYear"` — rolling N-day span
+    /// - `"pastWeek"`, `"pastMonth"` — rolling 7/30-day span ending today
+    /// - `"pastYear"` — from the same date last year (clamped to month end) to today
     pub fn from_str(s: &str, today: Date) -> Option<Self> {
         let s = s.trim();
         // Check for keyword shortcuts
         match s {
             "today" => {
                 return Some(DateSpan::new(today, today, DateSpanPeriod::Day));
+            }
+            "yesterday" => {
+                let day = Date::from(*today - Duration::days(1));
+                return Some(DateSpan::new(day, day, DateSpanPeriod::Day));
             }
             "thisWeek" => {
                 return Some(DateSpan::from_period(today, DateSpanPeriod::Week));
@@ -436,9 +421,10 @@ impl DateSpan {
                 return Some(DateSpan::range(Date::from(start_naive), end));
             }
             "pastYear" => {
-                let end = today;
-                let start_naive = *today - Duration::days(365);
-                return Some(DateSpan::range(Date::from(start_naive), end));
+                let start = today
+                    .checked_sub_months(Months::new(12))
+                    .unwrap_or(NaiveDate::MIN);
+                return Some(DateSpan::range(Date::from(start), today));
             }
             _ => {}
         }
@@ -727,18 +713,22 @@ mod tests {
         assert_eq!(ends(&year.prev()), (d(2025, 1, 1), d(2025, 12, 31)));
         assert_eq!(ends(&year.next()), (d(2027, 1, 1), d(2027, 12, 31)));
 
-        // A range shifts by its own length (10 days).
+        // A range rolls by one day, regardless of its length.
         let range = DateSpan::range(d(2026, 4, 1), d(2026, 4, 10));
-        assert_eq!(ends(&range.prev()), (d(2026, 3, 22), d(2026, 3, 31)));
-        assert_eq!(ends(&range.next()), (d(2026, 4, 11), d(2026, 4, 20)));
+        assert_eq!(ends(&range.prev()), (d(2026, 3, 31), d(2026, 4, 9)));
+        assert_eq!(ends(&range.next()), (d(2026, 4, 2), d(2026, 4, 11)));
         assert!(range.prev().is_range() && range.next().is_range());
     }
 
     #[test]
-    fn plus_minus_preserve_period() {
+    fn plus_minus_produce_range() {
         let month = DateSpan::from_period(d(2026, 4, 15), DateSpanPeriod::Month);
-        assert!(month.plus(Duration::days(1)).is_month());
-        assert!(month.minus(Duration::days(1)).is_month());
+        let plus = month.plus(Duration::days(1));
+        assert_eq!(ends(&plus), (d(2026, 4, 2), d(2026, 5, 1)));
+        assert!(plus.is_range());
+        let minus = month.minus(Duration::days(1));
+        assert_eq!(ends(&minus), (d(2026, 3, 31), d(2026, 4, 29)));
+        assert!(minus.is_range());
     }
 
     #[test]
@@ -773,6 +763,12 @@ mod tests {
     fn from_str_keywords() {
         let today = d(2026, 4, 15); // a Wednesday
         let cases = [
+            (
+                "yesterday",
+                d(2026, 4, 14),
+                d(2026, 4, 14),
+                DateSpanPeriod::Day,
+            ),
             (
                 "thisWeek",
                 d(2026, 4, 12),
@@ -845,6 +841,12 @@ mod tests {
             assert_eq!(ends(&span), (start, end), "{text}");
             assert_eq!(span.period, period, "{text}");
         }
+    }
+
+    #[test]
+    fn past_year_clamps_leap_day() {
+        let span = DateSpan::from_str("pastYear", d(2028, 2, 29)).unwrap();
+        assert_eq!(ends(&span), (d(2027, 2, 28), d(2028, 2, 29)));
     }
 
     #[test]
